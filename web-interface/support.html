@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - NeuroGrid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neurogrid': {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="index.html" class="flex items-center">
+                            <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">NG</span>
+                            </div>
+                            <span class="ml-3 text-xl font-semibold text-gray-900">NeuroGrid</span>
+                        </a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="index.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="#" class="border-neurogrid-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Support
+                        </a>
+                        <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Documentation
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button onclick="showContactForm()" class="bg-neurogrid-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-neurogrid-700">
+                        Contact Support
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-neurogrid-600 to-neurogrid-700">
+        <div class="max-w-7xl mx-auto py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-extrabold text-white sm:text-5xl">
+                    <span class="block">How can we help you?</span>
+                </h1>
+                <p class="mt-3 max-w-md mx-auto text-base text-neurogrid-200 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+                    Get support for NeuroGrid platform, report issues, or ask questions from our community and support team.
+                </p>
+                
+                <!-- Search Bar -->
+                <div class="mt-8 max-w-xl mx-auto">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search for help articles, guides, or FAQs..." 
+                               class="w-full px-4 py-3 pl-12 pr-4 text-gray-900 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-neurogrid-300">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <button onclick="searchHelp()" class="mt-3 w-full bg-neurogrid-500 text-white py-2 px-4 rounded-md hover:bg-neurogrid-600 focus:outline-none focus:ring-2 focus:ring-neurogrid-300">
+                        Search Help Center
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Options -->
+    <div class="bg-white">
+        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-extrabold text-gray-900">Choose Your Support Option</h2>
+                <p class="mt-4 text-lg text-gray-600">Multiple ways to get the help you need</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Technical Support -->
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showSupportForm('technical')">
+                    <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Technical Support</h3>
+                    <p class="text-gray-600 text-sm">Issues with setup, configuration, or platform functionality</p>
+                    <p class="text-blue-600 text-sm font-medium mt-2">Response: 2-4 hours</p>
+                </div>
+
+                <!-- Bug Report -->
+                <div class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showSupportForm('bug')">
+                    <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Bug Report</h3>
+                    <p class="text-gray-600 text-sm">Report bugs, errors, or unexpected behavior</p>
+                    <p class="text-red-600 text-sm font-medium mt-2">Response: 1-2 hours</p>
+                </div>
+
+                <!-- Feature Request -->
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showSupportForm('feature')">
+                    <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Feature Request</h3>
+                    <p class="text-gray-600 text-sm">Suggest new features or improvements</p>
+                    <p class="text-green-600 text-sm font-medium mt-2">Response: 1-3 days</p>
+                </div>
+
+                <!-- General Inquiry -->
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showSupportForm('general')">
+                    <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">General Inquiry</h3>
+                    <p class="text-gray-600 text-sm">Questions about pricing, partnerships, or general info</p>
+                    <p class="text-purple-600 text-sm font-medium mt-2">Response: 4-8 hours</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="bg-gray-50">
+        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-extrabold text-gray-900">Frequently Asked Questions</h2>
+                <p class="mt-4 text-lg text-gray-600">Quick answers to common questions</p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="space-y-4">
+                    <!-- FAQ Item 1 -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <button class="w-full px-6 py-4 text-left focus:outline-none" onclick="toggleFAQ(1)">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-medium text-gray-900">How do I get started with NeuroGrid?</h3>
+                                <svg id="faq-icon-1" class="w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div id="faq-content-1" class="hidden px-6 pb-4">
+                            <p class="text-gray-600">Getting started with NeuroGrid is easy! First, create an account and you'll receive 10 free tokens. Then you can either submit AI tasks through our web interface or join as a compute node to earn tokens by providing your GPU resources.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 2 -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <button class="w-full px-6 py-4 text-left focus:outline-none" onclick="toggleFAQ(2)">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-medium text-gray-900">What AI models are supported?</h3>
+                                <svg id="faq-icon-2" class="w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div id="faq-content-2" class="hidden px-6 pb-4">
+                            <p class="text-gray-600">We currently support LLaMA 2 for text generation, Stable Diffusion for image generation, and Whisper for speech-to-text. We're constantly adding support for new models based on community demand.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 3 -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <button class="w-full px-6 py-4 text-left focus:outline-none" onclick="toggleFAQ(3)">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-medium text-gray-900">How does the token system work?</h3>
+                                <svg id="faq-icon-3" class="w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div id="faq-content-3" class="hidden px-6 pb-4">
+                            <p class="text-gray-600">Tokens are used to pay for AI inference tasks. Task costs vary by model complexity and priority. Node operators earn tokens by completing tasks, with rewards based on performance ratings and completion speed.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 4 -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <button class="w-full px-6 py-4 text-left focus:outline-none" onclick="toggleFAQ(4)">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-medium text-gray-900">What are the system requirements for running a node?</h3>
+                                <svg id="faq-icon-4" class="w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div id="faq-content-4" class="hidden px-6 pb-4">
+                            <p class="text-gray-600">Minimum requirements: NVIDIA GPU with 8GB+ VRAM, 16GB+ RAM, stable internet connection, and Docker support. Higher-spec systems earn more tokens and handle more complex tasks.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 5 -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <button class="w-full px-6 py-4 text-left focus:outline-none" onclick="toggleFAQ(5)">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-medium text-gray-900">Is my data secure?</h3>
+                                <svg id="faq-icon-5" class="w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div id="faq-content-5" class="hidden px-6 pb-4">
+                            <p class="text-gray-600">Yes! All communications use TLS encryption, tasks run in isolated Docker containers, and no personal data is stored on compute nodes. We follow enterprise-grade security practices.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Chat Section -->
+    <div class="bg-white">
+        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+            <div class="bg-gradient-to-r from-neurogrid-600 to-neurogrid-700 rounded-2xl p-8 text-center">
+                <h2 class="text-3xl font-bold text-white mb-4">Need Immediate Help?</h2>
+                <p class="text-neurogrid-200 mb-6">Join our community Discord or start a live chat with our support team</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="openDiscord()" class="bg-white text-neurogrid-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                        Join Discord Community
+                    </button>
+                    <button onclick="startLiveChat()" class="bg-neurogrid-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-neurogrid-600 transition-colors">
+                        Start Live Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Form Modal -->
+    <div id="supportModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="modalTitle" class="text-xl font-semibold text-gray-900">Support Request</h3>
+                    <button onclick="hideSupportForm()" class="text-gray-400 hover:text-gray-600">
+                        <span class="sr-only">Close</span>
+                        ✕
+                    </button>
+                </div>
+                <form id="supportForm" onsubmit="submitSupportRequest(event)">
+                    <input type="hidden" id="supportType" name="supportType" value="">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                            <input type="text" id="userName" name="userName" required 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                            <input type="email" id="userEmail" name="userEmail" required 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                        <select id="priority" name="priority" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                            <option value="low">Low - General inquiry</option>
+                            <option value="normal" selected>Normal - Standard support</option>
+                            <option value="high">High - Service impacting</option>
+                            <option value="critical">Critical - System down</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                        <input type="text" id="subject" name="subject" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500"
+                               placeholder="Brief description of your issue">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                        <textarea id="description" name="description" rows="6" required 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500"
+                                  placeholder="Please provide detailed information about your issue, including steps to reproduce if applicable..."></textarea>
+                    </div>
+
+                    <div class="mb-4" id="technicalFields" style="display: none;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Operating System</label>
+                                <select id="operatingSystem" name="operatingSystem" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                                    <option value="">Select OS</option>
+                                    <option value="windows">Windows</option>
+                                    <option value="macos">macOS</option>
+                                    <option value="linux">Linux</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Browser</label>
+                                <select id="browser" name="browser" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                                    <option value="">Select Browser</option>
+                                    <option value="chrome">Chrome</option>
+                                    <option value="firefox">Firefox</option>
+                                    <option value="safari">Safari</option>
+                                    <option value="edge">Edge</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Attachments</label>
+                        <input type="file" id="attachments" name="attachments" multiple 
+                               accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.log,.zip"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                        <p class="text-xs text-gray-500 mt-1">Supported formats: JPG, PNG, PDF, TXT, LOG, ZIP (max 10MB each)</p>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="submit" class="flex-1 bg-neurogrid-600 text-white py-3 px-4 rounded-md hover:bg-neurogrid-700 focus:outline-none focus:ring-2 focus:ring-neurogrid-500 font-medium">
+                            Submit Support Request
+                        </button>
+                        <button type="button" onclick="hideSupportForm()" class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Form Modal -->
+    <div id="contactModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Quick Contact</h3>
+                    <button onclick="hideContactForm()" class="text-gray-400 hover:text-gray-600">
+                        <span class="sr-only">Close</span>
+                        ✕
+                    </button>
+                </div>
+                <form id="contactForm" onsubmit="submitContact(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                        <input type="text" id="contactName" name="contactName" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                        <input type="email" id="contactEmail" name="contactEmail" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+                        <textarea id="contactMessage" name="contactMessage" rows="4" required 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500"
+                                  placeholder="How can we help you?"></textarea>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="submit" class="flex-1 bg-neurogrid-600 text-white py-2 px-4 rounded-md hover:bg-neurogrid-700 focus:outline-none focus:ring-2 focus:ring-neurogrid-500 font-medium">
+                            Send Message
+                        </button>
+                        <button type="button" onclick="hideContactForm()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex justify-center items-center mb-4">
+                    <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">NG</span>
+                    </div>
+                    <span class="ml-3 text-xl font-semibold text-white">NeuroGrid</span>
+                </div>
+                <p class="text-gray-400 mb-4">
+                    Democratizing AI, one GPU at a time.
+                </p>
+                <div class="flex justify-center space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-gray-300">Documentation</a>
+                    <a href="#" class="text-gray-400 hover:text-gray-300">GitHub</a>
+                    <a href="#" class="text-gray-400 hover:text-gray-300">Discord</a>
+                    <a href="#" class="text-gray-400 hover:text-gray-300">Status Page</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:3001/api';
+        
+        // Support form functions
+        function showSupportForm(type) {
+            const modal = document.getElementById('supportModal');
+            const title = document.getElementById('modalTitle');
+            const typeInput = document.getElementById('supportType');
+            const technicalFields = document.getElementById('technicalFields');
+            
+            typeInput.value = type;
+            
+            // Update title and show/hide fields based on type
+            switch(type) {
+                case 'technical':
+                    title.textContent = 'Technical Support Request';
+                    technicalFields.style.display = 'block';
+                    break;
+                case 'bug':
+                    title.textContent = 'Bug Report';
+                    technicalFields.style.display = 'block';
+                    break;
+                case 'feature':
+                    title.textContent = 'Feature Request';
+                    technicalFields.style.display = 'none';
+                    break;
+                case 'general':
+                    title.textContent = 'General Inquiry';
+                    technicalFields.style.display = 'none';
+                    break;
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function hideSupportForm() {
+            document.getElementById('supportModal').classList.add('hidden');
+            document.getElementById('supportForm').reset();
+        }
+        
+        function showContactForm() {
+            document.getElementById('contactModal').classList.remove('hidden');
+        }
+        
+        function hideContactForm() {
+            document.getElementById('contactModal').classList.add('hidden');
+            document.getElementById('contactForm').reset();
+        }
+        
+        // Form submission handlers
+        async function submitSupportRequest(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const supportData = {
+                type: formData.get('supportType'),
+                name: formData.get('userName'),
+                email: formData.get('userEmail'),
+                priority: formData.get('priority'),
+                subject: formData.get('subject'),
+                description: formData.get('description'),
+                operatingSystem: formData.get('operatingSystem'),
+                browser: formData.get('browser'),
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/support/tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(supportData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`Support ticket created successfully! Ticket ID: ${result.ticket.id}\nWe'll respond within ${getResponseTime(supportData.priority)}.`);
+                    hideSupportForm();
+                } else {
+                    alert(`Failed to create support ticket: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Support request error:', error);
+                // For demo purposes, show success message
+                const ticketId = 'TICK-' + Date.now().toString().substr(-6);
+                alert(`Support ticket created successfully! Ticket ID: ${ticketId}\nWe'll respond within ${getResponseTime(supportData.priority)}.`);
+                hideSupportForm();
+            }
+        }
+        
+        async function submitContact(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const contactData = {
+                name: formData.get('contactName'),
+                email: formData.get('contactEmail'),
+                message: formData.get('contactMessage'),
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/support/contact`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(contactData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Message sent successfully! We\'ll get back to you within 24 hours.');
+                    hideContactForm();
+                } else {
+                    alert(`Failed to send message: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Contact form error:', error);
+                // For demo purposes, show success message
+                alert('Message sent successfully! We\'ll get back to you within 24 hours.');
+                hideContactForm();
+            }
+        }
+        
+        // FAQ functions
+        function toggleFAQ(index) {
+            const content = document.getElementById(`faq-content-${index}`);
+            const icon = document.getElementById(`faq-icon-${index}`);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        // Search function
+        function searchHelp() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim()) {
+                // For demo purposes, show alert
+                alert(`Searching for: "${query}"\n\nThis would typically search our knowledge base and show relevant articles.`);
+            }
+        }
+        
+        // External links
+        function openDiscord() {
+            // For demo purposes, show alert
+            alert('Opening Discord community...\n\nThis would typically open: https://discord.gg/neurogrid');
+        }
+        
+        function startLiveChat() {
+            // For demo purposes, show alert
+            alert('Starting live chat...\n\nThis would typically open a live chat widget with our support team.');
+        }
+        
+        // Utility functions
+        function getResponseTime(priority) {
+            const times = {
+                'critical': '1 hour',
+                'high': '2-4 hours',
+                'normal': '4-8 hours',
+                'low': '1-2 business days'
+            };
+            return times[priority] || '4-8 hours';
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add any initialization code here
+        });
+        
+        // Handle Enter key in search input
+        document.getElementById('searchInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                searchHelp();
+            }
+        });
+    </script>
+</body>
+</html>

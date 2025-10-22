@@ -16,6 +16,7 @@ const taskRoutes = require('./api/routes/tasks');
 const nodeRoutes = require('./api/routes/nodes');
 const tokenRoutes = require('./api/routes/tokens');
 const systemRoutes = require('./api/routes/system');
+const supportRoutes = require('./api/routes/support');
 
 // Import services
 const TaskDispatcher = require('./services/TaskDispatcher');
@@ -92,6 +93,7 @@ class CoordinatorServer {
     this.app.use('/api/nodes', nodeRoutes.router || nodeRoutes);
     this.app.use('/api/tokens', tokenRoutes.router || tokenRoutes);
     this.app.use('/api/system', systemRoutes);
+    this.app.use('/api/support', supportRoutes);
 
     // Initialize services in routes that need them
     if (taskRoutes.initializeServices) taskRoutes.initializeServices(services);
