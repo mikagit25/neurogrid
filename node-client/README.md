@@ -44,7 +44,7 @@ Python client application for participating nodes in the NeuroGrid distributed A
 
 ```bash
 # Clone repository
-git clone https://github.com/neurogrid/neurogrid.git
+git clone https://github.com/mikagit25/neurogrid.git
 cd neurogrid/node-client
 
 # Create virtual environment
