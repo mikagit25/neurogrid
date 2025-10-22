@@ -21,6 +21,8 @@ const {
 const taskRoutes = require('./api/routes/tasks');
 const nodeRoutes = require('./api/routes/nodes');
 const tokenRoutes = require('./api/routes/tokens');
+const paymentRoutes = require('./api/routes/payments');
+const walletRoutes = require('./api/routes/wallets');
 const systemRoutes = require('./api/routes/system');
 const supportRoutes = require('./api/routes/support');
 const analyticsRoutes = require('./api/routes/analytics');
@@ -30,8 +32,10 @@ const notificationRoutes = require('./api/routes/notifications');
 const TaskDispatcher = require('./services/TaskDispatcher');
 const NodeManager = require('./services/NodeManager');
 const TokenEngine = require('./services/TokenEngine');
+const PaymentGateway = require('./services/PaymentGateway');
 const { WebSocketManager } = require('./services/WebSocketManager');
 const { MonitoringService } = require('./services/MonitoringService');
+const WalletModel = require('./models/WalletModel');
 
 class CoordinatorServer {
   constructor() {
@@ -45,6 +49,8 @@ class CoordinatorServer {
     this.tokenEngine = new TokenEngine();
     
     // Initialize new services
+    this.paymentGateway = new PaymentGateway();
+    this.walletModel = new WalletModel();
     this.wsManager = null;
     this.monitoringService = null;
     
@@ -187,6 +193,8 @@ class CoordinatorServer {
       taskDispatcher: this.taskDispatcher,
       nodeManager: this.nodeManager,
       tokenEngine: this.tokenEngine,
+      paymentGateway: this.paymentGateway,
+      walletModel: this.walletModel,
       wsManager: this.wsManager,
       monitoringService: this.monitoringService
     };
@@ -195,6 +203,8 @@ class CoordinatorServer {
     this.app.use('/api/tasks', taskRoutes.router || taskRoutes);
     this.app.use('/api/nodes', nodeRoutes.router || nodeRoutes);
     this.app.use('/api/tokens', tokenRoutes.router || tokenRoutes);
+    this.app.use('/api/payments', paymentRoutes.router || paymentRoutes);
+    this.app.use('/api/wallets', walletRoutes.router || walletRoutes);
     this.app.use('/api/system', systemRoutes);
     this.app.use('/api/support', supportRoutes);
     this.app.use('/api/analytics', analyticsRoutes);
@@ -204,6 +214,8 @@ class CoordinatorServer {
     if (taskRoutes.initializeServices) taskRoutes.initializeServices(services);
     if (nodeRoutes.initializeServices) nodeRoutes.initializeServices(services);
     if (tokenRoutes.initializeServices) tokenRoutes.initializeServices(services);
+    if (paymentRoutes.initializeServices) paymentRoutes.initializeServices(services);
+    if (walletRoutes.initializeServices) walletRoutes.initializeServices(services);
 
     // Error handler
     this.app.use(errorHandler);
@@ -274,6 +286,11 @@ class CoordinatorServer {
       await this.taskDispatcher.initialize();
       await this.nodeManager.initialize();
       await this.tokenEngine.initialize();
+
+      // Initialize payment services
+      logger.info('Initializing payment services...');
+      await this.paymentGateway.initialize();
+      await this.walletModel.initialize();
 
       logger.info('All services initialized successfully');
     } catch (error) {

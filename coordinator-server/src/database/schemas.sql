@@ -146,6 +146,72 @@ CREATE TABLE IF NOT EXISTS user_balances (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Payment intents (Stripe, PayPal, etc.)
+CREATE TABLE IF NOT EXISTS payment_intents (
+    id VARCHAR(100) PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    intent_type VARCHAR(20) NOT NULL CHECK (intent_type IN ('deposit', 'withdrawal')),
+    amount DECIMAL(15,6) NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    token_amount DECIMAL(15,6),
+    payment_method VARCHAR(50) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    provider_intent_id VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'cancelled')),
+    fees JSONB DEFAULT '{}',
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- User external wallets (crypto addresses, PayPal emails, bank accounts)
+CREATE TABLE IF NOT EXISTS external_wallets (
+    id VARCHAR(100) PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    wallet_type VARCHAR(20) NOT NULL CHECK (wallet_type IN ('crypto', 'paypal', 'bank')),
+    currency VARCHAR(10) NOT NULL,
+    address TEXT NOT NULL,
+    label VARCHAR(100),
+    is_default BOOLEAN DEFAULT false,
+    is_verified BOOLEAN DEFAULT false,
+    verification_code VARCHAR(20),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'suspended', 'removed')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    verified_at TIMESTAMP WITH TIME ZONE,
+    last_used TIMESTAMP WITH TIME ZONE,
+    total_withdrawn DECIMAL(15,6) DEFAULT 0,
+    withdrawal_count INTEGER DEFAULT 0,
+    metadata JSONB DEFAULT '{}'
+);
+
+-- Exchange rates history
+CREATE TABLE IF NOT EXISTS exchange_rates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    from_currency VARCHAR(10) NOT NULL,
+    to_currency VARCHAR(10) NOT NULL,
+    rate DECIMAL(20,8) NOT NULL,
+    source VARCHAR(50) DEFAULT 'internal',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(from_currency, to_currency, created_at)
+);
+
+-- Payment webhooks log
+CREATE TABLE IF NOT EXISTS payment_webhooks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    provider VARCHAR(50) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    event_id VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'received' CHECK (status IN ('received', 'processed', 'failed', 'ignored')),
+    payload JSONB NOT NULL,
+    signature VARCHAR(500),
+    processed_at TIMESTAMP WITH TIME ZONE,
+    error_message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- System notifications
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -234,6 +300,27 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_system_metrics_metric_name ON system_metrics(metric_name);
 CREATE INDEX IF NOT EXISTS idx_system_metrics_timestamp ON system_metrics(timestamp);
 
+-- Indexes for new payment tables
+CREATE INDEX IF NOT EXISTS idx_payment_intents_user_id ON payment_intents(user_id);
+CREATE INDEX IF NOT EXISTS idx_payment_intents_status ON payment_intents(status);
+CREATE INDEX IF NOT EXISTS idx_payment_intents_provider ON payment_intents(provider);
+CREATE INDEX IF NOT EXISTS idx_payment_intents_created_at ON payment_intents(created_at);
+CREATE INDEX IF NOT EXISTS idx_payment_intents_provider_intent_id ON payment_intents(provider_intent_id);
+
+CREATE INDEX IF NOT EXISTS idx_external_wallets_user_id ON external_wallets(user_id);
+CREATE INDEX IF NOT EXISTS idx_external_wallets_wallet_type ON external_wallets(wallet_type);
+CREATE INDEX IF NOT EXISTS idx_external_wallets_currency ON external_wallets(currency);
+CREATE INDEX IF NOT EXISTS idx_external_wallets_status ON external_wallets(status);
+CREATE INDEX IF NOT EXISTS idx_external_wallets_is_default ON external_wallets(is_default);
+
+CREATE INDEX IF NOT EXISTS idx_exchange_rates_currencies ON exchange_rates(from_currency, to_currency);
+CREATE INDEX IF NOT EXISTS idx_exchange_rates_created_at ON exchange_rates(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_provider ON payment_webhooks(provider);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_event_type ON payment_webhooks(event_type);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_status ON payment_webhooks(status);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_created_at ON payment_webhooks(created_at);
+
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -251,6 +338,12 @@ CREATE TRIGGER update_nodes_updated_at BEFORE UPDATE ON nodes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_models_updated_at BEFORE UPDATE ON models 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_payment_intents_updated_at BEFORE UPDATE ON payment_intents 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_balances_updated_at BEFORE UPDATE ON user_balances 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_user_balances_updated_at BEFORE UPDATE ON user_balances 
