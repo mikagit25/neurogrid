@@ -1,0 +1,44 @@
+{
+  "name": "neurogrid",
+  "version": "0.1.0",
+  "description": "Decentralized AI inference platform - harnessing idle compute power to democratize AI",
+  "private": true,
+  "workspaces": [
+    "coordinator-server",
+    "node-client", 
+    "web-interface"
+  ],
+  "scripts": {
+    "start": "concurrently \"npm run start:coordinator\" \"npm run start:web\"",
+    "start:coordinator": "cd coordinator-server && npm start",
+    "start:web": "cd web-interface && npm start",
+    "start:node": "cd node-client && python main.py",
+    "install:all": "npm install && cd coordinator-server && npm install && cd ../web-interface && npm install && cd ../node-client && pip install -r requirements.txt",
+    "build": "cd coordinator-server && npm run build && cd ../web-interface && npm run build",
+    "test": "npm run test:coordinator && npm run test:web",
+    "test:coordinator": "cd coordinator-server && npm test",
+    "test:web": "cd web-interface && npm test",
+    "dev": "concurrently \"npm run dev:coordinator\" \"npm run dev:web\"",
+    "dev:coordinator": "cd coordinator-server && npm run dev",
+    "dev:web": "cd web-interface && npm run dev"
+  },
+  "keywords": [
+    "ai",
+    "inference", 
+    "decentralized",
+    "gpu",
+    "compute",
+    "neural-networks",
+    "blockchain",
+    "distributed-computing"
+  ],
+  "author": "NeuroGrid Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
