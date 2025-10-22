@@ -3,13 +3,19 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
-const rateLimit = require('express-rate-limit');
-const WebSocket = require('ws');
 const http = require('http');
 
 const logger = require('./utils/logger');
-const { initializeDatabase } = require('./config/database');
-const { initializeRedis } = require('./config/redis');
+const { db } = require('./config/database');
+const { migrations } = require('./database/migrations');
+
+// Import middleware
+const { 
+  rateLimiters, 
+  authenticate, 
+  errorHandler, 
+  requestLogger 
+} = require('./middleware/security');
 
 // Import routes
 const taskRoutes = require('./api/routes/tasks');
@@ -17,23 +23,30 @@ const nodeRoutes = require('./api/routes/nodes');
 const tokenRoutes = require('./api/routes/tokens');
 const systemRoutes = require('./api/routes/system');
 const supportRoutes = require('./api/routes/support');
+const analyticsRoutes = require('./api/routes/analytics');
+const notificationRoutes = require('./api/routes/notifications');
 
 // Import services
 const TaskDispatcher = require('./services/TaskDispatcher');
 const NodeManager = require('./services/NodeManager');
 const TokenEngine = require('./services/TokenEngine');
+const { WebSocketManager } = require('./services/WebSocketManager');
+const { MonitoringService } = require('./services/MonitoringService');
 
 class CoordinatorServer {
   constructor() {
     this.app = express();
     this.server = null;
-    this.wss = null;
     this.port = process.env.PORT || 3001;
     
-    // Initialize services
+    // Initialize legacy services
     this.taskDispatcher = new TaskDispatcher();
     this.nodeManager = new NodeManager();
     this.tokenEngine = new TokenEngine();
+    
+    // Initialize new services
+    this.wsManager = null;
+    this.monitoringService = null;
     
     this.setupMiddleware();
     this.setupRoutes();
@@ -41,51 +54,141 @@ class CoordinatorServer {
   }
 
   setupMiddleware() {
-    // Security and basic middleware
-    this.app.use(helmet());
-    this.app.use(cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-      credentials: true
+    // Security middleware
+    this.app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'", "ws:", "wss:"],
+        },
+      },
+      crossOriginEmbedderPolicy: false
     }));
-    this.app.use(compression());
-    this.app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
-    // Rate limiting
-    const limiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: parseInt(process.env.API_RATE_LIMIT) || 100,
-      message: { error: 'Too many requests, please try again later' }
-    });
-    this.app.use('/api', limiter);
+    // CORS configuration
+    this.app.use(cors({
+      origin: function(origin, callback) {
+        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+          'http://localhost:3000',
+          'http://localhost:8080'
+        ];
+        
+        // Allow requests with no origin (mobile apps, etc.)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          return callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
+    }));
+
+    this.app.use(compression());
+    this.app.use(morgan('combined', { 
+      stream: { write: (msg) => logger.info(msg.trim()) },
+      skip: (req, res) => process.env.NODE_ENV === 'production' && req.url === '/health'
+    }));
 
     // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.json({ 
+      limit: '10mb',
+      verify: (req, res, buf) => {
+        req.rawBody = buf;
+      }
+    }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // Request logging
-    this.app.use((req, res, next) => {
-      req.requestId = require('uuid').v4();
-      logger.info(`${req.method} ${req.path}`, { requestId: req.requestId });
-      next();
-    });
+    // Custom middleware
+    this.app.use(requestLogger);
+
+    // Rate limiting - different limits for different endpoints
+    this.app.use('/api/auth', rateLimiters.auth);
+    this.app.use('/api/jobs', rateLimiters.api);
+    this.app.use('/api/nodes', rateLimiters.api);
+    this.app.use('/api/tasks', rateLimiters.api);
+    this.app.use('/api', rateLimiters.general);
   }
 
   setupRoutes() {
-    // Health check
-    this.app.get('/health', (req, res) => {
-      res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '0.1.0',
-        uptime: process.uptime()
-      });
+    // Health check endpoint with detailed information
+    this.app.get('/health', async (req, res) => {
+      try {
+        const dbHealth = await db.healthCheck();
+        const uptime = process.uptime();
+        const memoryUsage = process.memoryUsage();
+        
+        const healthData = {
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          uptime: {
+            seconds: Math.floor(uptime),
+            human: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`
+          },
+          database: dbHealth,
+          memory: {
+            rss: Math.round(memoryUsage.rss / 1024 / 1024) + ' MB',
+            heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + ' MB',
+            heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + ' MB'
+          },
+          environment: process.env.NODE_ENV || 'development',
+          version: process.env.npm_package_version || '1.0.0'
+        };
+
+        // Check if all services are healthy
+        if (dbHealth.status !== 'healthy') {
+          healthData.status = 'unhealthy';
+          return res.status(503).json(healthData);
+        }
+
+        res.json(healthData);
+      } catch (error) {
+        logger.error('Health check failed', { error: error.message });
+        res.status(503).json({
+          status: 'unhealthy',
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    // Metrics endpoint (protected)
+    this.app.get('/metrics', authenticate, async (req, res) => {
+      try {
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied'
+          });
+        }
+
+        const metrics = await this.monitoringService.getMetrics();
+        res.json({
+          success: true,
+          data: metrics
+        });
+      } catch (error) {
+        logger.error('Failed to fetch metrics', { error: error.message });
+        res.status(500).json({
+          success: false,
+          error: 'Failed to fetch metrics'
+        });
+      }
     });
 
     // Initialize route services
     const services = {
       taskDispatcher: this.taskDispatcher,
       nodeManager: this.nodeManager,
-      tokenEngine: this.tokenEngine
+      tokenEngine: this.tokenEngine,
+      wsManager: this.wsManager,
+      monitoringService: this.monitoringService
     };
 
     // API routes
@@ -94,27 +197,29 @@ class CoordinatorServer {
     this.app.use('/api/tokens', tokenRoutes.router || tokenRoutes);
     this.app.use('/api/system', systemRoutes);
     this.app.use('/api/support', supportRoutes);
+    this.app.use('/api/analytics', analyticsRoutes);
+    this.app.use('/api/notifications', notificationRoutes);
 
     // Initialize services in routes that need them
     if (taskRoutes.initializeServices) taskRoutes.initializeServices(services);
     if (nodeRoutes.initializeServices) nodeRoutes.initializeServices(services);
     if (tokenRoutes.initializeServices) tokenRoutes.initializeServices(services);
 
+    // Error handler
+    this.app.use(errorHandler);
+
     // 404 handler
     this.app.use('*', (req, res) => {
-      res.status(404).json({
-        error: 'Endpoint not found',
-        path: req.originalUrl,
-        method: req.method
+      logger.warn('Route not found', { 
+        method: req.method, 
+        url: req.originalUrl, 
+        ip: req.ip 
       });
-    });
-
-    // Error handler
-    this.app.use((err, req, res, next) => {
-      logger.error('Unhandled error:', err);
-      res.status(500).json({
-        error: 'Internal server error',
-        requestId: req.requestId
+      
+      res.status(404).json({
+        success: false,
+        error: 'Route not found',
+        path: req.originalUrl
       });
     });
   }
@@ -122,63 +227,50 @@ class CoordinatorServer {
   setupWebSocket() {
     this.server = http.createServer(this.app);
     
-    this.wss = new WebSocket.Server({ 
-      server: this.server,
-      path: '/ws'
-    });
-
-    this.wss.on('connection', (ws, req) => {
-      logger.info('WebSocket connection established', { ip: req.socket.remoteAddress });
-      
-      ws.on('message', async (message) => {
-        try {
-          const data = JSON.parse(message);
-          await this.handleWebSocketMessage(ws, data);
-        } catch (error) {
-          logger.error('WebSocket message error:', error);
-          ws.send(JSON.stringify({ error: 'Invalid message format' }));
-        }
-      });
-
-      ws.on('close', () => {
-        logger.info('WebSocket connection closed');
-      });
-
-      ws.on('error', (error) => {
-        logger.error('WebSocket error:', error);
-      });
+    // Initialize WebSocket manager
+    this.wsManager = WebSocketManager.getInstance();
+    
+    // Setup WebSocket upgrade handling
+    this.server.on('upgrade', (request, socket, head) => {
+      this.wsManager.handleUpgrade(request, socket, head);
     });
   }
 
-  async handleWebSocketMessage(ws, data) {
-    const { type, payload } = data;
 
-    switch (type) {
-      case 'node_register':
-        await this.nodeManager.registerNode(payload, ws);
-        break;
-      case 'node_heartbeat':
-        await this.nodeManager.processHeartbeat(payload);
-        break;
-      case 'task_result':
-        await this.taskDispatcher.processTaskResult(payload);
-        break;
-      case 'task_status':
-        const status = await this.taskDispatcher.getTaskStatus(payload.taskId);
-        ws.send(JSON.stringify({ type: 'task_status_response', data: status }));
-        break;
-      default:
-        ws.send(JSON.stringify({ error: `Unknown message type: ${type}` }));
-    }
-  }
 
   async initialize() {
     try {
-      // Initialize database connections
-      await initializeDatabase();
-      await initializeRedis();
+      logger.info('Initializing NeuroGrid Coordinator Server...');
 
-      // Initialize services
+      // Initialize database
+      logger.info('Initializing database connection...');
+      await db.initialize();
+
+      // Run database migrations
+      logger.info('Running database migrations...');
+      await migrations.initialize();
+      
+      // Check if we need to run initial schema
+      const status = await migrations.getStatus();
+      if (status.applied === 0) {
+        logger.info('Setting up initial database schema...');
+        await migrations.setupInitialSchema();
+      } else {
+        logger.info('Running pending migrations...');
+        await migrations.migrate();
+      }
+
+      // Initialize WebSocket manager
+      logger.info('Initializing WebSocket manager...');
+      this.wsManager.initialize(this.server);
+
+      // Initialize monitoring service
+      logger.info('Initializing monitoring service...');
+      this.monitoringService = MonitoringService.getInstance();
+      await this.monitoringService.initialize();
+
+      // Initialize legacy services
+      logger.info('Initializing legacy services...');
       await this.taskDispatcher.initialize();
       await this.nodeManager.initialize();
       await this.tokenEngine.initialize();
@@ -210,19 +302,48 @@ class CoordinatorServer {
   }
 
   async shutdown() {
-    logger.info('Shutting down server...');
+    logger.info('Starting graceful shutdown...');
     
-    // Close WebSocket server
-    if (this.wss) {
-      this.wss.close();
-    }
+    try {
+      // Stop accepting new connections
+      if (this.server) {
+        this.server.close(() => {
+          logger.info('HTTP server closed');
+        });
+      }
 
-    // Close HTTP server
-    if (this.server) {
-      this.server.close(() => {
-        logger.info('Server stopped');
-        process.exit(0);
-      });
+      // Close WebSocket connections
+      if (this.wsManager) {
+        this.wsManager.closeAllConnections();
+        logger.info('WebSocket connections closed');
+      }
+
+      // Stop monitoring service
+      if (this.monitoringService) {
+        await this.monitoringService.stop();
+        logger.info('Monitoring service stopped');
+      }
+
+      // Stop legacy services
+      if (this.taskDispatcher) {
+        await this.taskDispatcher.shutdown();
+      }
+      if (this.nodeManager) {
+        await this.nodeManager.shutdown();
+      }
+      if (this.tokenEngine) {
+        await this.tokenEngine.shutdown();
+      }
+
+      // Close database connections
+      await db.close();
+      logger.info('Database connections closed');
+
+      logger.info('Graceful shutdown completed');
+      process.exit(0);
+    } catch (error) {
+      logger.error('Error during graceful shutdown', { error: error.message });
+      process.exit(1);
     }
   }
 }

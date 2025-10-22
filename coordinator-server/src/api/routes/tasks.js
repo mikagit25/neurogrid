@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
-const { auth } = require('../middleware/auth');
+const { authenticate } = require('../../middleware/security');
 const rateLimit = require('express-rate-limit');
 
 // Service instances (injected from main app)

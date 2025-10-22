@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - NeuroGrid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neurogrid': {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="index.html" class="flex items-center">
+                            <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">NG</span>
+                            </div>
+                            <span class="ml-3 text-xl font-semibold text-gray-900">NeuroGrid</span>
+                        </a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="index.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="#" class="border-neurogrid-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Analytics
+                        </a>
+                        <a href="support.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Support
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="refreshData()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </button>
+                    <select id="timeRange" onchange="updateTimeRange()" class="text-sm border-gray-300 rounded-md">
+                        <option value="1h">Last Hour</option>
+                        <option value="24h" selected>Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="bg-white">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <h1 class="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-sm text-gray-600">Live Data</span>
+                    </div>
+                    <span class="text-sm text-gray-500" id="lastUpdated">Updated now</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Tasks -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Tasks</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="totalTasks">-</dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-600 font-medium" id="tasksChange">+12%</span>
+                        <span class="text-gray-500 ml-1">vs last period</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Nodes -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Active Nodes</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="activeNodes">-</dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-600 font-medium" id="nodesChange">+5%</span>
+                        <span class="text-gray-500 ml-1">vs last period</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Token Volume</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="tokenVolume">-</dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-600 font-medium" id="revenueChange">+23%</span>
+                        <span class="text-gray-500 ml-1">vs last period</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Rate -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Success Rate</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="successRate">-</dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-600 font-medium" id="successChange">+2%</span>
+                        <span class="text-gray-500 ml-1">vs last period</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Task Volume Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Task Volume</h3>
+                    <div class="flex space-x-2">
+                        <button class="text-xs px-2 py-1 bg-neurogrid-100 text-neurogrid-700 rounded active" onclick="switchChart('tasks', 'hourly')">Hourly</button>
+                        <button class="text-xs px-2 py-1 text-gray-500 hover:bg-gray-100 rounded" onclick="switchChart('tasks', 'daily')">Daily</button>
+                    </div>
+                </div>
+                <canvas id="taskVolumeChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Node Performance Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Node Performance</h3>
+                    <div class="flex space-x-2">
+                        <button class="text-xs px-2 py-1 bg-neurogrid-100 text-neurogrid-700 rounded active" onclick="switchChart('nodes', 'response')">Response Time</button>
+                        <button class="text-xs px-2 py-1 text-gray-500 hover:bg-gray-100 rounded" onclick="switchChart('nodes', 'throughput')">Throughput</button>
+                    </div>
+                </div>
+                <canvas id="nodePerformanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Top Performing Nodes -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Top Performing Nodes</h3>
+                </div>
+                <div class="overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Node ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tasks</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Earnings</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topNodesTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Recent Activities</h3>
+                </div>
+                <div class="p-6">
+                    <div class="flow-root">
+                        <ul id="recentActivities" class="-mb-8">
+                            <!-- Activities will be populated here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">System Health</h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- API Response Time -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600" id="apiResponseTime">45ms</div>
+                        <div class="text-sm text-gray-500">API Response Time</div>
+                        <div class="mt-2">
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Performance -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-yellow-600" id="dbPerformance">12ms</div>
+                        <div class="text-sm text-gray-500">Database Query Time</div>
+                        <div class="mt-2">
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div class="bg-yellow-500 h-2 rounded-full" style="width: 70%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Uptime -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="systemUptime">99.9%</div>
+                        <div class="text-sm text-gray-500">System Uptime</div>
+                        <div class="mt-2">
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: 99%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 mt-12">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex justify-center items-center mb-4">
+                    <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">NG</span>
+                    </div>
+                    <span class="ml-3 text-xl font-semibold text-white">NeuroGrid Analytics</span>
+                </div>
+                <p class="text-gray-400">
+                    Real-time insights into your decentralized AI network
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:3001/api';
+        let refreshInterval;
+        let taskVolumeChart, nodePerformanceChart;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadDashboardData();
+            startAutoRefresh();
+        });
+
+        // Initialize charts
+        function initializeCharts() {
+            // Task Volume Chart
+            const taskCtx = document.getElementById('taskVolumeChart').getContext('2d');
+            taskVolumeChart = new Chart(taskCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Node Performance Chart
+            const nodeCtx = document.getElementById('nodePerformanceChart').getContext('2d');
+            nodePerformanceChart = new Chart(nodeCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Response Time (ms)',
+                        data: [],
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                        borderColor: 'rgb(34, 197, 94)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load key metrics
+                await Promise.all([
+                    loadKeyMetrics(),
+                    loadChartData(),
+                    loadTopNodes(),
+                    loadRecentActivities(),
+                    loadSystemHealth()
+                ]);
+
+                updateLastUpdatedTime();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                // Show fallback data for demo
+                showFallbackData();
+            }
+        }
+
+        // Load key metrics
+        async function loadKeyMetrics() {
+            // For demo purposes, using mock data
+            const metrics = {
+                totalTasks: Math.floor(Math.random() * 10000) + 5000,
+                activeNodes: Math.floor(Math.random() * 100) + 50,
+                tokenVolume: (Math.random() * 100000 + 50000).toFixed(0),
+                successRate: (95 + Math.random() * 4).toFixed(1) + '%'
+            };
+
+            document.getElementById('totalTasks').textContent = metrics.totalTasks.toLocaleString();
+            document.getElementById('activeNodes').textContent = metrics.activeNodes;
+            document.getElementById('tokenVolume').textContent = metrics.tokenVolume + ' NGT';
+            document.getElementById('successRate').textContent = metrics.successRate;
+            
+            // Update change indicators
+            document.getElementById('tasksChange').textContent = '+' + (Math.random() * 20 + 5).toFixed(0) + '%';
+            document.getElementById('nodesChange').textContent = '+' + (Math.random() * 10 + 2).toFixed(0) + '%';
+            document.getElementById('revenueChange').textContent = '+' + (Math.random() * 30 + 10).toFixed(0) + '%';
+            document.getElementById('successChange').textContent = '+' + (Math.random() * 5 + 1).toFixed(1) + '%';
+        }
+
+        // Load chart data
+        async function loadChartData() {
+            // Generate mock time series data
+            const hours = [];
+            const taskData = [];
+            const nodeData = [];
+            const nodeLabels = [];
+
+            // Last 24 hours for task volume
+            for (let i = 23; i >= 0; i--) {
+                const hour = new Date();
+                hour.setHours(hour.getHours() - i);
+                hours.push(hour.getHours() + ':00');
+                taskData.push(Math.floor(Math.random() * 50) + 10);
+            }
+
+            // Top 5 nodes for performance
+            for (let i = 1; i <= 5; i++) {
+                nodeLabels.push(`Node-${i.toString().padStart(3, '0')}`);
+                nodeData.push(Math.floor(Math.random() * 500) + 100);
+            }
+
+            // Update charts
+            taskVolumeChart.data.labels = hours;
+            taskVolumeChart.data.datasets[0].data = taskData;
+            taskVolumeChart.update();
+
+            nodePerformanceChart.data.labels = nodeLabels;
+            nodePerformanceChart.data.datasets[0].data = nodeData;
+            nodePerformanceChart.update();
+        }
+
+        // Load top performing nodes
+        async function loadTopNodes() {
+            const topNodes = [];
+            for (let i = 1; i <= 5; i++) {
+                topNodes.push({
+                    id: `node-${i.toString().padStart(3, '0')}`,
+                    tasks: Math.floor(Math.random() * 1000) + 100,
+                    rating: (0.8 + Math.random() * 0.2).toFixed(2),
+                    earnings: (Math.random() * 1000 + 100).toFixed(0)
+                });
+            }
+
+            const tableBody = document.getElementById('topNodesTable');
+            tableBody.innerHTML = topNodes.map(node => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${node.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${node.tasks}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(node.rating * 100).toFixed(0)}%</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${node.earnings} NGT</td>
+                </tr>
+            `).join('');
+        }
+
+        // Load recent activities
+        async function loadRecentActivities() {
+            const activities = [
+                { type: 'task', message: 'Task TASK-001234 completed successfully', time: '2 minutes ago', icon: '✅' },
+                { type: 'node', message: 'New node node-156 joined the network', time: '5 minutes ago', icon: '🔗' },
+                { type: 'payment', message: 'Payment of 45.2 NGT processed', time: '8 minutes ago', icon: '💰' },
+                { type: 'task', message: 'Task TASK-001235 started processing', time: '12 minutes ago', icon: '⏳' },
+                { type: 'alert', message: 'Node node-089 went offline', time: '15 minutes ago', icon: '⚠️' }
+            ];
+
+            const activitiesList = document.getElementById('recentActivities');
+            activitiesList.innerHTML = activities.map((activity, index) => `
+                <li class="${index < activities.length - 1 ? 'pb-3 mb-3 border-b border-gray-200' : ''}">
+                    <div class="relative flex items-start space-x-3">
+                        <div class="relative">
+                            <span class="text-lg">${activity.icon}</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div>
+                                <p class="text-sm text-gray-900">${activity.message}</p>
+                                <p class="text-xs text-gray-500">${activity.time}</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Load system health
+        async function loadSystemHealth() {
+            // Mock system health data
+            document.getElementById('apiResponseTime').textContent = (Math.random() * 100 + 20).toFixed(0) + 'ms';
+            document.getElementById('dbPerformance').textContent = (Math.random() * 20 + 5).toFixed(0) + 'ms';
+            document.getElementById('systemUptime').textContent = (99.5 + Math.random() * 0.5).toFixed(2) + '%';
+        }
+
+        // Show fallback data for demo
+        function showFallbackData() {
+            console.log('Using fallback demo data');
+            // The functions above already provide demo data
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadDashboardData();
+        }
+
+        // Update time range
+        function updateTimeRange() {
+            const range = document.getElementById('timeRange').value;
+            console.log('Time range changed to:', range);
+            loadChartData(); // Reload chart data for new time range
+        }
+
+        // Switch chart view
+        function switchChart(chartType, view) {
+            console.log(`Switching ${chartType} chart to ${view} view`);
+            // Update button states
+            const buttons = event.target.parentElement.children;
+            Array.from(buttons).forEach(btn => {
+                btn.classList.remove('bg-neurogrid-100', 'text-neurogrid-700', 'active');
+                btn.classList.add('text-gray-500', 'hover:bg-gray-100');
+            });
+            event.target.classList.add('bg-neurogrid-100', 'text-neurogrid-700', 'active');
+            event.target.classList.remove('text-gray-500', 'hover:bg-gray-100');
+            
+            // Reload chart data based on view
+            loadChartData();
+        }
+
+        // Auto refresh
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                loadDashboardData();
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        // Update last updated time
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = 
+                `Updated ${now.toLocaleTimeString()}`;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - NeuroGrid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neurogrid': {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .swagger-ui .topbar { display: none; }
+        .swagger-ui .info { margin: 0; }
+        .swagger-ui .scheme-container { background: none; box-shadow: none; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="index.html" class="flex items-center">
+                            <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">NG</span>
+                            </div>
+                            <span class="ml-3 text-xl font-semibold text-gray-900">NeuroGrid</span>
+                        </a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="index.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="analytics.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Analytics
+                        </a>
+                        <a href="#" class="border-neurogrid-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            API Docs
+                        </a>
+                        <a href="support.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Support
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-sm text-gray-600">API Online</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="bg-white">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">API Documentation</h1>
+                    <p class="mt-2 text-gray-600">Complete reference for NeuroGrid API endpoints</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                        v1.0.0
+                    </span>
+                    <a href="#getting-started" class="bg-neurogrid-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-neurogrid-700">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Links</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="#authentication" class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">Authentication</div>
+                        <div class="text-sm text-gray-500">API keys and tokens</div>
+                    </div>
+                </a>
+                
+                <a href="#rate-limits" class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">Rate Limits</div>
+                        <div class="text-sm text-gray-500">Request limitations</div>
+                    </div>
+                </a>
+                
+                <a href="#examples" class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">Code Examples</div>
+                        <div class="text-sm text-gray-500">Sample implementations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Getting Started Section -->
+        <div id="getting-started" class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Getting Started</h2>
+            <div class="prose max-w-none">
+                <p class="text-gray-600 mb-4">
+                    The NeuroGrid API provides programmatic access to our decentralized AI network. 
+                    Use our API to submit tasks, manage nodes, monitor performance, and integrate with your applications.
+                </p>
+                
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Base URL</h3>
+                <div class="bg-gray-100 rounded-md p-3 mb-4">
+                    <code class="text-sm text-gray-800">https://api.neurogrid.io/v1</code>
+                </div>
+                
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Quick Start</h3>
+                <ol class="list-decimal list-inside space-y-2 text-gray-600 mb-4">
+                    <li>Get your API key from the dashboard</li>
+                    <li>Include the API key in your request headers</li>
+                    <li>Make your first API call</li>
+                </ol>
+                
+                <div class="bg-gray-900 rounded-md p-4 mb-4">
+                    <pre class="text-sm text-green-400"><code>curl -X GET "https://api.neurogrid.io/v1/nodes" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication Section -->
+        <div id="authentication" class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Authentication</h2>
+            <div class="prose max-w-none">
+                <p class="text-gray-600 mb-4">
+                    NeuroGrid API uses API keys for authentication. Include your API key in the Authorization header of your requests.
+                </p>
+                
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">API Key Authentication</h3>
+                <div class="bg-gray-900 rounded-md p-4 mb-4">
+                    <pre class="text-sm text-green-400"><code>Authorization: Bearer YOUR_API_KEY</code></pre>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm text-blue-800">
+                                <strong>Security Note:</strong> Keep your API keys secure and never expose them in client-side code.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rate Limits Section -->
+        <div id="rate-limits" class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Rate Limits</h2>
+            <div class="prose max-w-none">
+                <p class="text-gray-600 mb-4">
+                    API requests are subject to rate limits to ensure fair usage and system stability.
+                </p>
+                
+                <div class="overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate Limit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Window</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">General API</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1000 requests</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 hour</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Task Submission</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">100 requests</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 hour</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Analytics</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">500 requests</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 hour</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Swagger UI Container -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div id="swagger-ui"></div>
+        </div>
+
+        <!-- Code Examples Section -->
+        <div id="examples" class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Code Examples</h2>
+            
+            <!-- JavaScript Example -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">JavaScript / Node.js</h3>
+                <div class="bg-gray-900 rounded-md p-4">
+                    <pre class="text-sm text-green-400"><code>const axios = require('axios');
+
+const api = axios.create({
+  baseURL: 'https://api.neurogrid.io/v1',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  }
+});
+
+// Submit a task
+async function submitTask(taskData) {
+  try {
+    const response = await api.post('/tasks', taskData);
+    console.log('Task submitted:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error:', error.response.data);
+  }
+}
+
+// Get task status
+async function getTaskStatus(taskId) {
+  try {
+    const response = await api.get(`/tasks/${taskId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error:', error.response.data);
+  }
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- Python Example -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Python</h3>
+                <div class="bg-gray-900 rounded-md p-4">
+                    <pre class="text-sm text-green-400"><code>import requests
+import json
+
+class NeuroGridAPI:
+    def __init__(self, api_key):
+        self.base_url = 'https://api.neurogrid.io/v1'
+        self.headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+    
+    def submit_task(self, task_data):
+        response = requests.post(
+            f'{self.base_url}/tasks',
+            headers=self.headers,
+            json=task_data
+        )
+        return response.json()
+    
+    def get_task_status(self, task_id):
+        response = requests.get(
+            f'{self.base_url}/tasks/{task_id}',
+            headers=self.headers
+        )
+        return response.json()
+
+# Usage
+api = NeuroGridAPI('YOUR_API_KEY')
+result = api.submit_task({
+    'type': 'ml_inference',
+    'model': 'gpt-3.5-turbo',
+    'input': 'Hello, world!'
+})</code></pre>
+                </div>
+            </div>
+
+            <!-- cURL Example -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">cURL</h3>
+                <div class="bg-gray-900 rounded-md p-4">
+                    <pre class="text-sm text-green-400"><code># Submit a task
+curl -X POST "https://api.neurogrid.io/v1/tasks" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "ml_inference",
+    "model": "gpt-3.5-turbo",
+    "input": "Hello, world!",
+    "parameters": {
+      "max_tokens": 100,
+      "temperature": 0.7
+    }
+  }'
+
+# Get task status
+curl -X GET "https://api.neurogrid.io/v1/tasks/TASK_ID" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# List available nodes
+curl -X GET "https://api.neurogrid.io/v1/nodes" \
+  -H "Authorization: Bearer YOUR_API_KEY"</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 mt-12">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex justify-center items-center mb-4">
+                    <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">NG</span>
+                    </div>
+                    <span class="ml-3 text-xl font-semibold text-white">NeuroGrid API</span>
+                </div>
+                <p class="text-gray-400 mb-4">
+                    Comprehensive API documentation for developers
+                </p>
+                <div class="flex justify-center space-x-6">
+                    <a href="support.html" class="text-gray-400 hover:text-white">Support</a>
+                    <a href="#" class="text-gray-400 hover:text-white">Status</a>
+                    <a href="#" class="text-gray-400 hover:text-white">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Swagger API specification
+        const apiSpec = {
+            openapi: '3.0.0',
+            info: {
+                title: 'NeuroGrid API',
+                version: '1.0.0',
+                description: 'Decentralized AI Network API',
+                contact: {
+                    name: 'NeuroGrid Support',
+                    email: 'support@neurogrid.io'
+                }
+            },
+            servers: [
+                {
+                    url: 'http://localhost:3001/api',
+                    description: 'Development server'
+                },
+                {
+                    url: 'https://api.neurogrid.io/v1',
+                    description: 'Production server'
+                }
+            ],
+            components: {
+                securitySchemes: {
+                    BearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer'
+                    }
+                },
+                schemas: {
+                    Task: {
+                        type: 'object',
+                        properties: {
+                            id: { type: 'string', example: 'task-123' },
+                            type: { type: 'string', example: 'ml_inference' },
+                            status: { type: 'string', example: 'completed' },
+                            model: { type: 'string', example: 'gpt-3.5-turbo' },
+                            input: { type: 'string', example: 'Hello, world!' },
+                            output: { type: 'string', example: 'Hello! How can I help you today?' },
+                            createdAt: { type: 'string', format: 'date-time' },
+                            completedAt: { type: 'string', format: 'date-time' }
+                        }
+                    },
+                    Node: {
+                        type: 'object',
+                        properties: {
+                            id: { type: 'string', example: 'node-001' },
+                            status: { type: 'string', example: 'active' },
+                            capabilities: { type: 'array', items: { type: 'string' } },
+                            performance: { type: 'number', example: 0.95 },
+                            lastSeen: { type: 'string', format: 'date-time' }
+                        }
+                    },
+                    Error: {
+                        type: 'object',
+                        properties: {
+                            success: { type: 'boolean', example: false },
+                            error: { type: 'string', example: 'Resource not found' },
+                            code: { type: 'string', example: 'NOT_FOUND' }
+                        }
+                    }
+                }
+            },
+            security: [
+                { BearerAuth: [] }
+            ],
+            paths: {
+                '/tasks': {
+                    get: {
+                        summary: 'List tasks',
+                        description: 'Retrieve a list of tasks',
+                        parameters: [
+                            {
+                                name: 'status',
+                                in: 'query',
+                                schema: { type: 'string' },
+                                description: 'Filter by task status'
+                            },
+                            {
+                                name: 'limit',
+                                in: 'query',
+                                schema: { type: 'integer', default: 20 },
+                                description: 'Number of tasks to return'
+                            }
+                        ],
+                        responses: {
+                            '200': {
+                                description: 'List of tasks',
+                                content: {
+                                    'application/json': {
+                                        schema: {
+                                            type: 'object',
+                                            properties: {
+                                                success: { type: 'boolean' },
+                                                data: {
+                                                    type: 'array',
+                                                    items: { $ref: '#/components/schemas/Task' }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    post: {
+                        summary: 'Submit a task',
+                        description: 'Submit a new task to the network',
+                        requestBody: {
+                            required: true,
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        required: ['type', 'model', 'input'],
+                                        properties: {
+                                            type: { type: 'string', example: 'ml_inference' },
+                                            model: { type: 'string', example: 'gpt-3.5-turbo' },
+                                            input: { type: 'string', example: 'Hello, world!' },
+                                            parameters: {
+                                                type: 'object',
+                                                properties: {
+                                                    max_tokens: { type: 'integer', example: 100 },
+                                                    temperature: { type: 'number', example: 0.7 }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            '201': {
+                                description: 'Task created successfully',
+                                content: {
+                                    'application/json': {
+                                        schema: {
+                                            type: 'object',
+                                            properties: {
+                                                success: { type: 'boolean' },
+                                                data: { $ref: '#/components/schemas/Task' }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            '400': {
+                                description: 'Invalid request',
+                                content: {
+                                    'application/json': {
+                                        schema: { $ref: '#/components/schemas/Error' }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                '/tasks/{taskId}': {
+                    get: {
+                        summary: 'Get task details',
+                        description: 'Retrieve details of a specific task',
+                        parameters: [
+                            {
+                                name: 'taskId',
+                                in: 'path',
+                                required: true,
+                                schema: { type: 'string' },
+                                description: 'Task identifier'
+                            }
+                        ],
+                        responses: {
+                            '200': {
+                                description: 'Task details',
+                                content: {
+                                    'application/json': {
+                                        schema: {
+                                            type: 'object',
+                                            properties: {
+                                                success: { type: 'boolean' },
+                                                data: { $ref: '#/components/schemas/Task' }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            '404': {
+                                description: 'Task not found',
+                                content: {
+                                    'application/json': {
+                                        schema: { $ref: '#/components/schemas/Error' }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                '/nodes': {
+                    get: {
+                        summary: 'List nodes',
+                        description: 'Retrieve a list of network nodes',
+                        parameters: [
+                            {
+                                name: 'status',
+                                in: 'query',
+                                schema: { type: 'string' },
+                                description: 'Filter by node status'
+                            }
+                        ],
+                        responses: {
+                            '200': {
+                                description: 'List of nodes',
+                                content: {
+                                    'application/json': {
+                                        schema: {
+                                            type: 'object',
+                                            properties: {
+                                                success: { type: 'boolean' },
+                                                data: {
+                                                    type: 'array',
+                                                    items: { $ref: '#/components/schemas/Node' }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                '/analytics/metrics': {
+                    get: {
+                        summary: 'Get key metrics',
+                        description: 'Retrieve key performance metrics',
+                        responses: {
+                            '200': {
+                                description: 'Key metrics',
+                                content: {
+                                    'application/json': {
+                                        schema: {
+                                            type: 'object',
+                                            properties: {
+                                                success: { type: 'boolean' },
+                                                data: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        totalTasks: { type: 'integer' },
+                                                        activeNodes: { type: 'integer' },
+                                                        successRate: { type: 'number' },
+                                                        avgResponseTime: { type: 'number' }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                '/support/tickets': {
+                    get: {
+                        summary: 'List support tickets',
+                        description: 'Retrieve support tickets',
+                        responses: {
+                            '200': {
+                                description: 'List of tickets',
+                                content: {
+                                    'application/json': {
+                                        schema: {
+                                            type: 'object',
+                                            properties: {
+                                                success: { type: 'boolean' },
+                                                data: { type: 'array' }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    post: {
+                        summary: 'Create support ticket',
+                        description: 'Submit a new support ticket',
+                        requestBody: {
+                            required: true,
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        required: ['subject', 'description', 'priority'],
+                                        properties: {
+                                            subject: { type: 'string' },
+                                            description: { type: 'string' },
+                                            priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
+                                            category: { type: 'string' }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        responses: {
+                            '201': {
+                                description: 'Ticket created successfully'
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // Initialize Swagger UI
+        window.onload = function() {
+            SwaggerUIBundle({
+                url: '',
+                spec: apiSpec,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.presets.standalone
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                tryItOutEnabled: true,
+                supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+                onComplete: function() {
+                    console.log('Swagger UI loaded');
+                }
+            });
+        };
+    </script>
+</body>
+</html>
