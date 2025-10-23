@@ -203,6 +203,7 @@ class CoordinatorServer {
     this.app.use('/api/tasks', taskRoutes.router || taskRoutes);
     this.app.use('/api/nodes', nodeRoutes.router || nodeRoutes);
     this.app.use('/api/tokens', tokenRoutes.router || tokenRoutes);
+    this.app.use('/api/nodes', require('./api/routes/installer'));
     this.app.use('/api/payments', paymentRoutes.router || paymentRoutes);
     this.app.use('/api/wallets', walletRoutes.router || walletRoutes);
     this.app.use('/api/system', systemRoutes);

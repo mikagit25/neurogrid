@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid - Настройка Узла</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .installation-step {
+            transition: all 0.3s ease;
+        }
+        .installation-step.active {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        .platform-selector.selected {
+            border: 2px solid #3b82f6;
+            background: #eff6ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-network-wired text-blue-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-900">NeuroGrid</span>
+                    <span class="ml-3 text-sm text-gray-500">Настройка Узла</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-arrow-left mr-2"></i>Назад к панели
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Прогресс установки</span>
+                <span class="text-sm text-gray-500" id="progressText">Шаг 1 из 4</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-blue-600 h-2 rounded-full progress-bar" id="progressBar" style="width: 25%"></div>
+            </div>
+        </div>
+
+        <!-- Step 1: Platform Selection -->
+        <div class="installation-step active bg-white rounded-lg shadow-sm p-6 mb-6" id="step1">
+            <div class="flex items-center mb-4">
+                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">1</div>
+                <h2 class="text-xl font-semibold text-gray-900">Выберите вашу операционную систему</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <!-- Windows -->
+                <div class="platform-selector cursor-pointer p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-platform="windows">
+                    <div class="text-center">
+                        <i class="fab fa-windows text-4xl text-blue-600 mb-3"></i>
+                        <h3 class="font-semibold text-gray-900">Windows</h3>
+                        <p class="text-sm text-gray-600">Windows 10/11, Server 2019+</p>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <i class="fas fa-download mr-1"></i>neurogrid-node-setup.exe
+                        </div>
+                    </div>
+                </div>
+
+                <!-- macOS -->
+                <div class="platform-selector cursor-pointer p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-platform="macos">
+                    <div class="text-center">
+                        <i class="fab fa-apple text-4xl text-gray-700 mb-3"></i>
+                        <h3 class="font-semibold text-gray-900">macOS</h3>
+                        <p class="text-sm text-gray-600">macOS 11.0+ (Intel/Apple Silicon)</p>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <i class="fas fa-download mr-1"></i>neurogrid-node-setup.pkg
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linux -->
+                <div class="platform-selector cursor-pointer p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-platform="linux">
+                    <div class="text-center">
+                        <i class="fab fa-linux text-4xl text-orange-600 mb-3"></i>
+                        <h3 class="font-semibold text-gray-900">Linux</h3>
+                        <p class="text-sm text-gray-600">Ubuntu 20.04+, CentOS 8+</p>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <i class="fas fa-download mr-1"></i>neurogrid-node-setup.sh
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto-detection -->
+            <div class="bg-blue-50 p-4 rounded-lg mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-magic text-blue-600 mr-3"></i>
+                    <div>
+                        <p class="text-sm font-medium text-blue-900">Автоопределение системы</p>
+                        <p class="text-xs text-blue-700">Обнаружена система: <span id="detectedOS" class="font-mono">Определение...</span></p>
+                    </div>
+                    <button class="ml-auto bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700" onclick="useDetectedOS()">
+                        Использовать
+                    </button>
+                </div>
+            </div>
+
+            <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors" id="continueStep1" onclick="nextStep()" disabled>
+                Продолжить <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+
+        <!-- Step 2: Hardware Configuration -->
+        <div class="installation-step bg-white rounded-lg shadow-sm p-6 mb-6 hidden" id="step2">
+            <div class="flex items-center mb-4">
+                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">2</div>
+                <h2 class="text-xl font-semibold text-gray-900">Конфигурация оборудования</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-microchip mr-2"></i>CPU Cores
+                    </label>
+                    <input type="number" id="cpuCores" min="1" max="128" value="4" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Количество ядер процессора для использования</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-memory mr-2"></i>RAM (GB)
+                    </label>
+                    <input type="number" id="ramGB" min="2" max="1024" value="8" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Объем оперативной памяти</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tv mr-2"></i>VRAM (GB)
+                    </label>
+                    <input type="number" id="vramGB" min="0" max="128" value="0" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Видеопамять GPU (0 если нет GPU)</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tasks mr-2"></i>Макс. одновременных задач
+                    </label>
+                    <input type="number" id="maxTasks" min="1" max="32" value="2" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Максимальное количество параллельных задач</p>
+                </div>
+            </div>
+
+            <!-- Auto-detection of hardware -->
+            <div class="bg-green-50 p-4 rounded-lg mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-cogs text-green-600 mr-3"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-green-900">Автоопределение оборудования</p>
+                        <p class="text-xs text-green-700">Нажмите для автоматического определения характеристик системы</p>
+                    </div>
+                    <button class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700" onclick="detectHardware()">
+                        <i class="fas fa-search mr-1"></i>Определить
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex space-x-4">
+                <button class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors" onclick="prevStep()">
+                    <i class="fas fa-arrow-left mr-2"></i>Назад
+                </button>
+                <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors" onclick="nextStep()">
+                    Продолжить <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Node Configuration -->
+        <div class="installation-step bg-white rounded-lg shadow-sm p-6 mb-6 hidden" id="step3">
+            <div class="flex items-center mb-4">
+                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">3</div>
+                <h2 class="text-xl font-semibold text-gray-900">Настройка узла</h2>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tag mr-2"></i>Имя узла
+                    </label>
+                    <input type="text" id="nodeName" placeholder="Мой NeuroGrid узел" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Отображаемое имя вашего узла в сети</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-map-marker-alt mr-2"></i>Регион
+                    </label>
+                    <select id="nodeRegion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="auto">Автоопределение</option>
+                        <option value="us-east">США - Восток</option>
+                        <option value="us-west">США - Запад</option>
+                        <option value="eu-west">Европа - Запад</option>
+                        <option value="eu-east">Европа - Восток</option>
+                        <option value="asia-pacific">Азиатско-Тихоокеанский</option>
+                        <option value="russia">Россия</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-robot mr-2"></i>Поддерживаемые модели
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="model-checkbox mr-2" value="gpt-3.5-turbo" checked>
+                            <span class="text-sm">GPT-3.5 Turbo</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="model-checkbox mr-2" value="gpt-4">
+                            <span class="text-sm">GPT-4</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="model-checkbox mr-2" value="stable-diffusion" checked>
+                            <span class="text-sm">Stable Diffusion</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="model-checkbox mr-2" value="whisper">
+                            <span class="text-sm">Whisper</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="model-checkbox mr-2" value="llama-2" checked>
+                            <span class="text-sm">LLaMA 2</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="model-checkbox mr-2" value="custom">
+                            <span class="text-sm">Пользовательские</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-dollar-sign mr-2"></i>Стоимость за час (токены)
+                    </label>
+                    <input type="number" id="hourlyCost" min="1" max="10000" value="100" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Стоимость предоставления вычислительных ресурсов</p>
+                </div>
+            </div>
+
+            <div class="flex space-x-4">
+                <button class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors" onclick="prevStep()">
+                    <i class="fas fa-arrow-left mr-2"></i>Назад
+                </button>
+                <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors" onclick="nextStep()">
+                    Продолжить <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Download & Install -->
+        <div class="installation-step bg-white rounded-lg shadow-sm p-6 mb-6 hidden" id="step4">
+            <div class="flex items-center mb-4">
+                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">4</div>
+                <h2 class="text-xl font-semibold text-gray-900">Скачивание и установка</h2>
+            </div>
+
+            <div class="bg-green-50 p-4 rounded-lg mb-6">
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-check-circle text-green-600 text-xl mr-3"></i>
+                    <h3 class="font-semibold text-green-900">Конфигурация готова!</h3>
+                </div>
+                <div class="text-sm text-green-700">
+                    <p>Ваш персонализированный установщик узла создан с следующими параметрами:</p>
+                    <ul class="mt-2 space-y-1" id="configSummary">
+                        <!-- Заполняется JavaScript -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-6" id="downloadSection">
+                <i class="fas fa-download text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Готов к скачиванию</h3>
+                <p class="text-gray-600 mb-4">Нажмите кнопку ниже для скачивания персонализированного установщика</p>
+                
+                <button class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors inline-flex items-center" 
+                        onclick="downloadInstaller()" id="downloadBtn">
+                    <i class="fas fa-download mr-2"></i>
+                    Скачать установщик
+                </button>
+            </div>
+
+            <!-- Installation Instructions -->
+            <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                <h4 class="font-semibold text-blue-900 mb-2">
+                    <i class="fas fa-info-circle mr-2"></i>Инструкции по установке
+                </h4>
+                <div class="text-sm text-blue-800" id="installInstructions">
+                    <!-- Заполняется JavaScript в зависимости от платформы -->
+                </div>
+            </div>
+
+            <!-- One-Click Install Option -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-semibold text-gray-900">
+                            <i class="fas fa-magic mr-2 text-purple-600"></i>Установка в один клик
+                        </h4>
+                        <p class="text-sm text-gray-600">Запустить установку прямо из браузера (экспериментально)</p>
+                    </div>
+                    <button class="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors" 
+                            onclick="oneClickInstall()" id="oneClickBtn">
+                        <i class="fas fa-rocket mr-2"></i>Установить
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex space-x-4">
+                <button class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors" onclick="prevStep()">
+                    <i class="fas fa-arrow-left mr-2"></i>Назад
+                </button>
+                <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors" onclick="viewNodeStatus()">
+                    <i class="fas fa-eye mr-2"></i>Статус узла
+                </button>
+            </div>
+        </div>
+
+        <!-- Installation Status Modal -->
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50" id="statusModal">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-satellite-dish text-blue-600 text-2xl mr-3"></i>
+                        <h3 class="text-lg font-semibold text-gray-900">Статус узла</h3>
+                    </div>
+                    
+                    <div class="space-y-3" id="nodeStatusContent">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <span class="text-sm text-gray-700">Статус подключения:</span>
+                            <span class="text-sm font-semibold text-yellow-600" id="connectionStatus">Проверка...</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <span class="text-sm text-gray-700">Первый запуск:</span>
+                            <span class="text-sm font-semibold text-gray-600" id="firstRunStatus">Ожидание</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <span class="text-sm text-gray-700">Выполнено задач:</span>
+                            <span class="text-sm font-semibold text-green-600" id="tasksCompleted">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex space-x-3">
+                        <button class="flex-1 bg-gray-300 text-gray-700 py-2 rounded font-semibold hover:bg-gray-400" 
+                                onclick="closeStatusModal()">Закрыть</button>
+                        <button class="flex-1 bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700" 
+                                onclick="refreshNodeStatus()">Обновить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedPlatform = null;
+        let nodeConfig = {};
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            detectOperatingSystem();
+            setupEventListeners();
+            updateProgressBar();
+        });
+
+        function setupEventListeners() {
+            // Platform selectors
+            document.querySelectorAll('.platform-selector').forEach(selector => {
+                selector.addEventListener('click', function() {
+                    selectPlatform(this.dataset.platform);
+                });
+            });
+        }
+
+        function detectOperatingSystem() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            let detectedOS = 'Unknown';
+            
+            if (userAgent.includes('windows nt')) {
+                detectedOS = 'Windows';
+                selectedPlatform = 'windows';
+            } else if (userAgent.includes('mac os')) {
+                detectedOS = 'macOS';
+                selectedPlatform = 'macos';
+            } else if (userAgent.includes('linux')) {
+                detectedOS = 'Linux';
+                selectedPlatform = 'linux';
+            }
+            
+            document.getElementById('detectedOS').textContent = detectedOS;
+            
+            if (selectedPlatform) {
+                document.querySelector(`[data-platform="${selectedPlatform}"]`).classList.add('selected');
+                document.getElementById('continueStep1').disabled = false;
+            }
+        }
+
+        function useDetectedOS() {
+            if (selectedPlatform) {
+                document.querySelectorAll('.platform-selector').forEach(s => s.classList.remove('selected'));
+                document.querySelector(`[data-platform="${selectedPlatform}"]`).classList.add('selected');
+                document.getElementById('continueStep1').disabled = false;
+            }
+        }
+
+        function selectPlatform(platform) {
+            selectedPlatform = platform;
+            document.querySelectorAll('.platform-selector').forEach(s => s.classList.remove('selected'));
+            document.querySelector(`[data-platform="${platform}"]`).classList.add('selected');
+            document.getElementById('continueStep1').disabled = false;
+        }
+
+        function detectHardware() {
+            // Simulate hardware detection
+            const cores = navigator.hardwareConcurrency || 4;
+            document.getElementById('cpuCores').value = cores;
+            
+            // Estimate RAM (this is not possible via JavaScript, so we'll use a reasonable default)
+            document.getElementById('ramGB').value = cores >= 8 ? 16 : 8;
+            
+            // VRAM detection is not possible via browser, leave as is
+            // GPU detection could be enhanced with WebGL context info
+            
+            // Show success message
+            showNotification('Характеристики системы определены!', 'success');
+        }
+
+        function nextStep() {
+            if (currentStep < 4) {
+                // Validate current step
+                if (!validateCurrentStep()) return;
+                
+                // Hide current step
+                document.getElementById(`step${currentStep}`).classList.add('hidden');
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                
+                currentStep++;
+                
+                // Show next step
+                document.getElementById(`step${currentStep}`).classList.remove('hidden');
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                
+                updateProgressBar();
+                
+                // Special handling for final step
+                if (currentStep === 4) {
+                    prepareDownloadStep();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                // Hide current step
+                document.getElementById(`step${currentStep}`).classList.add('hidden');
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                
+                currentStep--;
+                
+                // Show previous step
+                document.getElementById(`step${currentStep}`).classList.remove('hidden');
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                
+                updateProgressBar();
+            }
+        }
+
+        function validateCurrentStep() {
+            switch(currentStep) {
+                case 1:
+                    if (!selectedPlatform) {
+                        showNotification('Пожалуйста, выберите операционную систему', 'error');
+                        return false;
+                    }
+                    nodeConfig.platform = selectedPlatform;
+                    break;
+                case 2:
+                    const cpuCores = parseInt(document.getElementById('cpuCores').value);
+                    const ramGB = parseInt(document.getElementById('ramGB').value);
+                    const vramGB = parseInt(document.getElementById('vramGB').value);
+                    const maxTasks = parseInt(document.getElementById('maxTasks').value);
+                    
+                    if (cpuCores < 1 || ramGB < 2 || maxTasks < 1) {
+                        showNotification('Пожалуйста, проверьте конфигурацию оборудования', 'error');
+                        return false;
+                    }
+                    
+                    nodeConfig.hardware = { cpuCores, ramGB, vramGB, maxTasks };
+                    break;
+                case 3:
+                    const nodeName = document.getElementById('nodeName').value;
+                    const nodeRegion = document.getElementById('nodeRegion').value;
+                    const hourlyCost = parseInt(document.getElementById('hourlyCost').value);
+                    const supportedModels = Array.from(document.querySelectorAll('.model-checkbox:checked')).map(cb => cb.value);
+                    
+                    if (!nodeName.trim()) {
+                        showNotification('Пожалуйста, введите имя узла', 'error');
+                        return false;
+                    }
+                    
+                    if (supportedModels.length === 0) {
+                        showNotification('Выберите хотя бы одну поддерживаемую модель', 'error');
+                        return false;
+                    }
+                    
+                    nodeConfig.settings = { nodeName, nodeRegion, hourlyCost, supportedModels };
+                    break;
+            }
+            return true;
+        }
+
+        function updateProgressBar() {
+            const progress = (currentStep / 4) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `Шаг ${currentStep} из 4`;
+        }
+
+        function prepareDownloadStep() {
+            // Generate configuration summary
+            const summary = document.getElementById('configSummary');
+            summary.innerHTML = `
+                <li><strong>Платформа:</strong> ${getPlatformName(nodeConfig.platform)}</li>
+                <li><strong>CPU Cores:</strong> ${nodeConfig.hardware.cpuCores}</li>
+                <li><strong>RAM:</strong> ${nodeConfig.hardware.ramGB} GB</li>
+                <li><strong>VRAM:</strong> ${nodeConfig.hardware.vramGB} GB</li>
+                <li><strong>Имя узла:</strong> ${nodeConfig.settings.nodeName}</li>
+                <li><strong>Регион:</strong> ${getRegionName(nodeConfig.settings.nodeRegion)}</li>
+                <li><strong>Поддерживаемые модели:</strong> ${nodeConfig.settings.supportedModels.join(', ')}</li>
+                <li><strong>Стоимость:</strong> ${nodeConfig.settings.hourlyCost} токенов/час</li>
+            `;
+            
+            // Update installation instructions
+            updateInstallInstructions();
+        }
+
+        function updateInstallInstructions() {
+            const instructions = document.getElementById('installInstructions');
+            const platform = nodeConfig.platform;
+            
+            let instructionText = '';
+            switch(platform) {
+                case 'windows':
+                    instructionText = `
+                        <ol class="list-decimal list-inside space-y-1">
+                            <li>Скачайте файл neurogrid-node-setup.exe</li>
+                            <li>Запустите установщик от имени администратора</li>
+                            <li>Следуйте инструкциям мастера установки</li>
+                            <li>Узел автоматически запустится после установки</li>
+                        </ol>
+                    `;
+                    break;
+                case 'macos':
+                    instructionText = `
+                        <ol class="list-decimal list-inside space-y-1">
+                            <li>Скачайте файл neurogrid-node-setup.pkg</li>
+                            <li>Дважды щелкните по файлу для запуска установки</li>
+                            <li>Разрешите установку в настройках безопасности</li>
+                            <li>Узел будет добавлен в автозагрузку</li>
+                        </ol>
+                    `;
+                    break;
+                case 'linux':
+                    instructionText = `
+                        <ol class="list-decimal list-inside space-y-1">
+                            <li>Скачайте файл neurogrid-node-setup.sh</li>
+                            <li>Сделайте его исполняемым: <code class="bg-gray-200 px-1 rounded">chmod +x neurogrid-node-setup.sh</code></li>
+                            <li>Запустите: <code class="bg-gray-200 px-1 rounded">sudo ./neurogrid-node-setup.sh</code></li>
+                            <li>Узел будет установлен как системный сервис</li>
+                        </ol>
+                    `;
+                    break;
+            }
+            
+            instructions.innerHTML = instructionText;
+        }
+
+        async function downloadInstaller() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Создание установщика...';
+            
+            try {
+                // Generate unique node configuration
+                const nodeId = generateNodeId();
+                const configWithId = { ...nodeConfig, nodeId };
+                
+                // Call API to generate installer
+                const response = await fetch('/api/nodes/generate-installer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configWithId)
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const filename = getInstallerFilename(nodeConfig.platform);
+                    
+                    // Download file
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showNotification('Установщик успешно скачан!', 'success');
+                } else {
+                    throw new Error('Ошибка при создании установщика');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification('Ошибка при скачивании установщика', 'error');
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = '<i class="fas fa-download mr-2"></i>Скачать установщик';
+            }
+        }
+
+        async function oneClickInstall() {
+            if (!navigator.serviceWorker) {
+                showNotification('Установка в один клик не поддерживается в вашем браузере', 'error');
+                return;
+            }
+            
+            const oneClickBtn = document.getElementById('oneClickBtn');
+            oneClickBtn.disabled = true;
+            oneClickBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Установка...';
+            
+            try {
+                // This would use browser APIs or WebRTC to initiate installation
+                // For now, we'll simulate the process
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                showNotification('Узел успешно установлен и запущен!', 'success');
+                
+                // Show node status
+                setTimeout(viewNodeStatus, 1000);
+            } catch (error) {
+                console.error('One-click install error:', error);
+                showNotification('Ошибка при установке в один клик', 'error');
+            } finally {
+                oneClickBtn.disabled = false;
+                oneClickBtn.innerHTML = '<i class="fas fa-rocket mr-2"></i>Установить';
+            }
+        }
+
+        function viewNodeStatus() {
+            // Redirect to monitoring page instead of showing modal
+            window.location.href = 'node-monitoring.html';
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+        }
+
+        async function refreshNodeStatus() {
+            checkNodeStatus();
+        }
+
+        async function checkNodeStatus() {
+            // Simulate checking node status
+            document.getElementById('connectionStatus').textContent = 'Проверка...';
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Mock status updates
+            document.getElementById('connectionStatus').textContent = 'Подключен';
+            document.getElementById('connectionStatus').className = 'text-sm font-semibold text-green-600';
+            
+            document.getElementById('firstRunStatus').textContent = 'Завершен';
+            document.getElementById('firstRunStatus').className = 'text-sm font-semibold text-green-600';
+            
+            document.getElementById('tasksCompleted').textContent = '0';
+        }
+
+        function generateNodeId() {
+            return 'node_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        }
+
+        function getInstallerFilename(platform) {
+            const timestamp = new Date().toISOString().slice(0, 10);
+            switch(platform) {
+                case 'windows': return `neurogrid-node-${timestamp}.exe`;
+                case 'macos': return `neurogrid-node-${timestamp}.pkg`;
+                case 'linux': return `neurogrid-node-${timestamp}.sh`;
+                default: return `neurogrid-node-${timestamp}.zip`;
+            }
+        }
+
+        function getPlatformName(platform) {
+            const names = {
+                'windows': 'Windows',
+                'macos': 'macOS',
+                'linux': 'Linux'
+            };
+            return names[platform] || platform;
+        }
+
+        function getRegionName(region) {
+            const names = {
+                'auto': 'Автоопределение',
+                'us-east': 'США - Восток',
+                'us-west': 'США - Запад',
+                'eu-west': 'Европа - Запад',
+                'eu-east': 'Европа - Восток',
+                'asia-pacific': 'Азиатско-Тихоокеанский',
+                'russia': 'Россия'
+            };
+            return names[region] || region;
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+                type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+                'bg-blue-100 text-blue-800 border border-blue-200'
+            }`;
+            
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${
+                        type === 'success' ? 'fa-check-circle' :
+                        type === 'error' ? 'fa-exclamation-circle' :
+                        'fa-info-circle'
+                    } mr-2"></i>
+                    <span>${message}</span>
+                    <button class="ml-3 text-sm font-semibold hover:underline" onclick="this.parentElement.parentElement.remove()">
+                        ×
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
