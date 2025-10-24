@@ -33,6 +33,7 @@
   "author": "NeuroGrid Team",
   "license": "MIT",
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
     "archiver": "^6.0.1",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",

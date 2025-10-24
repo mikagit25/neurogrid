@@ -38,6 +38,9 @@ const supportRoutes = require('./api/routes/support');
 const analyticsRoutes = require('./api/routes/analytics');
 const notificationRoutes = require('./api/routes/notifications');
 const profileRoutes = require('./api/routes/profile');
+const consensusRoutes = require('./routes/consensus');
+const advancedAnalyticsRoutes = require('./routes/analytics');
+const deploymentRoutes = require('./routes/deployment');
 
 // Import services
 const TaskDispatcher = require('./services/TaskDispatcher');
@@ -381,6 +384,9 @@ class CoordinatorServer {
     this.app.use('/api/analytics', analyticsRoutes);
     this.app.use('/api/notifications', notificationRoutes);
     this.app.use('/api/profile', profileRoutes.router || profileRoutes);
+    this.app.use('/api/consensus', consensusRoutes);
+    this.app.use('/api/advanced-analytics', advancedAnalyticsRoutes);
+    this.app.use('/api/deployment', deploymentRoutes);
 
     // Cache demo routes (for testing and demonstration)
     const cacheDemo = require('./api/routes/cache-demo');

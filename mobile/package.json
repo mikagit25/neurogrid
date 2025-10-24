@@ -1,0 +1,31 @@
+{
+  "name": "neurogrid-mobile",
+  "version": "1.0.0",
+  "description": "NeuroGrid Mobile Application for Node Management and Cross-Chain Operations",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx react-native start",
+    "android": "npx react-native run-android", 
+    "ios": "npx react-native run-ios",
+    "test": "jest",
+    "build:android": "cd android && ./gradlew assembleRelease",
+    "build:ios": "npx react-native run-ios --configuration Release"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-native": "0.72.0",
+    "@react-navigation/native": "^6.1.0",
+    "@react-navigation/stack": "^6.3.0",
+    "react-native-crypto": "^2.2.0",
+    "react-native-secure-key-store": "^2.0.10",
+    "react-native-vector-icons": "^10.0.0",
+    "react-native-chart-kit": "^6.12.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "@testing-library/react-native": "^12.0.0"
+  },
+  "keywords": ["blockchain", "neurogrid", "mobile", "crypto", "defi"],
+  "author": "NeuroGrid Team",
+  "license": "MIT"
+}
