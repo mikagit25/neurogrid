@@ -1,13 +1,54 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
+const { body, validationResult } = require('express-validator');
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
 const router = express.Router();
-const { AuthManager } = require('../../utils/auth');
-const authManager = new AuthManager();
-const { 
-    authenticate, 
-    rateLimiters, 
-    validateRequest, 
-    validations 
-} = require('../../middleware/security');
+const AuthenticationService = require('../../services/AuthenticationService');
+const inputValidator = require('../../middleware/validation');
+const { SecurityMiddleware, authenticate, rateLimiters } = require('../../middleware/security');
+const User = require('../../models/User');
+const logger = require('../../utils/logger');
+
+// Validation functions
+const validations = {
+  email: body('email').isEmail().normalizeEmail(),
+  password: body('password').isLength({ min: 8 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
+  username: body('username').isLength({ min: 3, max: 50 }).isAlphanumeric()
+};
+
+// Middleware to validate request
+const validateRequest = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      details: errors.array()
+    });
+  }
+  next();
+};
+
+// These will be injected by the app
+let authService;
+let securityMiddleware;
+
+// Dependency injection
+router.setDependencies = (auth, security) => {
+    authService = auth;
+    securityMiddleware = security;
+};
 
 // Login endpoint
 router.post('/login', 

@@ -1,0 +1,222 @@
+groups:
+  - name: neurogrid.rules
+    rules:
+      # Application health alerts
+      - alert: ApplicationDown
+        expr: up{job="neurogrid-coordinator"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: neurogrid-coordinator
+        annotations:
+          summary: "NeuroGrid Coordinator is down"
+          description: "NeuroGrid Coordinator has been down for more than 1 minute."
+
+      - alert: ApplicationUnhealthy
+        expr: neurogrid_health_status != 1
+        for: 2m
+        labels:
+          severity: high
+          service: neurogrid-coordinator
+        annotations:
+          summary: "NeuroGrid Coordinator is unhealthy"
+          description: "NeuroGrid Coordinator health check is failing."
+
+      # Performance alerts
+      - alert: HighResponseTime
+        expr: neurogrid_http_request_duration_seconds{quantile="0.95"} > 5
+        for: 5m
+        labels:
+          severity: medium
+          service: neurogrid-coordinator
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for 5 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(neurogrid_http_requests_total{status=~"5.."}[5m]) / rate(neurogrid_http_requests_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: high
+          service: neurogrid-coordinator
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for 3 minutes."
+
+      # Database alerts
+      - alert: DatabaseConnectionsHigh
+        expr: neurogrid_database_connections_active / neurogrid_database_connections_max > 0.8
+        for: 5m
+        labels:
+          severity: medium
+          service: database
+        annotations:
+          summary: "Database connections usage is high"
+          description: "Database connections usage is {{ $value | humanizePercentage }}."
+
+      - alert: DatabaseSlowQueries
+        expr: neurogrid_database_query_duration_seconds{quantile="0.95"} > 5
+        for: 5m
+        labels:
+          severity: medium
+          service: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile query time is {{ $value }}s."
+
+      # Authentication alerts
+      - alert: HighFailedLogins
+        expr: rate(neurogrid_auth_events_total{type="login",success="false"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: medium
+          service: authentication
+        annotations:
+          summary: "High number of failed login attempts"
+          description: "Failed login rate is {{ $value }}/sec for 2 minutes."
+
+      - alert: PossibleBruteForceAttack
+        expr: rate(neurogrid_auth_events_total{type="login",success="false"}[1m]) > 20
+        for: 1m
+        labels:
+          severity: high
+          service: security
+        annotations:
+          summary: "Possible brute force attack detected"
+          description: "Failed login rate is {{ $value }}/sec, indicating possible brute force attack."
+
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
+        for: 5m
+        labels:
+          severity: medium
+          service: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: medium
+          service: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: high
+          service: system
+        annotations:
+          summary: "Disk space is low"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }}:{{ $labels.mountpoint }}."
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: high
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: medium
+          service: redis
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}."
+
+      # Database connectivity
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL has been down for more than 1 minute."
+
+      # Security alerts
+      - alert: RateLimitTriggered
+        expr: rate(neurogrid_security_events_total{type="rate_limit"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: medium
+          service: security
+        annotations:
+          summary: "Rate limiting frequently triggered"
+          description: "Rate limit events occurring at {{ $value }}/sec for 2 minutes."
+
+      - alert: SecurityViolation
+        expr: rate(neurogrid_security_events_total{severity="high"}[5m]) > 1
+        for: 1m
+        labels:
+          severity: high
+          service: security
+        annotations:
+          summary: "High severity security events detected"
+          description: "High severity security events occurring at {{ $value }}/sec."
+
+      # Business metrics alerts
+      - alert: TaskFailureRateHigh
+        expr: rate(neurogrid_business_tasks_total{status="failed"}[10m]) / rate(neurogrid_business_tasks_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: medium
+          service: business
+        annotations:
+          summary: "Task failure rate is high"
+          description: "Task failure rate is {{ $value | humanizePercentage }} over 10 minutes."
+
+      - alert: PaymentFailureRateHigh
+        expr: rate(neurogrid_business_payments_total{status="failed"}[10m]) / rate(neurogrid_business_payments_total[10m]) > 0.05
+        for: 3m
+        labels:
+          severity: high
+          service: business
+        annotations:
+          summary: "Payment failure rate is high"
+          description: "Payment failure rate is {{ $value | humanizePercentage }} over 10 minutes."
+
+      - alert: NoActiveNodes
+        expr: neurogrid_business_nodes_active == 0
+        for: 2m
+        labels:
+          severity: high
+          service: business
+        annotations:
+          summary: "No active nodes available"
+          description: "No compute nodes are currently active in the network."
+
+  - name: neurogrid.recording.rules
+    rules:
+      # Recording rules for better query performance
+      - record: neurogrid:http_requests:rate5m
+        expr: rate(neurogrid_http_requests_total[5m])
+
+      - record: neurogrid:http_request_duration:p95
+        expr: histogram_quantile(0.95, rate(neurogrid_http_request_duration_seconds_bucket[5m]))
+
+      - record: neurogrid:http_request_duration:p99
+        expr: histogram_quantile(0.99, rate(neurogrid_http_request_duration_seconds_bucket[5m]))
+
+      - record: neurogrid:database_query_duration:p95
+        expr: histogram_quantile(0.95, rate(neurogrid_database_query_duration_seconds_bucket[5m]))
+
+      - record: neurogrid:error_rate:5m
+        expr: rate(neurogrid_http_requests_total{status=~"5.."}[5m]) / rate(neurogrid_http_requests_total[5m])
+
+      - record: neurogrid:auth_failure_rate:5m
+        expr: rate(neurogrid_auth_events_total{success="false"}[5m]) / rate(neurogrid_auth_events_total[5m])

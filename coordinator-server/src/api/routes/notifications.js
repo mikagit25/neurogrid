@@ -1,7 +1,13 @@
 const express = require('express');
-const router = express.Router();
+const { body, query, validationResult } = require('express-validator');
+const NotificationService = require('../services/NotificationService');
+const { authenticate } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
-// In-memory storage for notifications (in production, use database)
+const router = express.Router();
+const notificationService = new NotificationService();
+
+// Legacy storage for backward compatibility
 let notifications = [];
 let userNotificationSettings = new Map();
 let notificationTemplates = new Map();
@@ -111,69 +117,63 @@ function createNotification(userId, templateId, variables = {}, options = {}) {
     return notification;
 }
 
-// Get notifications for user
-router.get('/', (req, res) => {
-    try {
-        const userId = req.headers['x-user-id'] || 'default-user';
-        const { 
-            status = 'all', 
-            type = 'all', 
-            priority = 'all',
-            limit = 50,
-            offset = 0 
-        } = req.query;
-
-        let userNotifications = notifications.filter(n => n.userId === userId);
-
-        // Apply filters
-        if (status !== 'all') {
-            userNotifications = userNotifications.filter(n => n.status === status);
-        }
-
-        if (type !== 'all') {
-            userNotifications = userNotifications.filter(n => n.type === type);
-        }
-
-        if (priority !== 'all') {
-            userNotifications = userNotifications.filter(n => n.priority === priority);
-        }
-
-        // Filter out expired notifications
-        const now = new Date();
-        userNotifications = userNotifications.filter(n => 
-            !n.expiresAt || new Date(n.expiresAt) > now
-        );
-
-        // Apply pagination
-        const total = userNotifications.length;
-        const paginatedNotifications = userNotifications.slice(
-            parseInt(offset), 
-            parseInt(offset) + parseInt(limit)
-        );
-
-        // Count unread notifications
-        const unreadCount = userNotifications.filter(n => n.status === 'unread').length;
-
-        res.json({
-            success: true,
-            data: {
-                notifications: paginatedNotifications,
-                pagination: {
-                    total,
-                    limit: parseInt(limit),
-                    offset: parseInt(offset),
-                    hasMore: total > parseInt(offset) + parseInt(limit)
-                },
-                unreadCount
-            },
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch notifications'
-        });
+/**
+ * @route GET /api/notifications
+ * @desc Get user notifications with filtering and pagination
+ * @access Private
+ */
+router.get('/', [
+  authenticate,
+  query('status').optional().isIn(['pending', 'sending', 'sent', 'failed', 'scheduled']),
+  query('type').optional().isString(),
+  query('priority').optional().isIn(['urgent', 'high', 'medium', 'low']),
+  query('isRead').optional().isBoolean(),
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  query('offset').optional().isInt({ min: 0 }).toInt(),
+  query('sortBy').optional().isIn(['createdAt', 'priority', 'type']),
+  query('sortOrder').optional().isIn(['asc', 'desc'])
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array(),
+        timestamp: new Date().toISOString()
+      });
     }
+
+    const userId = req.user.id;
+    const options = {
+      status: req.query.status,
+      type: req.query.type,
+      priority: req.query.priority,
+      isRead: req.query.isRead,
+      limit: req.query.limit || 20,
+      offset: req.query.offset || 0,
+      sortBy: req.query.sortBy || 'createdAt',
+      sortOrder: req.query.sortOrder || 'desc'
+    };
+
+    const result = await notificationService.getUserNotifications(userId, options);
+
+    res.json({
+      success: true,
+      data: result.notifications,
+      pagination: result.pagination,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error fetching notifications:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch notifications',
+      code: 'FETCH_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Create notification
@@ -463,35 +463,190 @@ router.get('/stats', (req, res) => {
     }
 });
 
-// Test notification endpoint (for development)
-router.post('/test', (req, res) => {
-    try {
-        const userId = req.headers['x-user-id'] || 'default-user';
-        const { templateId = 'task_completed' } = req.body;
-
-        const testVariables = {
-            taskId: 'TASK-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
-            nodeId: 'node-' + Math.floor(Math.random() * 100).toString().padStart(3, '0'),
-            amount: (Math.random() * 100 + 10).toFixed(2),
-            error: 'Connection timeout',
-            message: 'System maintenance scheduled for tonight',
-            ticketId: 'TICKET-' + Math.random().toString(36).substr(2, 8).toUpperCase()
-        };
-
-        const notification = createNotification(userId, templateId, testVariables);
-
-        res.status(201).json({
-            success: true,
-            data: notification,
-            message: 'Test notification created',
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
+/**
+ * @route POST /api/notifications/send-template
+ * @desc Send notification using a template
+ * @access Private
+ */
+router.post('/send-template', [
+  authenticate,
+  body('templateId').isString().notEmpty(),
+  body('variables').optional().isObject(),
+  body('channels').optional().isArray(),
+  body('channels.*').isIn(['web', 'email', 'sms', 'push']),
+  body('scheduleAt').optional().isISO8601()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array(),
+        timestamp: new Date().toISOString()
+      });
     }
+
+    const userId = req.user.id;
+    const { templateId, variables = {}, channels, scheduleAt } = req.body;
+
+    const notification = await notificationService.sendTemplateNotification(
+      userId,
+      templateId,
+      variables,
+      { channels, scheduleAt }
+    );
+
+    res.status(201).json({
+      success: true,
+      data: notification,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error sending template notification:', error);
+    const statusCode = error.message.includes('not found') ? 404 : 500;
+    
+    res.status(statusCode).json({
+      success: false,
+      error: error.message || 'Failed to send template notification',
+      code: statusCode === 404 ? 'TEMPLATE_NOT_FOUND' : 'SEND_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route POST /api/notifications/mark-all-read
+ * @desc Mark all notifications as read for user
+ * @access Private
+ */
+router.post('/mark-all-read', [
+  authenticate
+], async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const count = await notificationService.markAllAsRead(userId);
+
+    res.json({
+      success: true,
+      data: { markedCount: count },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error marking all notifications as read:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to mark all notifications as read',
+      code: 'BULK_UPDATE_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route DELETE /api/notifications/read
+ * @desc Delete all read notifications for user
+ * @access Private
+ */
+router.delete('/read', [
+  authenticate
+], async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const count = await notificationService.deleteAllRead(userId);
+
+    res.json({
+      success: true,
+      data: { deletedCount: count },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error deleting read notifications:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete read notifications',
+      code: 'BULK_DELETE_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route GET /api/notifications/system/stats
+ * @desc Get system-wide notification statistics (admin only)
+ * @access Private (Admin)
+ */
+router.get('/system/stats', [
+  authenticate
+], async (req, res) => {
+  try {
+    // In a real implementation, you'd check for admin role
+    const stats = await notificationService.getStatistics();
+
+    res.json({
+      success: true,
+      data: stats,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error fetching system notification stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch system notification statistics',
+      code: 'SYSTEM_STATS_FETCH_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Test notification endpoint (for development)
+router.post('/test', [
+  authenticate,
+  body('templateId').optional().isString()
+], async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { templateId = 'task_completed' } = req.body;
+
+    const testVariables = {
+      taskName: 'Test AI Model Training',
+      taskId: 'TASK-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
+      nodeName: 'GPU-Node-' + Math.floor(Math.random() * 100).toString().padStart(2, '0'),
+      nodeId: 'node-' + Math.floor(Math.random() * 100).toString().padStart(3, '0'),
+      amount: (Math.random() * 100 + 10).toFixed(2),
+      error: 'Connection timeout after 30 seconds',
+      message: 'System maintenance scheduled for tonight at 2:00 AM UTC',
+      ticketId: 'TICKET-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
+      startTime: '2025-01-21T02:00:00Z',
+      duration: '2 hours',
+      reason: 'Network connectivity issues detected'
+    };
+
+    const notification = await notificationService.sendTemplateNotification(
+      userId,
+      templateId,
+      testVariables
+    );
+
+    res.status(201).json({
+      success: true,
+      data: notification,
+      message: 'Test notification created successfully',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error creating test notification:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Failed to create test notification',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 module.exports = router;

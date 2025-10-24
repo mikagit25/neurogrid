@@ -1,77 +1,172 @@
 const WebSocket = require('ws');
+const jwt = require('jsonwebtoken');
+const EventEmitter = require('events');
 const logger = require('../utils/logger');
-const authManager = require('../utils/auth');
 
-class WebSocketManager {
-    constructor() {
-        this.wss = null;
+class WebSocketManager extends EventEmitter {
+    constructor(options = {}) {
+        super();
+        
+        this.port = options.port || 8080;
+        this.jwtSecret = options.jwtSecret || process.env.JWT_SECRET || 'fallback-secret';
+        this.pingInterval = options.pingInterval || 30000; // 30 seconds
+        this.maxConnections = options.maxConnections || 1000;
+        
+        // Connection pools by type
+        this.connections = {
+            nodes: new Map(),      // nodeId -> connection
+            users: new Map(),      // userId -> connection
+            admins: new Map(),     // sessionId -> connection
+            anonymous: new Map()   // connectionId -> connection
+        };
+        
+        // Message routing
+        this.rooms = new Map();  // roomName -> Set of connectionIds
+        this.subscribers = new Map(); // topic -> Set of connectionIds
+        
+        // Legacy compatibility
         this.clients = new Map(); // userId -> Set of WebSocket connections
         this.subscriptions = new Map(); // connectionId -> Set of subscriptions
         this.channels = new Map(); // channel -> Set of connectionIds
+        
+        this.wss = null;
+        this.server = null;
         this.heartbeatInterval = null;
+        this.pingTimer = null;
+        
+        // Enhanced statistics
         this.stats = {
             totalConnections: 0,
             activeConnections: 0,
             messagesSent: 0,
-            messagesReceived: 0
+            messagesReceived: 0,
+            errors: 0,
+            startTime: new Date(),
+            byType: {
+                nodes: 0,
+                users: 0,
+                admins: 0,
+                anonymous: 0
+            }
         };
+        
+        logger.info('Enhanced WebSocket Manager initialized', {
+            port: this.port,
+            maxConnections: this.maxConnections
+        });
     }
 
     initialize(server) {
-        this.wss = new WebSocket.Server({ 
-            server,
-            path: '/ws',
-            verifyClient: this.verifyClient.bind(this)
-        });
+        try {
+            this.server = server;
+            
+            // Create WebSocket server
+            this.wss = new WebSocket.Server({
+                server: server,
+                path: '/ws',
+                verifyClient: this.verifyClient.bind(this),
+                maxPayload: 1024 * 1024 // 1MB max message size
+            });
 
-        this.wss.on('connection', this.handleConnection.bind(this));
-        this.startHeartbeat();
-        
-        logger.info('WebSocket server initialized');
+            this.wss.on('connection', this.handleConnection.bind(this));
+            this.wss.on('error', this.handleServerError.bind(this));
+            
+            // Start periodic ping to keep connections alive
+            this.startHeartbeat();
+            this.startPingInterval();
+            
+            logger.info('Enhanced WebSocket server initialized', {
+                path: '/ws',
+                maxPayload: '1MB',
+                maxConnections: this.maxConnections
+            });
+            
+            return this;
+        } catch (error) {
+            logger.error('Failed to initialize WebSocket server', { error: error.message });
+            throw error;
+        }
     }
 
     verifyClient(info) {
-        // Basic verification - in production, add more security checks
-        return true;
+        try {
+            // Check connection limits
+            if (this.stats.activeConnections >= this.maxConnections) {
+                logger.warn('WebSocket connection rejected: max connections reached', {
+                    current: this.stats.activeConnections,
+                    max: this.maxConnections
+                });
+                return false;
+            }
+
+            // Basic origin check (can be enhanced based on requirements)
+            const origin = info.origin;
+            if (process.env.NODE_ENV === 'production' && origin) {
+                const allowedOrigins = [
+                    'https://neurogrid.ai',
+                    'https://app.neurogrid.ai',
+                    'https://admin.neurogrid.ai'
+                ];
+                
+                if (!allowedOrigins.includes(origin)) {
+                    logger.warn('WebSocket connection rejected: invalid origin', { origin });
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            logger.error('Error verifying WebSocket client', { error: error.message });
+            return false;
+        }
     }
 
-    handleConnection(ws, req) {
+    handleConnection(ws, request) {
         const connectionId = this.generateConnectionId();
-        const ip = req.socket.remoteAddress;
+        const clientIP = request.socket.remoteAddress;
+        const userAgent = request.headers['user-agent'];
         
-        // Initialize connection
+        // Initialize connection metadata
         ws.connectionId = connectionId;
-        ws.isAlive = true;
-        ws.userId = null;
-        ws.subscriptions = new Set();
         ws.connectedAt = new Date();
-
+        ws.isAlive = true;
+        ws.clientIP = clientIP;
+        ws.userAgent = userAgent;
+        ws.type = 'anonymous';
+        ws.authenticated = false;
+        ws.subscriptions = new Set(); // Legacy compatibility
+        ws.userId = null; // Legacy compatibility
+        
+        // Update statistics
         this.stats.totalConnections++;
         this.stats.activeConnections++;
-
-        logger.info('WebSocket connection established', {
+        this.stats.byType.anonymous++;
+        
+        logger.info('New WebSocket connection', {
             connectionId,
-            ip,
-            totalConnections: this.stats.totalConnections
+            clientIP,
+            userAgent,
+            activeConnections: this.stats.activeConnections
         });
 
-        // Set up message handler
-        ws.on('message', (message) => {
-            this.handleMessage(ws, message);
+        // Add to anonymous connections initially
+        this.connections.anonymous.set(connectionId, ws);
+
+        // Set up event handlers
+        ws.on('message', (data) => this.handleMessage(ws, data));
+        ws.on('close', (code, reason) => this.handleDisconnection(ws, code, reason));
+        ws.on('error', (error) => this.handleConnectionError(ws, error));
+        ws.on('pong', () => { ws.isAlive = true; });
+
+        // Send welcome message
+        this.sendToConnection(ws, {
+            type: 'welcome',
+            connectionId: connectionId,
+            timestamp: new Date().toISOString(),
+            serverVersion: '1.0.0'
         });
 
-        // Set up close handler
-        ws.on('close', (code, reason) => {
-            this.handleDisconnection(ws, code, reason);
-        });
-
-        // Set up error handler
-        ws.on('error', (error) => {
-            logger.error('WebSocket connection error', {
-                connectionId,
-                error: error.message
-            });
-        });
+        this.emit('connection', { connectionId, ws, clientIP });
 
         // Set up pong handler for heartbeat
         ws.on('pong', () => {

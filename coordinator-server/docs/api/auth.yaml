@@ -1,0 +1,419 @@
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user account
+      description: |
+        Create a new user account with email verification.
+        Users will receive a verification email after successful registration.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - username
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                  description: "Valid email address for account verification"
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 30
+                  pattern: "^[a-zA-Z0-9_-]+$"
+                  example: "john_doe"
+                  description: "Unique username (alphanumeric, underscore, dash)"
+                password:
+                  type: string
+                  minLength: 8
+                  example: "SecurePass123!"
+                  description: "Strong password (min 8 chars, mixed case, numbers, symbols)"
+                full_name:
+                  type: string
+                  example: "John Doe"
+                  description: "User's full name (optional)"
+                company:
+                  type: string
+                  example: "AI Solutions Inc"
+                  description: "Company name (optional)"
+                role:
+                  type: string
+                  enum: [user, node_operator]
+                  default: user
+                  description: "Account type - regular user or node operator"
+      responses:
+        201:
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Account created successfully"
+                  user_id:
+                    type: integer
+                    example: 123
+                  verification_required:
+                    type: boolean
+                    example: true
+        400:
+          $ref: '#/components/responses/ValidationError'
+        409:
+          description: Email or username already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: |
+        Authenticate user and receive JWT token.
+        Supports email/username and password authentication.
+        Returns access token and refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifier
+                - password
+              properties:
+                identifier:
+                  type: string
+                  example: "user@example.com"
+                  description: "Email address or username"
+                password:
+                  type: string
+                  example: "SecurePass123!"
+                  description: "User password"
+                remember_me:
+                  type: boolean
+                  default: false
+                  description: "Extended session duration"
+                totp_code:
+                  type: string
+                  pattern: "^[0-9]{6}$"
+                  example: "123456"
+                  description: "6-digit TOTP code (required if 2FA enabled)"
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful"
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refresh_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  expires_in:
+                    type: integer
+                    example: 3600
+                    description: "Token expiration time in seconds"
+                  user:
+                    $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          description: Invalid credentials or 2FA required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "invalid_credentials"
+                  message:
+                    type: string
+                    example: "Invalid email/username or password"
+                  requires_2fa:
+                    type: boolean
+                    example: false
+        429:
+          $ref: '#/components/responses/RateLimitError'
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: |
+        Generate a new access token using a valid refresh token.
+        The old access token will be invalidated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        200:
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  expires_in:
+                    type: integer
+                    example: 3600
+        401:
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: |
+        Invalidate current session and tokens.
+        Clears session cookies and blacklists JWT tokens.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        200:
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/auth/verify-email:
+    post:
+      tags:
+        - Authentication
+      summary: Verify email address
+      description: |
+        Verify user email address using verification token.
+        Required to activate the account for most operations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  example: "abc123def456ghi789"
+                  description: "Email verification token"
+      responses:
+        200:
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Email verified successfully"
+        400:
+          description: Invalid or expired verification token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: |
+        Send password reset email to user.
+        Rate limited to prevent abuse.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+      responses:
+        200:
+          description: Password reset email sent (always returned regardless of email existence)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset instructions sent to email"
+        429:
+          $ref: '#/components/responses/RateLimitError'
+
+  /api/auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: |
+        Reset user password using reset token from email.
+        Token expires after 1 hour for security.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - new_password
+              properties:
+                token:
+                  type: string
+                  example: "abc123def456ghi789"
+                  description: "Password reset token from email"
+                new_password:
+                  type: string
+                  minLength: 8
+                  example: "NewSecurePass123!"
+                  description: "New strong password"
+      responses:
+        200:
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset successful"
+        400:
+          description: Invalid token or weak password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/auth/2fa/setup:
+    post:
+      tags:
+        - Authentication
+      summary: Setup 2FA (Two-Factor Authentication)
+      description: |
+        Enable two-factor authentication for the account.
+        Returns QR code and backup codes.
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 2FA setup initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  qr_code:
+                    type: string
+                    example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                    description: "QR code for authenticator app"
+                  secret:
+                    type: string
+                    example: "JBSWY3DPEHPK3PXP"
+                    description: "Secret for manual entry"
+                  backup_codes:
+                    type: array
+                    items:
+                      type: string
+                    example: ["12345678", "87654321"]
+                    description: "One-time backup codes"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/auth/2fa/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Verify 2FA setup
+      description: |
+        Complete 2FA setup by verifying TOTP code.
+        2FA will be enabled after successful verification.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - totp_code
+              properties:
+                totp_code:
+                  type: string
+                  pattern: "^[0-9]{6}$"
+                  example: "123456"
+                  description: "6-digit TOTP code from authenticator app"
+      responses:
+        200:
+          description: 2FA enabled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Two-factor authentication enabled"
+        400:
+          description: Invalid TOTP code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'

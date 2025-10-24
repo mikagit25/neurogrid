@@ -1,7 +1,14 @@
 const express = require('express');
-const router = express.Router();
+const { query, validationResult } = require('express-validator');
+const { authenticate } = require('../middleware/auth');
+const AdvancedAnalyticsService = require('../services/AdvancedAnalyticsService');
+const { ResponseHelper, ValidationHelper } = require('../middleware/apiStandardization');
+const logger = require('../utils/logger');
 
-// Mock data storage for demo
+const router = express.Router();
+const analyticsService = new AdvancedAnalyticsService();
+
+// Legacy mock data storage for backward compatibility
 let analyticsData = {
     metrics: {
         totalTasks: 7542,
@@ -362,61 +369,366 @@ router.get('/dashboard', (req, res) => {
     }
 });
 
-// Simulate adding new data (for real-time updates)
-router.post('/simulate', (req, res) => {
-    try {
-        const { type, count = 1 } = req.body;
-        
-        switch (type) {
-            case 'task_completed':
-                analyticsData.metrics.completedTasks += count;
-                analyticsData.metrics.totalTasks += count;
-                
-                // Add to recent activities
-                for (let i = 0; i < count; i++) {
-                    const taskId = `TASK-${Math.floor(Math.random() * 999999).toString().padStart(6, '0')}`;
-                    analyticsData.recentActivities.unshift({
-                        id: `activity-${Date.now()}-${i}`,
-                        type: 'task_completed',
-                        icon: '✅',
-                        message: `Task ${taskId} completed successfully`,
-                        timestamp: new Date().toISOString(),
-                        timeAgo: 'Just now'
-                    });
-                }
-                break;
-                
-            case 'node_joined':
-                analyticsData.metrics.activeNodes += count;
-                
-                for (let i = 0; i < count; i++) {
-                    const nodeId = `node-${Math.floor(Math.random() * 999).toString().padStart(3, '0')}`;
-                    analyticsData.recentActivities.unshift({
-                        id: `activity-${Date.now()}-${i}`,
-                        type: 'node_joined',
-                        icon: '🔗',
-                        message: `New node ${nodeId} joined the network`,
-                        timestamp: new Date().toISOString(),
-                        timeAgo: 'Just now'
-                    });
-                }
-                break;
-        }
-
-        // Keep only last 50 activities
-        analyticsData.recentActivities = analyticsData.recentActivities.slice(0, 50);
-
-        res.json({
-            success: true,
-            message: `Simulated ${count} ${type} event(s)`,
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to simulate data'
-        });
+/**
+ * @route GET /api/analytics/advanced/dashboard
+ * @desc Get comprehensive dashboard data with real-time metrics
+ * @access Private
+ */
+router.get('/advanced/dashboard', [
+  authenticate,
+  query('timeRange').optional().isIn(['1h', '24h', '7d', '30d'])
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array(),
+        timestamp: new Date().toISOString()
+      });
     }
+
+    const timeRange = req.query.timeRange || '24h';
+    const dashboard = await analyticsService.getDashboardOverview(timeRange);
+
+    res.json({
+      success: true,
+      data: dashboard,
+      timeRange,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error fetching advanced dashboard:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch dashboard data',
+      code: 'DASHBOARD_FETCH_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route GET /api/analytics/advanced/system
+ * @desc Get detailed system metrics and performance data
+ * @access Private
+ */
+router.get('/advanced/system', [
+  authenticate
+], async (req, res) => {
+  try {
+    const systemMetrics = await analyticsService.getSystemMetrics();
+
+    return ResponseHelper.success(res, systemMetrics, {
+      generatedAt: new Date().toISOString(),
+      source: 'advanced-analytics-service'
+    });
+
+  } catch (error) {
+    logger.error('Error fetching system metrics:', error);
+    return ResponseHelper.internalError(res, 'Failed to fetch system metrics', { 
+      code: 'SYSTEM_METRICS_FAILED' 
+    });
+  }
+});
+
+/**
+ * @route GET /api/analytics/advanced/nodes
+ * @desc Get comprehensive node analytics and performance data
+ * @access Private
+ */
+router.get('/advanced/nodes', [
+  authenticate,
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHelper.validationError(res, errors.array(), 'Invalid request parameters');
+    }
+
+    const limit = req.query.limit || 20;
+    const nodeAnalytics = await analyticsService.getNodeAnalytics(limit);
+
+    return ResponseHelper.success(res, nodeAnalytics, {
+      limit,
+      generatedAt: new Date().toISOString(),
+      source: 'advanced-analytics-service'
+    });
+
+  } catch (error) {
+    logger.error('Error fetching node analytics:', error);
+    return ResponseHelper.internalError(res, 'Failed to fetch node analytics', { 
+      code: 'NODE_ANALYTICS_FAILED' 
+    });
+  }
+});
+
+/**
+ * @route GET /api/analytics/advanced/users
+ * @desc Get user analytics and engagement metrics
+ * @access Private
+ */
+router.get('/advanced/users', [
+  authenticate,
+  query('timeRange').optional().isIn(['7d', '30d', '90d'])
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array(),
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const timeRange = req.query.timeRange || '30d';
+    const userAnalytics = await analyticsService.getUserAnalytics(timeRange);
+
+    res.json({
+      success: true,
+      data: userAnalytics,
+      timeRange,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error fetching user analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user analytics',
+      code: 'USER_ANALYTICS_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route GET /api/analytics/advanced/financial
+ * @desc Get financial analytics and revenue metrics
+ * @access Private
+ */
+router.get('/advanced/financial', [
+  authenticate,
+  query('timeRange').optional().isIn(['7d', '30d', '90d', '1y'])
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array(),
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const timeRange = req.query.timeRange || '30d';
+    const financialAnalytics = await analyticsService.getFinancialAnalytics(timeRange);
+
+    res.json({
+      success: true,
+      data: financialAnalytics,
+      timeRange,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error fetching financial analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch financial analytics',
+      code: 'FINANCIAL_ANALYTICS_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route GET /api/analytics/advanced/predictions
+ * @desc Get predictive analytics and trend forecasts
+ * @access Private
+ */
+router.get('/advanced/predictions', [
+  authenticate
+], async (req, res) => {
+  try {
+    const predictions = await analyticsService.getPredictiveAnalytics();
+
+    res.json({
+      success: true,
+      data: predictions,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error fetching predictive analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch predictive analytics',
+      code: 'PREDICTIONS_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route POST /api/analytics/events
+ * @desc Record analytics event
+ * @access Private
+ */
+router.post('/events', [
+  authenticate
+], async (req, res) => {
+  try {
+    const { type, data } = req.body;
+    
+    if (!type) {
+      return res.status(400).json({
+        success: false,
+        error: 'Event type is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const event = analyticsService.recordEvent(type, data || {});
+
+    res.status(201).json({
+      success: true,
+      data: event,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error recording analytics event:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to record event',
+      code: 'EVENT_RECORD_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @route GET /api/analytics/export
+ * @desc Export analytics data
+ * @access Private
+ */
+router.get('/export', [
+  authenticate,
+  query('format').optional().isIn(['json', 'csv'])
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array(),
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const format = req.query.format || 'json';
+    const data = await analyticsService.exportData(format);
+
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="analytics-data.csv"');
+      res.send(data);
+    } else {
+      res.json({
+        success: true,
+        data,
+        format,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+  } catch (error) {
+    logger.error('Error exporting analytics data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to export data',
+      code: 'EXPORT_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Simulate adding new data (for real-time updates) - Enhanced version
+router.post('/simulate', [
+  authenticate
+], async (req, res) => {
+  try {
+    const { type, count = 1, data = {} } = req.body;
+    
+    // Record events using the advanced analytics service
+    for (let i = 0; i < count; i++) {
+      analyticsService.recordEvent(type, data);
+    }
+    
+    // Legacy simulation for backward compatibility
+    switch (type) {
+      case 'task_completed':
+        analyticsData.metrics.completedTasks += count;
+        analyticsData.metrics.totalTasks += count;
+        
+        // Add to recent activities
+        for (let i = 0; i < count; i++) {
+          const taskId = `TASK-${Math.floor(Math.random() * 999999).toString().padStart(6, '0')}`;
+          analyticsData.recentActivities.unshift({
+            id: `activity-${Date.now()}-${i}`,
+            type: 'task_completed',
+            icon: '✅',
+            message: `Task ${taskId} completed successfully`,
+            timestamp: new Date().toISOString(),
+            timeAgo: 'Just now'
+          });
+        }
+        break;
+        
+      case 'node_joined':
+        analyticsData.metrics.activeNodes += count;
+        
+        for (let i = 0; i < count; i++) {
+          const nodeId = `node-${Math.floor(Math.random() * 999).toString().padStart(3, '0')}`;
+          analyticsData.recentActivities.unshift({
+            id: `activity-${Date.now()}-${i}`,
+            type: 'node_joined',
+            icon: '🔗',
+            message: `New node ${nodeId} joined the network`,
+            timestamp: new Date().toISOString(),
+            timeAgo: 'Just now'
+          });
+        }
+        break;
+    }
+
+    // Keep only last 50 activities
+    analyticsData.recentActivities = analyticsData.recentActivities.slice(0, 50);
+
+    res.json({
+      success: true,
+      message: `Simulated ${count} ${type} event(s)`,
+      eventsRecorded: count,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error simulating analytics data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to simulate data',
+      code: 'SIMULATION_FAILED',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 module.exports = router;

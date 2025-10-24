@@ -103,13 +103,21 @@
             <div class="bg-blue-50 p-4 rounded-lg mb-4">
                 <div class="flex items-center">
                     <i class="fas fa-magic text-blue-600 mr-3"></i>
-                    <div>
+                    <div class="flex-1">
                         <p class="text-sm font-medium text-blue-900">Автоопределение системы</p>
                         <p class="text-xs text-blue-700">Обнаружена система: <span id="detectedOS" class="font-mono">Определение...</span></p>
                     </div>
-                    <button class="ml-auto bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700" onclick="useDetectedOS()">
+                    <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700" onclick="useDetectedOS()">
                         Использовать
                     </button>
+                </div>
+            </div>
+
+            <!-- Manual selection hint -->
+            <div class="bg-gray-50 p-3 rounded-lg mb-4">
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-info-circle text-gray-400 mr-2"></i>
+                    <span>Выберите другую систему выше, если хотите скачать установщик для другого компьютера</span>
                 </div>
             </div>
 
@@ -292,16 +300,40 @@
             </div>
 
             <!-- Download Section -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-6" id="downloadSection">
-                <i class="fas fa-download text-4xl text-gray-400 mb-4"></i>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Готов к скачиванию</h3>
-                <p class="text-gray-600 mb-4">Нажмите кнопку ниже для скачивания персонализированного установщика</p>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-6" id="downloadSection">
+                <div class="text-center mb-6">
+                    <i class="fas fa-download text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Готов к скачиванию</h3>
+                    <p class="text-gray-600">Скачайте персонализированный установщик для выбранной системы</p>
+                </div>
                 
-                <button class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors inline-flex items-center" 
-                        onclick="downloadInstaller()" id="downloadBtn">
-                    <i class="fas fa-download mr-2"></i>
-                    Скачать установщик
-                </button>
+                <!-- Primary download button -->
+                <div class="text-center mb-6">
+                    <button class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors inline-flex items-center" 
+                            onclick="downloadInstaller()" id="downloadBtn">
+                        <i class="fas fa-download mr-2"></i>
+                        <span id="downloadBtnText">Скачать установщик</span>
+                    </button>
+                </div>
+
+                <!-- Alternative platform downloads -->
+                <div class="border-t pt-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3 text-center">Или скачать для других систем:</h4>
+                    <div class="flex justify-center space-x-3">
+                        <button class="flex items-center px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors" 
+                                onclick="downloadForPlatform('windows')" id="downloadWindows">
+                            <i class="fab fa-windows text-blue-600 mr-2"></i>Windows
+                        </button>
+                        <button class="flex items-center px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors" 
+                                onclick="downloadForPlatform('macos')" id="downloadMacOS">
+                            <i class="fab fa-apple text-gray-700 mr-2"></i>macOS
+                        </button>
+                        <button class="flex items-center px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors" 
+                                onclick="downloadForPlatform('linux')" id="downloadLinux">
+                            <i class="fab fa-linux text-orange-600 mr-2"></i>Linux
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Installation Instructions -->
@@ -553,8 +585,30 @@
                 <li><strong>Стоимость:</strong> ${nodeConfig.settings.hourlyCost} токенов/час</li>
             `;
             
+            // Update primary download button text
+            const platformName = getPlatformName(nodeConfig.platform);
+            document.getElementById('downloadBtnText').textContent = `Скачать для ${platformName}`;
+            
+            // Update alternative download buttons
+            updateAlternativeDownloadButtons();
+            
             // Update installation instructions
             updateInstallInstructions();
+        }
+
+        function updateAlternativeDownloadButtons() {
+            const currentPlatform = nodeConfig.platform;
+            
+            // Hide current platform from alternatives and update styles
+            ['windows', 'macos', 'linux'].forEach(platform => {
+                const btn = document.getElementById(`download${platform.charAt(0).toUpperCase() + platform.slice(1)}`);
+                if (platform === currentPlatform) {
+                    btn.classList.add('bg-green-100', 'border-green-300', 'text-green-700');
+                    btn.innerHTML = btn.innerHTML.replace('>', '> <span class="text-xs">(выбрано)</span>');
+                } else {
+                    btn.classList.remove('bg-green-100', 'border-green-300', 'text-green-700');
+                }
+            });
         }
 
         function updateInstallInstructions() {
@@ -598,15 +652,21 @@
             instructions.innerHTML = instructionText;
         }
 
-        async function downloadInstaller() {
-            const downloadBtn = document.getElementById('downloadBtn');
-            downloadBtn.disabled = true;
-            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Создание установщика...';
+        async function downloadInstaller(platform = null) {
+            const targetPlatform = platform || nodeConfig.platform;
+            const isMainDownload = !platform;
+            
+            let downloadBtn;
+            if (isMainDownload) {
+                downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Создание установщика...';
+            }
             
             try {
                 // Generate unique node configuration
                 const nodeId = generateNodeId();
-                const configWithId = { ...nodeConfig, nodeId };
+                const configWithId = { ...nodeConfig, nodeId, platform: targetPlatform };
                 
                 // Call API to generate installer
                 const response = await fetch('/api/nodes/generate-installer', {
@@ -619,7 +679,7 @@
                 
                 if (response.ok) {
                     const blob = await response.blob();
-                    const filename = getInstallerFilename(nodeConfig.platform);
+                    const filename = getInstallerFilename(targetPlatform);
                     
                     // Download file
                     const url = window.URL.createObjectURL(blob);
@@ -631,7 +691,9 @@
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
                     
-                    showNotification('Установщик успешно скачан!', 'success');
+                    const platformName = targetPlatform === 'win32' ? 'Windows' : 
+                                       targetPlatform === 'darwin' ? 'macOS' : 'Linux';
+                    showNotification(`Установщик для ${platformName} успешно скачан!`, 'success');
                 } else {
                     throw new Error('Ошибка при создании установщика');
                 }
@@ -639,9 +701,24 @@
                 console.error('Download error:', error);
                 showNotification('Ошибка при скачивании установщика', 'error');
             } finally {
-                downloadBtn.disabled = false;
-                downloadBtn.innerHTML = '<i class="fas fa-download mr-2"></i>Скачать установщик';
+                if (isMainDownload) {
+                    downloadBtn.disabled = false;
+                    downloadBtn.innerHTML = '<i class="fas fa-download mr-2"></i>Скачать установщик';
+                }
             }
+        }
+
+        // Alternative platform download functions
+        async function downloadForWindows() {
+            await downloadInstaller('win32');
+        }
+        
+        async function downloadForMacOS() {
+            await downloadInstaller('darwin');
+        }
+        
+        async function downloadForLinux() {
+            await downloadInstaller('linux');
         }
 
         async function oneClickInstall() {

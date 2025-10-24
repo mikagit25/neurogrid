@@ -1,6 +1,9 @@
 require('jest-extended');
-const { db } = require('../src/config/database');
-const { migrations } = require('../src/database/migrations');
+
+// Setup mocks
+jest.mock('../src/config/database', () => require('./__mocks__/database'));
+jest.mock('../src/utils/logger', () => require('./__mocks__/logger'));
+
 const logger = require('../src/utils/logger');
 
 // Test database configuration
@@ -12,28 +15,18 @@ const testDbConfig = {
   port: parseInt(process.env.TEST_DB_PORT) || 5433
 };
 
-// Global test setup
+// Test environment setup
 beforeAll(async () => {
-  // Set test environment
-  process.env.NODE_ENV = 'test';
-  process.env.LOG_LEVEL = 'error'; // Reduce log noise during tests
-  
-  // Override database config for tests
-  Object.assign(db.connectionConfig, testDbConfig);
-  
-  try {
-    // Initialize test database
-    await db.initialize();
-    
-    // Run migrations
-    await migrations.initialize();
-    await migrations.setupInitialSchema();
-    
-    console.log('Test database initialized successfully');
-  } catch (error) {
-    console.error('Failed to setup test database:', error);
-    process.exit(1);
-  }
+  logger.info('Test environment initialized');
+});
+
+afterAll(async () => {
+  logger.info('Test environment cleanup completed');
+});
+
+// Clear all mocks between tests
+afterEach(() => {
+  jest.clearAllMocks();
 });
 
 // Global test cleanup

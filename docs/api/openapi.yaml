@@ -1,0 +1,998 @@
+openapi: 3.0.3
+info:
+  title: NeuroGrid API
+  description: |
+    NeuroGrid is a distributed AI computing platform that enables secure and efficient deployment of AI models across a decentralized network.
+    
+    ## Features
+    - Text generation with LLaMA models
+    - Image generation with Stable Diffusion
+    - Audio transcription with Whisper
+    - Real-time task monitoring
+    - Secure authentication and authorization
+    
+    ## Base URLs
+    - Production: `https://api.neurogrid.io`
+    - Development: `https://api-dev.neurogrid.io`
+    
+  version: 1.0.0
+  contact:
+    name: NeuroGrid Support
+    url: https://neurogrid.io/support
+    email: support@neurogrid.io
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.neurogrid.io/api/v1
+    description: Production server
+  - url: https://api-dev.neurogrid.io/api/v1
+    description: Development server
+  - url: http://localhost:3001/api/v1
+    description: Local development server
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # Authentication
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: securepassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Get a new access token using refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  example: refresh_token_here
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  # Nodes
+  /nodes:
+    get:
+      tags:
+        - Nodes
+      summary: List nodes
+      description: Get a list of all available nodes in the network
+      parameters:
+        - name: status
+          in: query
+          description: Filter by node status
+          schema:
+            type: string
+            enum: [online, offline, busy]
+        - name: region
+          in: query
+          description: Filter by geographical region
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      nodes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Node'
+                      total:
+                        type: integer
+                        example: 150
+                      limit:
+                        type: integer
+                        example: 50
+                      offset:
+                        type: integer
+                        example: 0
+
+  /nodes/{nodeId}:
+    get:
+      tags:
+        - Nodes
+      summary: Get node details
+      description: Get detailed information about a specific node
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          description: Node ID
+          schema:
+            type: string
+            example: node_123
+      responses:
+        '200':
+          description: Node details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/NodeDetails'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Models
+  /models:
+    get:
+      tags:
+        - Models
+      summary: List available models
+      description: Get a list of all available AI models
+      parameters:
+        - name: type
+          in: query
+          description: Model type
+          schema:
+            type: string
+            enum: [text, image, audio]
+        - name: category
+          in: query
+          description: Model category
+          schema:
+            type: string
+            enum: [generation, classification, transcription]
+      responses:
+        '200':
+          description: List of models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      models:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Model'
+
+  /models/generate/text:
+    post:
+      tags:
+        - AI Generation
+      summary: Generate text
+      description: Generate text using language models
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextGenerationRequest'
+      responses:
+        '200':
+          description: Text generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TextGenerationResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /models/generate/image:
+    post:
+      tags:
+        - AI Generation
+      summary: Generate image
+      description: Generate images using AI models
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageGenerationRequest'
+      responses:
+        '200':
+          description: Image generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ImageGenerationResponse'
+
+  /models/transcribe:
+    post:
+      tags:
+        - AI Generation
+      summary: Transcribe audio
+      description: Transcribe audio using speech recognition models
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Audio file to transcribe
+                model:
+                  type: string
+                  default: whisper-large
+                  example: whisper-large
+                language:
+                  type: string
+                  description: Language code (optional)
+                  example: en
+      responses:
+        '200':
+          description: Audio transcribed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TranscriptionResponse'
+
+  # Tasks
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List tasks
+      description: Get a list of your tasks
+      parameters:
+        - name: status
+          in: query
+          description: Filter by task status
+          schema:
+            type: string
+            enum: [pending, running, completed, failed]
+        - name: model
+          in: query
+          description: Filter by model used
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      tasks:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Task'
+                      total:
+                        type: integer
+
+  /tasks/{taskId}:
+    get:
+      tags:
+        - Tasks
+      summary: Get task details
+      description: Get detailed information about a specific task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+            example: task_789
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TaskDetails'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Tasks
+      summary: Cancel task
+      description: Cancel a running task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+            example: task_789
+      responses:
+        '200':
+          description: Task cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Task cancelled successfully
+
+  # Analytics
+  /analytics/stats:
+    get:
+      tags:
+        - Analytics
+      summary: System statistics
+      description: Get overall system statistics
+      responses:
+        '200':
+          description: System statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SystemStats'
+
+  /analytics/usage:
+    get:
+      tags:
+        - Analytics
+      summary: User usage statistics
+      description: Get your usage statistics
+      responses:
+        '200':
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UserUsage'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            refreshToken:
+              type: string
+              example: refresh_token_here
+            expiresIn:
+              type: integer
+              example: 3600
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: user123
+                email:
+                  type: string
+                  example: user@example.com
+                role:
+                  type: string
+                  example: user
+                permissions:
+                  type: array
+                  items:
+                    type: string
+                  example: [read, write]
+
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+          example: node_123
+        status:
+          type: string
+          enum: [online, offline, busy]
+          example: online
+        region:
+          type: string
+          example: us-west-1
+        capabilities:
+          type: array
+          items:
+            type: string
+          example: [text-generation, image-generation]
+        gpu_info:
+          type: object
+          properties:
+            model:
+              type: string
+              example: NVIDIA RTX 4090
+            memory:
+              type: string
+              example: 24GB
+            compute_capability:
+              type: string
+              example: "8.9"
+        performance_score:
+          type: number
+          example: 95.5
+        last_seen:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    NodeDetails:
+      allOf:
+        - $ref: '#/components/schemas/Node'
+        - type: object
+          properties:
+            owner:
+              type: string
+              example: user_456
+            current_load:
+              type: number
+              example: 0.65
+            total_tasks_completed:
+              type: integer
+              example: 1250
+            uptime:
+              type: string
+              example: "15d 8h 32m"
+            earnings:
+              type: object
+              properties:
+                total:
+                  type: string
+                  example: "145.50"
+                currency:
+                  type: string
+                  example: USD
+                last_30_days:
+                  type: string
+                  example: "32.10"
+
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+          example: llama2-7b
+        name:
+          type: string
+          example: LLaMA 2 7B
+        type:
+          type: string
+          enum: [text, image, audio]
+          example: text
+        category:
+          type: string
+          enum: [generation, classification, transcription]
+          example: generation
+        description:
+          type: string
+          example: Large language model for text generation
+        parameters:
+          type: object
+          properties:
+            size:
+              type: string
+              example: 7B
+            context_length:
+              type: integer
+              example: 4096
+            languages:
+              type: array
+              items:
+                type: string
+              example: [en, es, fr, de]
+        pricing:
+          type: object
+          properties:
+            per_token:
+              type: number
+              example: 0.0001
+            currency:
+              type: string
+              example: USD
+
+    TextGenerationRequest:
+      type: object
+      required:
+        - model
+        - prompt
+      properties:
+        model:
+          type: string
+          example: llama2-7b
+        prompt:
+          type: string
+          example: Explain quantum computing in simple terms
+        parameters:
+          type: object
+          properties:
+            max_tokens:
+              type: integer
+              minimum: 1
+              maximum: 2048
+              default: 150
+              example: 150
+            temperature:
+              type: number
+              minimum: 0
+              maximum: 2
+              default: 0.7
+              example: 0.7
+            top_p:
+              type: number
+              minimum: 0
+              maximum: 1
+              default: 0.9
+              example: 0.9
+            stop_sequences:
+              type: array
+              items:
+                type: string
+              example: ["\n\n"]
+        node_preferences:
+          type: object
+          properties:
+            region:
+              type: string
+              example: us-west-1
+            min_performance_score:
+              type: number
+              example: 90
+
+    TextGenerationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: task_789
+        model:
+          type: string
+          example: llama2-7b
+        generated_text:
+          type: string
+          example: Quantum computing is a revolutionary technology...
+        usage:
+          type: object
+          properties:
+            prompt_tokens:
+              type: integer
+              example: 12
+            completion_tokens:
+              type: integer
+              example: 143
+            total_tokens:
+              type: integer
+              example: 155
+        node_id:
+          type: string
+          example: node_123
+        execution_time:
+          type: number
+          example: 2.34
+        cost:
+          type: number
+          example: 0.0155
+
+    ImageGenerationRequest:
+      type: object
+      required:
+        - model
+        - prompt
+      properties:
+        model:
+          type: string
+          example: stable-diffusion-xl
+        prompt:
+          type: string
+          example: A futuristic cityscape at sunset
+        parameters:
+          type: object
+          properties:
+            width:
+              type: integer
+              minimum: 256
+              maximum: 2048
+              default: 512
+              example: 1024
+            height:
+              type: integer
+              minimum: 256
+              maximum: 2048
+              default: 512
+              example: 1024
+            steps:
+              type: integer
+              minimum: 1
+              maximum: 100
+              default: 30
+              example: 30
+            guidance_scale:
+              type: number
+              minimum: 1
+              maximum: 20
+              default: 7.5
+              example: 7.5
+            seed:
+              type: integer
+              example: 42
+        negative_prompt:
+          type: string
+          example: blurry, low quality
+
+    ImageGenerationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: task_790
+        model:
+          type: string
+          example: stable-diffusion-xl
+        image_url:
+          type: string
+          format: uri
+          example: https://cdn.neurogrid.io/images/task_790.png
+        parameters_used:
+          type: object
+          properties:
+            width:
+              type: integer
+              example: 1024
+            height:
+              type: integer
+              example: 1024
+            steps:
+              type: integer
+              example: 30
+            seed:
+              type: integer
+              example: 42
+        execution_time:
+          type: number
+          example: 8.5
+        cost:
+          type: number
+          example: 0.05
+
+    TranscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: task_791
+        model:
+          type: string
+          example: whisper-large
+        transcription:
+          type: string
+          example: Hello, this is a test audio file...
+        language:
+          type: string
+          example: en
+        confidence:
+          type: number
+          example: 0.95
+        segments:
+          type: array
+          items:
+            type: object
+            properties:
+              start:
+                type: number
+                example: 0.0
+              end:
+                type: number
+                example: 3.2
+              text:
+                type: string
+                example: Hello, this is a test
+        execution_time:
+          type: number
+          example: 1.8
+        cost:
+          type: number
+          example: 0.02
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          example: task_789
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+          example: completed
+        model:
+          type: string
+          example: llama2-7b
+        type:
+          type: string
+          enum: [text-generation, image-generation, transcription]
+          example: text-generation
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        completed_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:15Z"
+        cost:
+          type: number
+          example: 0.0155
+        node_id:
+          type: string
+          example: node_123
+
+    TaskDetails:
+      allOf:
+        - $ref: '#/components/schemas/Task'
+        - type: object
+          properties:
+            input:
+              type: object
+              description: Original request parameters
+            result:
+              type: object
+              description: Task result (varies by task type)
+            error:
+              type: object
+              description: Error information (if failed)
+              properties:
+                code:
+                  type: string
+                message:
+                  type: string
+                details:
+                  type: string
+
+    SystemStats:
+      type: object
+      properties:
+        total_nodes:
+          type: integer
+          example: 1250
+        active_nodes:
+          type: integer
+          example: 892
+        total_tasks_today:
+          type: integer
+          example: 15420
+        average_response_time:
+          type: number
+          example: 3.2
+        network_uptime:
+          type: number
+          example: 99.8
+        total_compute_hours:
+          type: integer
+          example: 125000
+
+    UserUsage:
+      type: object
+      properties:
+        current_month:
+          type: object
+          properties:
+            tasks_completed:
+              type: integer
+              example: 45
+            total_cost:
+              type: number
+              example: 12.50
+            compute_time:
+              type: string
+              example: "2h 15m"
+            tokens_generated:
+              type: integer
+              example: 25000
+        limits:
+          type: object
+          properties:
+            monthly_tasks:
+              type: integer
+              example: 1000
+            monthly_budget:
+              type: number
+              example: 100.00
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: INVALID_REQUEST
+            message:
+              type: string
+              example: Human readable error message
+            type:
+              type: string
+              example: ValidationError
+            details:
+              type: object
+              description: Additional error details
+
+  examples:
+    TextGenerationExample:
+      summary: Basic text generation
+      value:
+        model: llama2-7b
+        prompt: Write a short story about artificial intelligence
+        parameters:
+          max_tokens: 200
+          temperature: 0.8
+
+    ImageGenerationExample:
+      summary: Basic image generation
+      value:
+        model: stable-diffusion-xl
+        prompt: A beautiful sunset over mountains
+        parameters:
+          width: 1024
+          height: 1024
+          steps: 30

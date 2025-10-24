@@ -1,0 +1,676 @@
+paths:
+  /api/users:
+    get:
+      tags:
+        - Users
+      summary: List users (Admin only)
+      description: |
+        Retrieve a paginated list of users with filtering options.
+        Only accessible by administrators.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [user, admin, node_operator]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, banned]
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by email or username
+      responses:
+        200:
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  statistics:
+                    type: object
+                    properties:
+                      total_tasks:
+                        type: integer
+                      completed_tasks:
+                        type: integer
+                      total_spent:
+                        type: number
+                      member_since:
+                        type: string
+                        format: date
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      description: Update the authenticated user's profile information
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  maxLength: 100
+                company:
+                  type: string
+                  maxLength: 100
+                bio:
+                  type: string
+                  maxLength: 500
+                website:
+                  type: string
+                  format: uri
+                location:
+                  type: string
+                  maxLength: 100
+                notification_preferences:
+                  type: object
+                  properties:
+                    email_notifications:
+                      type: boolean
+                    task_updates:
+                      type: boolean
+                    marketing_emails:
+                      type: boolean
+      responses:
+        200:
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Profile updated successfully
+                  user:
+                    $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/users/{user_id}:
+    get:
+      tags:
+        - Users
+      summary: Get user details (Admin only)
+      description: Retrieve detailed information about a specific user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/User'
+                  - type: object
+                    properties:
+                      statistics:
+                        type: object
+                        properties:
+                          total_tasks:
+                            type: integer
+                          total_spent:
+                            type: number
+                          nodes_owned:
+                            type: integer
+                          last_activity:
+                            type: string
+                            format: date-time
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Users
+      summary: Update user status (Admin only)
+      description: Update user account status and permissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [active, inactive, banned]
+                role:
+                  type: string
+                  enum: [user, admin, node_operator]
+                reason:
+                  type: string
+                  description: Reason for status change
+      responses:
+        200:
+          description: User updated successfully
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/users/api-keys:
+    get:
+      tags:
+        - Users
+      summary: List user API keys
+      description: Retrieve list of API keys for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: API keys retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_keys:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        prefix:
+                          type: string
+                          example: "nk_12345..."
+                        permissions:
+                          type: array
+                          items:
+                            type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                        last_used:
+                          type: string
+                          format: date-time
+                        expires_at:
+                          type: string
+                          format: date-time
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Users
+      summary: Create API key
+      description: Generate a new API key for programmatic access
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  example: "Production API Key"
+                permissions:
+                  type: array
+                  items:
+                    type: string
+                    enum: [tasks:read, tasks:write, nodes:read, nodes:write, payments:read]
+                  example: ["tasks:read", "tasks:write"]
+                expires_in_days:
+                  type: integer
+                  minimum: 1
+                  maximum: 365
+                  default: 90
+      responses:
+        201:
+          description: API key created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API key created successfully
+                  api_key:
+                    type: string
+                    example: "nk_1234567890abcdef1234567890abcdef"
+                    description: "Full API key (only shown once)"
+                  key_info:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                      permissions:
+                        type: array
+                        items:
+                          type: string
+                      expires_at:
+                        type: string
+                        format: date-time
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/users/api-keys/{key_id}:
+    delete:
+      tags:
+        - Users
+      summary: Revoke API key
+      description: Permanently disable an API key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: API key revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API key revoked successfully
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/analytics/overview:
+    get:
+      tags:
+        - Analytics
+      summary: Get system overview
+      description: |
+        Retrieve high-level system metrics and statistics.
+        Available to all authenticated users.
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: System overview retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  network:
+                    type: object
+                    properties:
+                      total_nodes:
+                        type: integer
+                        example: 1250
+                      online_nodes:
+                        type: integer
+                        example: 1180
+                      total_compute_power:
+                        type: number
+                        example: 15680.5
+                        description: "Total TFLOPS available"
+                      avg_response_time:
+                        type: number
+                        example: 2.34
+                        description: "Average response time in seconds"
+                  tasks:
+                    type: object
+                    properties:
+                      total_completed:
+                        type: integer
+                        example: 2456789
+                      completed_today:
+                        type: integer
+                        example: 12543
+                      success_rate:
+                        type: number
+                        example: 98.7
+                        description: "Success rate percentage"
+                      avg_execution_time:
+                        type: number
+                        example: 45.2
+                        description: "Average execution time in seconds"
+                  economy:
+                    type: object
+                    properties:
+                      total_volume:
+                        type: number
+                        example: 1250000.50
+                        description: "Total transaction volume in USD"
+                      volume_24h:
+                        type: number
+                        example: 45680.25
+                        description: "24-hour transaction volume in USD"
+                      avg_task_cost:
+                        type: number
+                        example: 0.45
+                        description: "Average task cost in USD"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/analytics/user-stats:
+    get:
+      tags:
+        - Analytics
+      summary: Get user statistics
+      description: |
+        Retrieve detailed statistics for the authenticated user.
+        Includes task history, spending, and performance metrics.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, year, all]
+            default: month
+          description: Time period for statistics
+      responses:
+        200:
+          description: User statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: object
+                    properties:
+                      total_submitted:
+                        type: integer
+                      total_completed:
+                        type: integer
+                      total_failed:
+                        type: integer
+                      success_rate:
+                        type: number
+                      avg_execution_time:
+                        type: number
+                  spending:
+                    type: object
+                    properties:
+                      total_spent:
+                        type: number
+                      period_spent:
+                        type: number
+                      avg_cost_per_task:
+                        type: number
+                      cost_breakdown:
+                        type: object
+                        properties:
+                          compute:
+                            type: number
+                          network:
+                            type: number
+                          storage:
+                            type: number
+                  usage_patterns:
+                    type: object
+                    properties:
+                      favorite_models:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            model:
+                              type: string
+                            usage_count:
+                              type: integer
+                      peak_hours:
+                        type: array
+                        items:
+                          type: integer
+                        description: "Hours of day with highest usage (0-23)"
+                      preferred_regions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            region:
+                              type: string
+                            usage_percentage:
+                              type: number
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/files/upload:
+    post:
+      tags:
+        - Files
+      summary: Upload file
+      description: |
+        Upload a file for use in AI tasks.
+        Supports datasets, models, and result files.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - file_type
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "File to upload"
+                file_type:
+                  type: string
+                  enum: [dataset, model, result, other]
+                  description: "Type of file being uploaded"
+                description:
+                  type: string
+                  maxLength: 500
+                  description: "Optional description of the file"
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: "Tags for file organization"
+                public:
+                  type: boolean
+                  default: false
+                  description: "Whether file should be publicly accessible"
+      responses:
+        201:
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: File uploaded successfully
+                  file_id:
+                    type: string
+                    format: uuid
+                  file_url:
+                    type: string
+                    format: uri
+                  file_info:
+                    type: object
+                    properties:
+                      filename:
+                        type: string
+                      size:
+                        type: integer
+                        description: "File size in bytes"
+                      mime_type:
+                        type: string
+                      checksum:
+                        type: string
+                        description: "SHA-256 checksum"
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        413:
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/files/{file_id}:
+    get:
+      tags:
+        - Files
+      summary: Download file
+      description: |
+        Download a previously uploaded file.
+        Access is restricted based on file ownership and permissions.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Files
+      summary: Delete file
+      description: |
+        Permanently delete an uploaded file.
+        Only the file owner can delete files.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: File deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: File deleted successfully
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'

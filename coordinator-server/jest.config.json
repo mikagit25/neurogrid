@@ -1,0 +1,41 @@
+{
+  "displayName": "NeuroGrid Testing Suite",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/src", "<rootDir>/tests"],
+  "testMatch": [
+    "**/__tests__/**/*.js",
+    "**/?(*.)+(spec|test).js"
+  ],
+  "collectCoverage": true,
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!src/config/database.js",
+    "!src/server.js",
+    "!src/index.js",
+    "!src/**/*-backup.js",
+    "!src/**/*.backup.js"
+  ],
+  "coverageDirectory": "coverage",
+  "coverageReporters": [
+    "text",
+    "lcov",
+    "html",
+    "cobertura"
+  ],
+  "coverageThreshold": {
+    "global": {
+      "branches": 70,
+      "functions": 75,
+      "lines": 80,
+      "statements": 80
+    }
+  },
+  "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+  "testTimeout": 30000,
+  "verbose": true,
+  "forceExit": true,
+  "detectOpenHandles": true,
+  "clearMocks": true,
+  "resetMocks": true,
+  "restoreMocks": true
+}

@@ -1,15 +1,19 @@
 const logger = require('../utils/logger');
+const { db } = require('../config/database-universal');
+const Job = require('../models/Job');
+const Node = require('../models/Node');
 
 /**
  * Task Dispatcher Service
- * Handles task assignment and load balancing across nodes
+ * Handles task assignment and load balancing across nodes using database
  */
 class TaskDispatcher {
   constructor() {
-    this.pendingTasks = new Map();
-    this.runningTasks = new Map();
-    this.taskQueue = [];
-    this.nodeAssignments = new Map();
+    this.dispatchInterval = 5000; // 5 seconds
+    this.maxRetries = 3;
+    this.dispatchTimer = null;
+    
+    this.startDispatchTimer();
   }
 
   /**
@@ -17,335 +21,385 @@ class TaskDispatcher {
    */
   async addTask(taskData) {
     try {
-      const task = {
-        id: taskData.id,
-        model: taskData.model,
-        input: taskData.input,
-        priority: taskData.priority || 'standard',
-        requirements: taskData.requirements || {},
-        createdAt: new Date(),
-        status: 'pending',
-        retries: 0,
-        maxRetries: 3
+      // Create job in database
+      const jobData = {
+        user_id: taskData.user_id || taskData.userId,
+        title: taskData.title || `${taskData.model} Task`,
+        description: taskData.description,
+        job_type: taskData.model || 'unknown',
+        priority: this.convertPriority(taskData.priority),
+        requirements: {
+          model: taskData.model,
+          minVram: taskData.requirements?.minVram,
+          minCpuCores: taskData.requirements?.minCpuCores,
+          region: taskData.requirements?.region
+        },
+        parameters: taskData.parameters || {},
+        input_data: taskData.input || {},
+        estimated_duration: taskData.estimatedDuration,
+        cost_estimate: taskData.costEstimate
       };
 
-      this.pendingTasks.set(task.id, task);
-      this.taskQueue.push(task);
-      
-      // Sort by priority
-      this.taskQueue.sort((a, b) => this.getPriorityWeight(b.priority) - this.getPriorityWeight(a.priority));
+      const job = await Job.create(jobData);
 
-      logger.info(`Task ${task.id} added to dispatch queue`, {
-        taskId: task.id,
-        model: task.model,
-        priority: task.priority
+      logger.info(`Task added to dispatch queue`, {
+        taskId: job.id,
+        model: taskData.model,
+        priority: taskData.priority,
+        userId: taskData.user_id || taskData.userId
       });
 
-      // Attempt immediate dispatch
-      await this.processQueue();
+      // Try immediate dispatch
+      await this.tryDispatchTask(job.id);
 
-      return task;
+      return job;
     } catch (error) {
-      logger.error('Error adding task to dispatcher:', error);
+      logger.error('Error adding task to queue:', error);
       throw error;
     }
   }
 
   /**
-   * Process the task queue and assign to available nodes
+   * Convert priority string to numeric value
    */
-  async processQueue() {
-    if (this.taskQueue.length === 0) return;
+  convertPriority(priority) {
+    const priorityMap = {
+      'low': 1,
+      'standard': 5,
+      'high': 8,
+      'critical': 10
+    };
+    return priorityMap[priority] || 5;
+  }
 
-    // Get available nodes (this would come from NodeManager)
-    const availableNodes = await this.getAvailableNodes();
-    if (availableNodes.length === 0) {
-      logger.debug('No available nodes for task assignment');
-      return;
+  /**
+   * Try to dispatch a specific task
+   */
+  async tryDispatchTask(taskId) {
+    try {
+      const job = await Job.findById(taskId);
+      if (!job || job.status !== 'pending') {
+        return false; // Job not found or already assigned
+      }
+
+      // Get available nodes based on requirements
+      const requirements = {
+        minVram: job.requirements?.minVram,
+        minCpuCores: job.requirements?.minCpuCores,
+        region: job.requirements?.region,
+        models: job.requirements?.model ? [job.requirements.model] : []
+      };
+
+      const availableNodes = await Node.getAvailableNodes(requirements);
+      
+      if (availableNodes.length === 0) {
+        logger.debug(`No available nodes for task ${taskId}`);
+        return false;
+      }
+
+      // Select best node (highest reputation with capacity)
+      const bestNode = this.selectBestNode(availableNodes, job);
+      
+      if (!bestNode) {
+        logger.debug(`No suitable node found for task ${taskId}`);
+        return false;
+      }
+
+      // Assign task to node
+      await Job.assignToNode(taskId, bestNode.id);
+
+      logger.info(`Task ${taskId} assigned to node ${bestNode.id}`, {
+        taskId,
+        nodeId: bestNode.id,
+        nodeName: bestNode.name,
+        nodeReputation: bestNode.reputation_score
+      });
+
+      return true;
+    } catch (error) {
+      logger.error(`Error dispatching task ${taskId}:`, error);
+      return false;
     }
+  }
 
-    // Process tasks in priority order
-    let assignedCount = 0;
-    const tasksToRemove = [];
+  /**
+   * Select the best node for a task
+   */
+  selectBestNode(availableNodes, job) {
+    // Score nodes based on multiple criteria
+    const scoredNodes = availableNodes.map(node => {
+      let score = 0;
+      
+      // Reputation score (0-1) * 40%
+      score += (node.reputation_score || 0) * 0.4;
+      
+      // Resource availability (0-1) * 30%
+      const hardwareInfo = node.hardware_info || {};
+      const vramRatio = hardwareInfo.available_vram_gb / Math.max(hardwareInfo.max_vram_gb, 1);
+      const cpuRatio = hardwareInfo.available_cpu_cores / Math.max(hardwareInfo.max_cpu_cores, 1);
+      const resourceScore = (vramRatio + cpuRatio) / 2;
+      score += resourceScore * 0.3;
+      
+      // Lower current load (0-1) * 20%
+      const currentTasks = hardwareInfo.current_tasks || 0;
+      const maxTasks = 5; // Assume max 5 concurrent tasks
+      const loadScore = Math.max(0, 1 - (currentTasks / maxTasks));
+      score += loadScore * 0.2;
+      
+      // Recent activity bonus * 10%
+      const lastSeen = new Date(node.last_seen || 0);
+      const minutesAgo = (Date.now() - lastSeen.getTime()) / (1000 * 60);
+      const activityScore = Math.max(0, 1 - (minutesAgo / 60)); // Full score if seen in last hour
+      score += activityScore * 0.1;
+      
+      return { node, score };
+    });
 
-    for (let i = 0; i < this.taskQueue.length && assignedCount < availableNodes.length; i++) {
-      const task = this.taskQueue[i];
-      const suitableNode = this.findSuitableNode(task, availableNodes);
+    // Sort by score (highest first)
+    scoredNodes.sort((a, b) => b.score - a.score);
+    
+    return scoredNodes.length > 0 ? scoredNodes[0].node : null;
+  }
 
-      if (suitableNode) {
+  /**
+   * Get pending tasks count
+   */
+  async getPendingTasksCount() {
+    try {
+      const result = await db.query(
+        'SELECT COUNT(*) as count FROM jobs WHERE status = $1',
+        ['pending']
+      );
+      return parseInt(result.rows[0].count);
+    } catch (error) {
+      logger.error('Error getting pending tasks count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get running tasks count
+   */
+  async getRunningTasksCount() {
+    try {
+      const result = await db.query(
+        'SELECT COUNT(*) as count FROM jobs WHERE status IN ($1, $2)',
+        ['assigned', 'running']
+      );
+      return parseInt(result.rows[0].count);
+    } catch (error) {
+      logger.error('Error getting running tasks count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get task by ID
+   */
+  async getTask(taskId) {
+    try {
+      return await Job.findById(taskId);
+    } catch (error) {
+      logger.error(`Error getting task ${taskId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Update task status
+   */
+  async updateTaskStatus(taskId, status, updates = {}) {
+    try {
+      return await Job.updateStatus(taskId, status, updates);
+    } catch (error) {
+      logger.error(`Error updating task ${taskId} status:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel task
+   */
+  async cancelTask(taskId, reason = 'User cancelled') {
+    try {
+      const job = await Job.cancel(taskId, reason);
+      
+      logger.info(`Task ${taskId} cancelled`, {
+        taskId,
+        reason
+      });
+
+      return job;
+    } catch (error) {
+      logger.error(`Error cancelling task ${taskId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get tasks for a user
+   */
+  async getUserTasks(userId, options = {}) {
+    try {
+      return await Job.findByUserId(userId, options);
+    } catch (error) {
+      logger.error(`Error getting tasks for user ${userId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get tasks for a node
+   */
+  async getNodeTasks(nodeId, status = null) {
+    try {
+      return await Job.findByNodeId(nodeId, status);
+    } catch (error) {
+      logger.error(`Error getting tasks for node ${nodeId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Retry failed task
+   */
+  async retryTask(taskId) {
+    try {
+      const job = await Job.findById(taskId);
+      if (!job) {
+        throw new Error('Task not found');
+      }
+
+      if (job.status !== 'failed') {
+        throw new Error('Only failed tasks can be retried');
+      }
+
+      // Reset task to pending
+      await Job.updateStatus(taskId, 'pending', {
+        error_message: null,
+        node_id: null
+      });
+
+      // Try to dispatch immediately
+      await this.tryDispatchTask(taskId);
+
+      logger.info(`Task ${taskId} queued for retry`);
+      return await Job.findById(taskId);
+    } catch (error) {
+      logger.error(`Error retrying task ${taskId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get dispatch statistics
+   */
+  async getDispatchStats() {
+    try {
+      const result = await db.query(`
+        SELECT 
+          status,
+          COUNT(*) as count,
+          AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) as avg_duration
+        FROM jobs 
+        WHERE created_at >= NOW() - INTERVAL '24 hours'
+        GROUP BY status
+      `);
+
+      const stats = {
+        last24h: {},
+        totalPending: 0,
+        totalRunning: 0,
+        totalCompleted: 0,
+        totalFailed: 0
+      };
+
+      result.rows.forEach(row => {
+        const status = row.status;
+        const count = parseInt(row.count);
+        
+        stats.last24h[status] = {
+          count,
+          avgDuration: parseFloat(row.avg_duration) || 0
+        };
+
+        // Update totals
+        if (status === 'pending') stats.totalPending = count;
+        else if (status === 'running' || status === 'assigned') stats.totalRunning += count;
+        else if (status === 'completed') stats.totalCompleted = count;
+        else if (status === 'failed') stats.totalFailed = count;
+      });
+
+      return stats;
+    } catch (error) {
+      logger.error('Error getting dispatch stats:', error);
+      return {
+        last24h: {},
+        totalPending: 0,
+        totalRunning: 0,
+        totalCompleted: 0,
+        totalFailed: 0
+      };
+    }
+  }
+
+  /**
+   * Start automatic task dispatch timer
+   */
+  startDispatchTimer() {
+    this.dispatchTimer = setInterval(async () => {
+      await this.dispatchPendingTasks();
+    }, this.dispatchInterval);
+  }
+
+  /**
+   * Dispatch all pending tasks
+   */
+  async dispatchPendingTasks() {
+    try {
+      const pendingJobs = await Job.getPendingJobs(10); // Process up to 10 at a time
+      
+      if (pendingJobs.length === 0) {
+        return;
+      }
+
+      logger.debug(`Dispatching ${pendingJobs.length} pending tasks`);
+
+      for (const job of pendingJobs) {
         try {
-          await this.assignTaskToNode(task, suitableNode);
-          tasksToRemove.push(i);
-          assignedCount++;
-          
-          // Remove assigned node from available list
-          const nodeIndex = availableNodes.findIndex(n => n.id === suitableNode.id);
-          if (nodeIndex > -1) {
-            availableNodes.splice(nodeIndex, 1);
-          }
+          await this.tryDispatchTask(job.id);
         } catch (error) {
-          logger.error(`Failed to assign task ${task.id} to node ${suitableNode.id}:`, error);
+          logger.error(`Error dispatching task ${job.id}:`, error);
         }
       }
-    }
-
-    // Remove assigned tasks from queue
-    tasksToRemove.reverse().forEach(index => {
-      this.taskQueue.splice(index, 1);
-    });
-
-    if (assignedCount > 0) {
-      logger.info(`Assigned ${assignedCount} tasks to nodes`);
-    }
-  }
-
-  /**
-   * Find suitable node for task based on requirements
-   */
-  findSuitableNode(task, availableNodes) {
-    // Filter nodes that meet task requirements
-    const suitableNodes = availableNodes.filter(node => {
-      // Check VRAM requirements
-      if (task.requirements.minVram && node.available_vram_gb < task.requirements.minVram) {
-        return false;
-      }
-
-      // Check CPU requirements
-      if (task.requirements.minCpuCores && node.available_cpu_cores < task.requirements.minCpuCores) {
-        return false;
-      }
-
-      // Check supported models
-      if (task.model && !node.supported_models.includes(task.model)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    if (suitableNodes.length === 0) return null;
-
-    // Select best node based on rating and availability
-    return suitableNodes.sort((a, b) => {
-      // Prioritize by rating first
-      const ratingDiff = b.rating - a.rating;
-      if (Math.abs(ratingDiff) > 0.1) return ratingDiff;
-
-      // Then by available resources
-      const resourceScoreA = (a.available_vram_gb / a.max_vram_gb) + (a.available_cpu_cores / a.max_cpu_cores);
-      const resourceScoreB = (b.available_vram_gb / b.max_vram_gb) + (b.available_cpu_cores / b.max_cpu_cores);
-      
-      return resourceScoreB - resourceScoreA;
-    })[0];
-  }
-
-  /**
-   * Assign task to specific node
-   */
-  async assignTaskToNode(task, node) {
-    try {
-      // Move task from pending to running
-      this.pendingTasks.delete(task.id);
-      
-      const runningTask = {
-        ...task,
-        nodeId: node.id,
-        assignedAt: new Date(),
-        status: 'assigned'
-      };
-
-      this.runningTasks.set(task.id, runningTask);
-      
-      // Track node assignment
-      if (!this.nodeAssignments.has(node.id)) {
-        this.nodeAssignments.set(node.id, new Set());
-      }
-      this.nodeAssignments.get(node.id).add(task.id);
-
-      // Send task to node (would integrate with actual node communication)
-      await this.sendTaskToNode(runningTask, node);
-
-      logger.info(`Task ${task.id} assigned to node ${node.id}`, {
-        taskId: task.id,
-        nodeId: node.id,
-        model: task.model
-      });
-
-      return runningTask;
     } catch (error) {
-      // Revert assignment on failure
-      this.runningTasks.delete(task.id);
-      this.pendingTasks.set(task.id, task);
-      this.taskQueue.unshift(task);
-      throw error;
+      logger.error('Error in dispatch timer:', error);
     }
   }
 
   /**
-   * Handle task completion
+   * Stop dispatch timer
    */
-  async completeTask(taskId, result) {
-    const task = this.runningTasks.get(taskId);
-    if (!task) {
-      logger.warn(`Attempt to complete unknown task: ${taskId}`);
-      return false;
-    }
-
-    try {
-      // Update task status
-      task.status = 'completed';
-      task.completedAt = new Date();
-      task.result = result;
-
-      // Remove from running tasks
-      this.runningTasks.delete(taskId);
-
-      // Clean up node assignment
-      if (this.nodeAssignments.has(task.nodeId)) {
-        this.nodeAssignments.get(task.nodeId).delete(taskId);
-      }
-
-      logger.info(`Task ${taskId} completed successfully`, {
-        taskId,
-        nodeId: task.nodeId,
-        duration: task.completedAt - task.assignedAt
-      });
-
-      return true;
-    } catch (error) {
-      logger.error(`Error completing task ${taskId}:`, error);
-      return false;
+  stopDispatchTimer() {
+    if (this.dispatchTimer) {
+      clearInterval(this.dispatchTimer);
+      this.dispatchTimer = null;
     }
   }
 
   /**
-   * Handle task failure
-   */
-  async failTask(taskId, error) {
-    const task = this.runningTasks.get(taskId);
-    if (!task) {
-      logger.warn(`Attempt to fail unknown task: ${taskId}`);
-      return false;
-    }
-
-    try {
-      task.retries++;
-      task.lastError = error;
-
-      // Remove from running tasks
-      this.runningTasks.delete(taskId);
-
-      // Clean up node assignment
-      if (this.nodeAssignments.has(task.nodeId)) {
-        this.nodeAssignments.get(task.nodeId).delete(taskId);
-      }
-
-      if (task.retries < task.maxRetries) {
-        // Retry task
-        task.status = 'pending';
-        delete task.nodeId;
-        delete task.assignedAt;
-        
-        this.pendingTasks.set(taskId, task);
-        this.taskQueue.push(task);
-
-        logger.warn(`Task ${taskId} failed, retry ${task.retries}/${task.maxRetries}`, {
-          taskId,
-          error: error.message,
-          retries: task.retries
-        });
-
-        // Process queue to reassign
-        await this.processQueue();
-      } else {
-        // Mark as permanently failed
-        task.status = 'failed';
-        task.failedAt = new Date();
-
-        logger.error(`Task ${taskId} permanently failed after ${task.retries} retries`, {
-          taskId,
-          error: error.message
-        });
-      }
-
-      return true;
-    } catch (err) {
-      logger.error(`Error handling task failure for ${taskId}:`, err);
-      return false;
-    }
-  }
-
-  /**
-   * Get priority weight for sorting
-   */
-  getPriorityWeight(priority) {
-    const weights = {
-      'critical': 100,
-      'high': 75,
-      'standard': 50,
-      'low': 25
-    };
-    return weights[priority] || weights.standard;
-  }
-
-  /**
-   * Mock method to get available nodes
-   * In real implementation, this would call NodeManager
-   */
-  async getAvailableNodes() {
-    // This would be replaced with actual NodeManager integration
-    return [];
-  }
-
-  /**
-   * Mock method to send task to node
-   * In real implementation, this would use WebSocket or HTTP
-   */
-  async sendTaskToNode(task, node) {
-    // This would be replaced with actual node communication
-    logger.debug(`Sending task ${task.id} to node ${node.id}`);
-    return true;
-  }
-
-  /**
-   * Get dispatcher statistics
-   */
-  getStats() {
-    return {
-      pendingTasks: this.pendingTasks.size,
-      runningTasks: this.runningTasks.size,
-      queueLength: this.taskQueue.length,
-      activeNodes: this.nodeAssignments.size,
-      totalAssignments: Array.from(this.nodeAssignments.values())
-        .reduce((sum, assignments) => sum + assignments.size, 0)
-    };
-  }
-
-  /**
-   * Clean up completed or failed tasks older than specified time
-   */
-  cleanup(maxAge = 24 * 60 * 60 * 1000) { // 24 hours
-    const cutoff = Date.now() - maxAge;
-    let cleaned = 0;
-
-    // This would typically clean up from persistent storage
-    logger.debug(`Task dispatcher cleanup completed, removed ${cleaned} old tasks`);
-    
-    return cleaned;
-  }
-
-  /**
-   * Initialize the task dispatcher
+   * Initialize the service
    */
   async initialize() {
-    logger.info('Task dispatcher initialized');
-    
-    // Start periodic queue processing
-    setInterval(() => {
-      this.processQueue();
-    }, 5000); // Process queue every 5 seconds
-    
-    return true;
+    logger.info('TaskDispatcher initialized with database integration');
+  }
+
+  /**
+   * Cleanup on shutdown
+   */
+  async shutdown() {
+    this.stopDispatchTimer();
+    logger.info('TaskDispatcher shut down');
   }
 }
 

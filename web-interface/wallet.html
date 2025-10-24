@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid - Управление кошельком</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neurogrid': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); }
+        .balance-card { 
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+        .transaction-item:hover { transform: translateY(-1px); }
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #0ea5e9;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .currency-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .crypto-btc { background: #f7931a; }
+        .crypto-eth { background: #627eea; }
+        .crypto-usdt { background: #26a17b; }
+        .fiat-usd { background: #2e7d32; }
+        .fiat-eur { background: #1976d2; }
+        .fiat-rub { background: #d32f2f; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="index.html" class="flex items-center">
+                            <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">NG</span>
+                            </div>
+                            <span class="ml-3 text-xl font-semibold text-gray-900">NeuroGrid</span>
+                        </a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="dashboard.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fas fa-tachometer-alt mr-2"></i>
+                            Дашборд
+                        </a>
+                        <a href="#" class="border-neurogrid-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fas fa-wallet mr-2"></i>
+                            Кошелек
+                        </a>
+                        <a href="node-monitoring.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fas fa-server mr-2"></i>
+                            Узлы
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button onclick="window.location.href='dashboard.html'" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-arrow-left mr-2"></i>Назад к дашборду
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Управление кошельком</h1>
+            <p class="mt-2 text-gray-600">Управляйте своими токенами, пополняйте баланс и выводите средства</p>
+        </div>
+
+        <!-- Balance Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="balance-card rounded-xl p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-300 text-sm">Текущий баланс</p>
+                        <p class="text-3xl font-bold" id="totalBalance">Загрузка...</p>
+                    </div>
+                    <div class="w-12 h-12 bg-neurogrid-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-coins text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-600">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-300">Всего заработано:</span>
+                        <span class="font-medium" id="totalEarned">0 NGRID</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Потрачено</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalSpent">0 NGRID</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-credit-card text-red-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Транзакций</p>
+                        <p class="text-2xl font-bold text-gray-900" id="transactionCount">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-exchange-alt text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <button onclick="showDepositModal()" class="bg-green-600 text-white p-4 rounded-xl font-medium hover:bg-green-700 transition-colors shadow-sm">
+                <i class="fas fa-plus-circle text-xl mr-3"></i>
+                Пополнить баланс
+            </button>
+            <button onclick="showWithdrawModal()" class="bg-red-600 text-white p-4 rounded-xl font-medium hover:bg-red-700 transition-colors shadow-sm">
+                <i class="fas fa-minus-circle text-xl mr-3"></i>
+                Вывести средства
+            </button>
+            <button onclick="showExternalWallets()" class="bg-neurogrid-600 text-white p-4 rounded-xl font-medium hover:bg-neurogrid-700 transition-colors shadow-sm">
+                <i class="fas fa-link text-xl mr-3"></i>
+                Внешние кошельки
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <!-- Transaction History -->
+            <div class="xl:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">История транзакций</h3>
+                        <div class="flex space-x-2">
+                            <select id="transactionFilter" onchange="filterTransactions()" class="text-sm border border-gray-300 rounded-md px-3 py-1">
+                                <option value="all">Все транзакции</option>
+                                <option value="deposit">Пополнения</option>
+                                <option value="withdrawal">Выводы</option>
+                                <option value="payment">Платежи</option>
+                                <option value="reward">Награды</option>
+                            </select>
+                            <button onclick="refreshTransactions()" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div id="transactionsList">
+                            <div class="text-center py-8">
+                                <div class="loading-spinner mx-auto mb-4"></div>
+                                <p class="text-gray-500">Загрузка транзакций...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Quick Stats -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Статистика за месяц</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Пополнения:</span>
+                            <span class="font-medium text-green-600" id="monthlyDeposits">0 NGRID</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Выводы:</span>
+                            <span class="font-medium text-red-600" id="monthlyWithdrawals">0 NGRID</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Заработано:</span>
+                            <span class="font-medium text-blue-600" id="monthlyEarnings">0 NGRID</span>
+                        </div>
+                        <div class="flex justify-between pt-3 border-t border-gray-200">
+                            <span class="text-gray-900 font-medium">Итого:</span>
+                            <span class="font-bold" id="monthlyTotal">0 NGRID</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Способы оплаты</h3>
+                    <div id="paymentMethods" class="space-y-3">
+                        <div class="text-center py-4">
+                            <div class="loading-spinner mx-auto mb-2"></div>
+                            <p class="text-sm text-gray-500">Загрузка способов оплаты...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exchange Rates -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Курсы валют</h3>
+                    <div id="exchangeRates" class="space-y-3">
+                        <div class="text-center py-4">
+                            <div class="loading-spinner mx-auto mb-2"></div>
+                            <p class="text-sm text-gray-500">Загрузка курсов...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="hidden fixed inset-0 z-50 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-screen overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Пополнить баланс</h3>
+                <button onclick="closeModal('depositModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="depositForm" onsubmit="handleDeposit(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Сумма пополнения</label>
+                            <div class="relative">
+                                <input type="number" id="depositAmount" min="1" step="0.01" class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-20" placeholder="100.00" required>
+                                <select id="depositCurrency" class="absolute right-2 top-2 bottom-2 border-0 bg-transparent text-sm font-medium">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="RUB">RUB</option>
+                                </select>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Минимальная сумма: 10 USD</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Способ оплаты</label>
+                            <div class="space-y-3" id="depositPaymentMethods">
+                                <!-- Payment methods will be loaded here -->
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex">
+                                <i class="fas fa-info-circle text-blue-400 mr-3 mt-0.5"></i>
+                                <div class="text-sm text-blue-800">
+                                    <p class="font-medium mb-1">Конвертация в NGRID:</p>
+                                    <p>1 USD = <span id="usdToNgrid">10</span> NGRID</p>
+                                    <p>Вы получите: <span id="ngridAmount">0</span> NGRID</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex space-x-3">
+                        <button type="button" onclick="closeModal('depositModal')" class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                            Отмена
+                        </button>
+                        <button type="submit" class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                            <span id="depositBtnText">Пополнить</span>
+                            <div id="depositSpinner" class="hidden loading-spinner ml-2"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="hidden fixed inset-0 z-50 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-screen overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Вывести средства</h3>
+                <button onclick="closeModal('withdrawModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="withdrawForm" onsubmit="handleWithdraw(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Сумма вывода</label>
+                            <div class="relative">
+                                <input type="number" id="withdrawAmount" min="10" step="0.01" class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-20" placeholder="50.00" required>
+                                <span class="absolute right-4 top-3 text-sm font-medium text-gray-600">NGRID</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Минимум: 10 NGRID</span>
+                                <span>Доступно: <span id="availableBalance">0</span> NGRID</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Способ вывода</label>
+                            <div class="space-y-3" id="withdrawPaymentMethods">
+                                <!-- Withdrawal methods will be loaded here -->
+                            </div>
+                        </div>
+
+                        <div id="withdrawWalletDetails" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Реквизиты для вывода</label>
+                            <input type="text" id="withdrawWalletAddress" class="w-full border border-gray-300 rounded-lg px-4 py-3" placeholder="Адрес кошелька или номер карты">
+                        </div>
+
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-0.5"></i>
+                                <div class="text-sm text-yellow-800">
+                                    <p class="font-medium mb-1">Условия вывода:</p>
+                                    <p>• Комиссия: 2% (мин. 0.5 NGRID)</p>
+                                    <p>• Время обработки: 1-24 часа</p>
+                                    <p>• К выводу: <span id="withdrawFinalAmount">0</span> NGRID</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex space-x-3">
+                        <button type="button" onclick="closeModal('withdrawModal')" class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                            Отмена
+                        </button>
+                        <button type="submit" class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors">
+                            <span id="withdrawBtnText">Вывести</span>
+                            <div id="withdrawSpinner" class="hidden loading-spinner ml-2"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Wallets Modal -->
+    <div id="externalWalletsModal" class="hidden fixed inset-0 z-50 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Внешние кошельки</h3>
+                <button onclick="closeModal('externalWalletsModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-6">
+                    <button onclick="showAddWalletForm()" class="bg-neurogrid-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Добавить кошелек
+                    </button>
+                </div>
+                <div id="externalWalletsList">
+                    <!-- External wallets will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let walletData = null;
+        let paymentMethods = [];
+        let exchangeRates = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeWallet();
+        });
+
+        // Initialize wallet page
+        async function initializeWallet() {
+            try {
+                // Check authentication
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Load user profile
+                await loadUserProfile();
+                
+                // Load wallet data
+                await Promise.all([
+                    loadWalletBalance(),
+                    loadTransactionHistory(),
+                    loadPaymentMethods(),
+                    loadExchangeRates()
+                ]);
+
+                // Setup event listeners
+                setupEventListeners();
+
+            } catch (error) {
+                console.error('Wallet initialization error:', error);
+                showNotification('Ошибка инициализации кошелька', 'error');
+            }
+        }
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.data;
+                } else {
+                    throw new Error('Failed to load user profile');
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+                showNotification('Ошибка загрузки профиля', 'error');
+            }
+        }
+
+        // Load wallet balance
+        async function loadWalletBalance() {
+            try {
+                const response = await fetch(`/api/tokens/balance/${currentUser.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    document.getElementById('totalBalance').textContent = `${data.balance.toFixed(2)} NGRID`;
+                    document.getElementById('totalEarned').textContent = `${data.totalEarned.toFixed(2)} NGRID`;
+                    document.getElementById('totalSpent').textContent = `${data.totalSpent.toFixed(2)} NGRID`;
+                    document.getElementById('transactionCount').textContent = data.transactionCount;
+                    document.getElementById('availableBalance').textContent = data.balance.toFixed(2);
+
+                    // Update monthly stats (mock for now)
+                    updateMonthlyStats(data);
+                    
+                } else {
+                    throw new Error('Failed to load wallet balance');
+                }
+            } catch (error) {
+                console.error('Error loading wallet balance:', error);
+                document.getElementById('totalBalance').textContent = 'Ошибка загрузки';
+                showNotification('Ошибка загрузки баланса', 'error');
+            }
+        }
+
+        // Load transaction history
+        async function loadTransactionHistory() {
+            try {
+                const response = await fetch(`/api/tokens/history/${currentUser.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                let transactions = [];
+                if (response.ok) {
+                    const data = await response.json();
+                    transactions = data.transactions || [];
+                }
+
+                // If no real transactions, show mock data
+                if (transactions.length === 0) {
+                    transactions = generateMockTransactions();
+                }
+
+                displayTransactions(transactions);
+
+            } catch (error) {
+                console.error('Error loading transaction history:', error);
+                displayTransactions(generateMockTransactions());
+            }
+        }
+
+        // Generate mock transactions
+        function generateMockTransactions() {
+            return [
+                {
+                    id: 'tx_001',
+                    type: 'deposit',
+                    amount: 100.00,
+                    currency: 'NGRID',
+                    status: 'completed',
+                    method: 'card',
+                    description: 'Пополнение через карту',
+                    timestamp: new Date(Date.now() - 86400000 * 2) // 2 days ago
+                },
+                {
+                    id: 'tx_002',
+                    type: 'payment',
+                    amount: -2.50,
+                    currency: 'NGRID',
+                    status: 'completed',
+                    method: 'internal',
+                    description: 'Оплата задачи GPT-4',
+                    timestamp: new Date(Date.now() - 86400000) // 1 day ago
+                },
+                {
+                    id: 'tx_003',
+                    type: 'reward',
+                    amount: 5.75,
+                    currency: 'NGRID',
+                    status: 'completed',
+                    method: 'mining',
+                    description: 'Награда за выполнение задачи',
+                    timestamp: new Date(Date.now() - 3600000 * 4) // 4 hours ago
+                }
+            ];
+        }
+
+        // Display transactions
+        function displayTransactions(transactions) {
+            const container = document.getElementById('transactionsList');
+            
+            if (transactions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-history text-4xl mb-4"></i>
+                        <p>Транзакций не найдено</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = transactions.map(tx => {
+                const isPositive = tx.amount > 0;
+                const typeIcons = {
+                    deposit: 'fa-plus-circle text-green-600',
+                    withdrawal: 'fa-minus-circle text-red-600',
+                    payment: 'fa-credit-card text-blue-600',
+                    reward: 'fa-gift text-purple-600'
+                };
+
+                const statusClasses = {
+                    completed: 'bg-green-100 text-green-800',
+                    pending: 'bg-yellow-100 text-yellow-800',
+                    failed: 'bg-red-100 text-red-800'
+                };
+
+                return `
+                    <div class="transaction-item flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-3 transition-all duration-200 hover:shadow-md">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas ${typeIcons[tx.type]} text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">${tx.description}</h4>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <span>${tx.timestamp.toLocaleDateString('ru-RU')}</span>
+                                    <span class="mx-2">•</span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusClasses[tx.status]}">
+                                        ${tx.status === 'completed' ? 'Завершено' : tx.status === 'pending' ? 'В обработке' : 'Ошибка'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}">
+                                ${isPositive ? '+' : ''}${tx.amount.toFixed(2)} ${tx.currency}
+                            </div>
+                            <div class="text-xs text-gray-500">${tx.method}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load payment methods
+        async function loadPaymentMethods() {
+            try {
+                const response = await fetch('/api/payments/methods?currency=USD&amount=100&type=deposit');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    paymentMethods = data.methods || [];
+                } else {
+                    // Fallback to mock data
+                    paymentMethods = [
+                        { id: 'card', name: 'Банковская карта', icon: 'fas fa-credit-card', available: true },
+                        { id: 'crypto', name: 'Криптовалюта', icon: 'fab fa-bitcoin', available: true },
+                        { id: 'paypal', name: 'PayPal', icon: 'fab fa-paypal', available: false }
+                    ];
+                }
+
+                displayPaymentMethods();
+            } catch (error) {
+                console.error('Error loading payment methods:', error);
+                // Use fallback data
+                paymentMethods = [
+                    { id: 'card', name: 'Банковская карта', icon: 'fas fa-credit-card', available: true },
+                    { id: 'crypto', name: 'Криптовалюта', icon: 'fab fa-bitcoin', available: true }
+                ];
+                displayPaymentMethods();
+            }
+        }
+
+        // Display payment methods
+        function displayPaymentMethods() {
+            const container = document.getElementById('paymentMethods');
+            
+            container.innerHTML = paymentMethods.map(method => `
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg ${method.available ? 'hover:bg-gray-50' : 'opacity-50'}">
+                    <div class="flex items-center">
+                        <i class="${method.icon} text-lg mr-3"></i>
+                        <span class="font-medium">${method.name}</span>
+                    </div>
+                    <div class="text-sm ${method.available ? 'text-green-600' : 'text-red-600'}">
+                        ${method.available ? 'Доступно' : 'Недоступно'}
+                    </div>
+                </div>
+            `).join('');
+
+            // Also update modal payment methods
+            updateModalPaymentMethods();
+        }
+
+        // Update modal payment methods
+        function updateModalPaymentMethods() {
+            const depositContainer = document.getElementById('depositPaymentMethods');
+            const withdrawContainer = document.getElementById('withdrawPaymentMethods');
+
+            const depositMethods = paymentMethods.filter(m => m.available).map(method => `
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" name="depositMethod" value="${method.id}" class="mr-3" ${method.id === 'card' ? 'checked' : ''}>
+                    <i class="${method.icon} text-lg mr-3"></i>
+                    <span class="font-medium">${method.name}</span>
+                </label>
+            `).join('');
+
+            const withdrawMethods = paymentMethods.filter(m => m.available).map(method => `
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" name="withdrawMethod" value="${method.id}" class="mr-3" onchange="updateWithdrawForm('${method.id}')" ${method.id === 'card' ? 'checked' : ''}>
+                    <i class="${method.icon} text-lg mr-3"></i>
+                    <span class="font-medium">${method.name}</span>
+                </label>
+            `).join('');
+
+            depositContainer.innerHTML = depositMethods;
+            withdrawContainer.innerHTML = withdrawMethods;
+        }
+
+        // Load exchange rates
+        async function loadExchangeRates() {
+            try {
+                const response = await fetch('/api/payments/rates');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    exchangeRates = data.rates || {};
+                } else {
+                    // Fallback to mock data
+                    exchangeRates = {
+                        'USD_NGRID': 10,
+                        'EUR_NGRID': 11,
+                        'RUB_NGRID': 0.12,
+                        'BTC_USD': 45000,
+                        'ETH_USD': 2800
+                    };
+                }
+
+                displayExchangeRates();
+                updateDepositCalculation();
+            } catch (error) {
+                console.error('Error loading exchange rates:', error);
+                exchangeRates = {
+                    'USD_NGRID': 10,
+                    'EUR_NGRID': 11,
+                    'RUB_NGRID': 0.12
+                };
+                displayExchangeRates();
+            }
+        }
+
+        // Display exchange rates
+        function displayExchangeRates() {
+            const container = document.getElementById('exchangeRates');
+            
+            const rates = [
+                { from: 'USD', to: 'NGRID', rate: exchangeRates.USD_NGRID || 10, icon: 'fiat-usd' },
+                { from: 'EUR', to: 'NGRID', rate: exchangeRates.EUR_NGRID || 11, icon: 'fiat-eur' },
+                { from: 'RUB', to: 'NGRID', rate: exchangeRates.RUB_NGRID || 0.12, icon: 'fiat-rub' }
+            ];
+
+            container.innerHTML = rates.map(rate => `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="currency-icon ${rate.icon} mr-2">${rate.from.substring(0, 1)}</div>
+                        <span class="text-sm">${rate.from}/NGRID</span>
+                    </div>
+                    <span class="font-medium">${rate.rate}</span>
+                </div>
+            `).join('');
+        }
+
+        // Update monthly stats (mock)
+        function updateMonthlyStats(balanceData) {
+            // Mock monthly data
+            const monthlyDeposits = balanceData.totalEarned * 0.3;
+            const monthlyWithdrawals = balanceData.totalSpent * 0.2;
+            const monthlyEarnings = balanceData.totalEarned * 0.1;
+            const monthlyTotal = monthlyDeposits - monthlyWithdrawals + monthlyEarnings;
+
+            document.getElementById('monthlyDeposits').textContent = `${monthlyDeposits.toFixed(2)} NGRID`;
+            document.getElementById('monthlyWithdrawals').textContent = `${monthlyWithdrawals.toFixed(2)} NGRID`;
+            document.getElementById('monthlyEarnings').textContent = `${monthlyEarnings.toFixed(2)} NGRID`;
+            document.getElementById('monthlyTotal').textContent = `${monthlyTotal.toFixed(2)} NGRID`;
+            
+            if (monthlyTotal >= 0) {
+                document.getElementById('monthlyTotal').className = 'font-bold text-green-600';
+            } else {
+                document.getElementById('monthlyTotal').className = 'font-bold text-red-600';
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Deposit amount change
+            document.getElementById('depositAmount').addEventListener('input', updateDepositCalculation);
+            document.getElementById('depositCurrency').addEventListener('change', updateDepositCalculation);
+
+            // Withdraw amount change
+            document.getElementById('withdrawAmount').addEventListener('input', updateWithdrawCalculation);
+        }
+
+        // Update deposit calculation
+        function updateDepositCalculation() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            const currency = document.getElementById('depositCurrency').value;
+            const rate = exchangeRates[`${currency}_NGRID`] || 10;
+            const ngridAmount = amount * rate;
+
+            document.getElementById('usdToNgrid').textContent = rate;
+            document.getElementById('ngridAmount').textContent = ngridAmount.toFixed(2);
+        }
+
+        // Update withdraw calculation
+        function updateWithdrawCalculation() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            const fee = Math.max(amount * 0.02, 0.5); // 2% fee, minimum 0.5 NGRID
+            const finalAmount = Math.max(amount - fee, 0);
+
+            document.getElementById('withdrawFinalAmount').textContent = finalAmount.toFixed(2);
+        }
+
+        // Update withdraw form based on method
+        function updateWithdrawForm(method) {
+            const detailsDiv = document.getElementById('withdrawWalletDetails');
+            const addressInput = document.getElementById('withdrawWalletAddress');
+
+            if (method === 'crypto') {
+                detailsDiv.classList.remove('hidden');
+                addressInput.placeholder = 'Адрес криптокошелька';
+                addressInput.required = true;
+            } else if (method === 'card') {
+                detailsDiv.classList.remove('hidden');
+                addressInput.placeholder = 'Номер банковской карты';
+                addressInput.required = true;
+            } else {
+                detailsDiv.classList.add('hidden');
+                addressInput.required = false;
+            }
+        }
+
+        // Modal functions
+        function showDepositModal() {
+            document.getElementById('depositModal').classList.remove('hidden');
+            updateDepositCalculation();
+        }
+
+        function showWithdrawModal() {
+            document.getElementById('withdrawModal').classList.remove('hidden');
+            updateWithdrawCalculation();
+        }
+
+        function showExternalWallets() {
+            document.getElementById('externalWalletsModal').classList.remove('hidden');
+            loadExternalWallets();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Handle deposit
+        async function handleDeposit(event) {
+            event.preventDefault();
+            
+            const btn = document.getElementById('depositBtnText');
+            const spinner = document.getElementById('depositSpinner');
+            
+            btn.textContent = 'Обработка...';
+            spinner.classList.remove('hidden');
+
+            try {
+                const formData = new FormData(document.getElementById('depositForm'));
+                const depositData = {
+                    amount: parseFloat(document.getElementById('depositAmount').value),
+                    currency: document.getElementById('depositCurrency').value,
+                    paymentMethod: document.querySelector('input[name="depositMethod"]:checked').value
+                };
+
+                const response = await fetch('/api/payments/deposit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify(depositData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification('Запрос на пополнение создан успешно!', 'success');
+                    closeModal('depositModal');
+                    
+                    // Refresh data
+                    await loadWalletBalance();
+                    await loadTransactionHistory();
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка при пополнении');
+                }
+
+            } catch (error) {
+                console.error('Deposit error:', error);
+                showNotification(error.message || 'Ошибка при пополнении баланса', 'error');
+            } finally {
+                btn.textContent = 'Пополнить';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Handle withdraw
+        async function handleWithdraw(event) {
+            event.preventDefault();
+            
+            const btn = document.getElementById('withdrawBtnText');
+            const spinner = document.getElementById('withdrawSpinner');
+            
+            btn.textContent = 'Обработка...';
+            spinner.classList.remove('hidden');
+
+            try {
+                const withdrawData = {
+                    amount: parseFloat(document.getElementById('withdrawAmount').value),
+                    method: document.querySelector('input[name="withdrawMethod"]:checked').value,
+                    walletAddress: document.getElementById('withdrawWalletAddress').value
+                };
+
+                const response = await fetch('/api/payments/withdraw', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify(withdrawData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification('Запрос на вывод средств создан успешно!', 'success');
+                    closeModal('withdrawModal');
+                    
+                    // Refresh data
+                    await loadWalletBalance();
+                    await loadTransactionHistory();
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка при выводе средств');
+                }
+
+            } catch (error) {
+                console.error('Withdraw error:', error);
+                showNotification(error.message || 'Ошибка при выводе средств', 'error');
+            } finally {
+                btn.textContent = 'Вывести';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Load external wallets
+        async function loadExternalWallets() {
+            try {
+                const response = await fetch('/api/wallets', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                let wallets = { external: [] };
+                if (response.ok) {
+                    const data = await response.json();
+                    wallets = data.wallets || { external: [] };
+                }
+
+                displayExternalWallets(wallets.external);
+
+            } catch (error) {
+                console.error('Error loading external wallets:', error);
+                displayExternalWallets([]);
+            }
+        }
+
+        // Display external wallets
+        function displayExternalWallets(wallets) {
+            const container = document.getElementById('externalWalletsList');
+            
+            if (wallets.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-wallet text-4xl mb-4"></i>
+                        <p>Внешние кошельки не добавлены</p>
+                        <p class="text-sm">Добавьте кошелек для удобного пополнения и вывода средств</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = wallets.map(wallet => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-3">
+                    <div class="flex items-center">
+                        <div class="currency-icon ${wallet.type === 'crypto' ? 'crypto-btc' : 'fiat-usd'} mr-3">
+                            ${wallet.currency.substring(0, 1)}
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">${wallet.label}</h4>
+                            <p class="text-sm text-gray-500">${wallet.address}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${wallet.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${wallet.isVerified ? 'Проверен' : 'Ожидает проверки'}
+                        </span>
+                        <button class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter transactions
+        function filterTransactions() {
+            const filter = document.getElementById('transactionFilter').value;
+            // Implement filtering logic here
+            console.log('Filtering by:', filter);
+        }
+
+        // Refresh transactions
+        function refreshTransactions() {
+            loadTransactionHistory();
+            showNotification('Транзакции обновлены', 'success');
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            
+            const typeClasses = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'warning': 'bg-yellow-500',
+                'info': 'bg-blue-500'
+            };
+            
+            notification.className = `${typeClasses[type]} text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

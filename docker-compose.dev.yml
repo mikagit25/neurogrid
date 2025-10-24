@@ -1,0 +1,168 @@
+# Docker Compose for NeuroGrid Development
+version: '3.8'
+
+services:
+  # ================================
+  # Coordinator Server (Development)
+  # ================================
+  coordinator:
+    build:
+      context: ./coordinator-server
+      dockerfile: Dockerfile
+      target: development
+    container_name: neurogrid-coordinator-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+      - "9229:9229"  # Node.js debugger
+      - "9090:9090"  # Metrics
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - METRICS_PORT=9090
+      - DATABASE_URL=postgresql://neurogrid:neurogrid123@postgres:5432/neurogrid
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev-jwt-secret-not-for-production
+      - STRIPE_SECRET_KEY=sk_test_dev_key
+      - STRIPE_WEBHOOK_SECRET=whsec_dev_secret
+      - LOG_LEVEL=debug
+      - RATE_LIMIT_ENABLED=true
+      - CACHE_ENABLED=true
+    volumes:
+      - ./coordinator-server/src:/app/src:ro
+      - ./coordinator-server/package.json:/app/package.json:ro
+      - ./coordinator-server/package-lock.json:/app/package-lock.json:ro
+      - coordinator_logs_dev:/app/logs
+      - coordinator_uploads_dev:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - neurogrid-dev-network
+    command: npm run dev
+
+  # ================================
+  # Web Interface (Development)
+  # ================================
+  web-interface:
+    build:
+      context: ./web-interface
+      dockerfile: Dockerfile
+      target: development
+    container_name: neurogrid-web-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - NEXT_PUBLIC_WS_URL=ws://localhost:3001/ws
+      - NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_dev_key
+    volumes:
+      - ./web-interface/src:/app/src:ro
+      - ./web-interface/pages:/app/pages:ro
+      - ./web-interface/components:/app/components:ro
+      - ./web-interface/styles:/app/styles:ro
+      - ./web-interface/package.json:/app/package.json:ro
+    depends_on:
+      - coordinator
+    networks:
+      - neurogrid-dev-network
+    command: npm run dev
+
+  # ================================
+  # PostgreSQL Database (Development)
+  # ================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: neurogrid-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=neurogrid
+      - POSTGRES_USER=neurogrid
+      - POSTGRES_PASSWORD=neurogrid123
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - neurogrid-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neurogrid -d neurogrid"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ================================
+  # Redis Cache (Development)
+  # ================================
+  redis:
+    image: redis:7-alpine
+    container_name: neurogrid-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - neurogrid-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    command: redis-server --appendonly yes
+
+  # ================================
+  # Testing Database (Separate instance)
+  # ================================
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: neurogrid-postgres-test
+    environment:
+      - POSTGRES_DB=neurogrid_test
+      - POSTGRES_USER=neurogrid
+      - POSTGRES_PASSWORD=neurogrid123
+    volumes:
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - neurogrid-dev-network
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data  # Use tmpfs for faster tests
+
+  # ================================
+  # Redis Test Instance
+  # ================================
+  redis-test:
+    image: redis:7-alpine
+    container_name: neurogrid-redis-test
+    networks:
+      - neurogrid-dev-network
+    ports:
+      - "6380:6379"
+    command: redis-server --port 6379
+
+# ================================
+# Networks
+# ================================
+networks:
+  neurogrid-dev-network:
+    driver: bridge
+
+# ================================
+# Volumes
+# ================================
+volumes:
+  postgres_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+  coordinator_logs_dev:
+    driver: local
+  coordinator_uploads_dev:
+    driver: local

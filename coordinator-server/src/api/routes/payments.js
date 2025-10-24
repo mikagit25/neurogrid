@@ -4,29 +4,872 @@ const { body, param, query, validationResult } = require('express-validator');
 const { authenticate } = require('../../middleware/security');
 const rateLimit = require('express-rate-limit');
 const logger = require('../../utils/logger');
+const StripeService = require('../../services/StripeService');
 
 // Service instances (injected from main app)
-let paymentGateway = null;
-let tokenEngine = null;
+let stripeService = null;
+let userService = null;
+let subscriptionService = null;
 
 // Rate limiting for payment operations
 const paymentLimit = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 5, // 5 payment operations per minute per IP
-  message: { error: 'Too many payment requests, please try again later' }
+  max: 10, // 10 payment operations per minute per IP
+  message: { error: 'Too many payment requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
-// Withdrawal rate limiting (more restrictive)
-const withdrawalLimit = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 withdrawals per hour per IP
-  message: { error: 'Too many withdrawal requests, please try again later' }
+// Subscription operations rate limiting
+const subscriptionLimit = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 5, // 5 subscription operations per 5 minutes per IP
+  message: { error: 'Too many subscription requests, please try again later' }
+});
+
+// Webhook rate limiting (high limit for Stripe webhooks)
+const webhookLimit = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 webhook calls per minute
+  message: { error: 'Webhook rate limit exceeded' }
 });
 
 // Initialize services
 const initializeServices = (services) => {
-  paymentGateway = services.paymentGateway;
-  tokenEngine = services.tokenEngine;
+  stripeService = services.stripeService;
+  userService = services.userService;
+  subscriptionService = services.subscriptionService;
+};
+
+// Validation middleware
+const validateRequest = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      details: errors.array()
+    });
+  }
+  next();
+};
+
+/**
+ * @swagger
+ * /api/payments/plans:
+ *   get:
+ *     tags:
+ *       - Payments
+ *     summary: Get available subscription plans
+ *     description: Retrieve all available subscription plans with pricing and features
+ *     responses:
+ *       200:
+ *         description: List of available plans
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     plans:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           key:
+ *                             type: string
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                           price:
+ *                             type: integer
+ *                           priceFormatted:
+ *                             type: string
+ *                           currency:
+ *                             type: string
+ *                           interval:
+ *                             type: string
+ *                           features:
+ *                             type: object
+ */
+router.get('/plans', async (req, res) => {
+  try {
+    if (!stripeService) {
+      return res.status(503).json({
+        success: false,
+        error: 'Payment service not available'
+      });
+    }
+
+    const plans = stripeService.getPlans();
+    
+    res.json({
+      success: true,
+      data: {
+        plans,
+        currency: 'USD',
+        timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error fetching plans', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch plans'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/payments/create-customer:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Create or retrieve Stripe customer
+ *     description: Create a new Stripe customer or retrieve existing one
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Customer full name
+ *               phone:
+ *                 type: string
+ *                 description: Customer phone number
+ *               address:
+ *                 type: object
+ *                 description: Customer address
+ *     responses:
+ *       200:
+ *         description: Customer created or retrieved successfully
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ */
+router.post('/create-customer',
+  authenticate,
+  paymentLimit,
+  [
+    body('name').optional().isString().trim().isLength({ min: 2, max: 100 }),
+    body('phone').optional().isString().trim(),
+    body('address').optional().isObject()
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      const { name, phone, address } = req.body;
+      const user = req.user;
+
+      const customerData = {
+        email: user.email,
+        name: name || user.username || user.email,
+        userId: user.id,
+        metadata: {
+          user_id: user.id.toString(),
+          registered_at: user.createdAt || new Date().toISOString(),
+          phone: phone || '',
+          role: user.role || 'user'
+        }
+      };
+
+      if (address) {
+        customerData.address = address;
+      }
+
+      const customer = await stripeService.getOrCreateCustomer(customerData);
+
+      res.json({
+        success: true,
+        data: {
+          customer: {
+            id: customer.id,
+            email: customer.email,
+            name: customer.name,
+            created: customer.created
+          }
+        }
+      });
+
+    } catch (error) {
+      logger.error('Error creating customer', { 
+        userId: req.user?.id,
+        error: error.message 
+      });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create customer'
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/payments/create-subscription:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Create new subscription
+ *     description: Create a new subscription for the authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - planId
+ *             properties:
+ *               planId:
+ *                 type: string
+ *                 description: Subscription plan ID
+ *               paymentMethodId:
+ *                 type: string
+ *                 description: Stripe payment method ID
+ *               trialDays:
+ *                 type: integer
+ *                 description: Trial period in days
+ *                 default: 0
+ *     responses:
+ *       200:
+ *         description: Subscription created successfully
+ *       400:
+ *         description: Invalid request data
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/create-subscription',
+  authenticate,
+  subscriptionLimit,
+  [
+    body('planId').isString().notEmpty(),
+    body('paymentMethodId').optional().isString(),
+    body('trialDays').optional().isInt({ min: 0, max: 30 })
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      const { planId, paymentMethodId, trialDays = 0 } = req.body;
+      const user = req.user;
+
+      // Get or create customer
+      const customer = await stripeService.getOrCreateCustomer({
+        email: user.email,
+        name: user.username || user.email,
+        userId: user.id
+      });
+
+      // Create subscription
+      const subscription = await stripeService.createSubscription(
+        customer.id,
+        planId,
+        {
+          paymentMethodId,
+          trialDays,
+          metadata: {
+            user_id: user.id.toString(),
+            plan_id: planId,
+            created_by: 'web_api'
+          }
+        }
+      );
+
+      res.json({
+        success: true,
+        data: {
+          subscription: {
+            id: subscription.id,
+            status: subscription.status,
+            current_period_start: subscription.current_period_start,
+            current_period_end: subscription.current_period_end,
+            trial_end: subscription.trial_end,
+            latest_invoice: subscription.latest_invoice
+          },
+          customer: {
+            id: customer.id,
+            email: customer.email
+          }
+        }
+      });
+
+    } catch (error) {
+      logger.error('Error creating subscription', {
+        userId: req.user?.id,
+        planId: req.body.planId,
+        error: error.message
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create subscription',
+        details: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/payments/create-payment-intent:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Create payment intent for one-time payment
+ *     description: Create a payment intent for credits or one-time purchases
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *             properties:
+ *               amount:
+ *                 type: integer
+ *                 description: Payment amount in cents
+ *                 minimum: 50
+ *               currency:
+ *                 type: string
+ *                 description: Payment currency
+ *                 default: usd
+ *               description:
+ *                 type: string
+ *                 description: Payment description
+ *               paymentMethodId:
+ *                 type: string
+ *                 description: Stripe payment method ID
+ *     responses:
+ *       200:
+ *         description: Payment intent created successfully
+ */
+router.post('/create-payment-intent',
+  authenticate,
+  paymentLimit,
+  [
+    body('amount').isInt({ min: 50 }).withMessage('Amount must be at least $0.50'),
+    body('currency').optional().isString().isLength({ min: 3, max: 3 }),
+    body('description').optional().isString().trim().isLength({ max: 500 }),
+    body('paymentMethodId').optional().isString()
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      const { 
+        amount, 
+        currency = 'usd', 
+        description = 'NeuroGrid Credits',
+        paymentMethodId 
+      } = req.body;
+      const user = req.user;
+
+      // Get or create customer
+      const customer = await stripeService.getOrCreateCustomer({
+        email: user.email,
+        name: user.username || user.email,
+        userId: user.id
+      });
+
+      // Create payment intent
+      const paymentIntent = await stripeService.createPaymentIntent(
+        amount,
+        currency,
+        {
+          customerId: customer.id,
+          paymentMethodId,
+          description,
+          metadata: {
+            user_id: user.id.toString(),
+            customer_email: user.email,
+            purpose: 'credits_purchase'
+          }
+        }
+      );
+
+      res.json({
+        success: true,
+        data: {
+          paymentIntent: {
+            id: paymentIntent.id,
+            client_secret: paymentIntent.client_secret,
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency,
+            status: paymentIntent.status
+          },
+          customer: {
+            id: customer.id,
+            email: customer.email
+          }
+        }
+      });
+
+    } catch (error) {
+      logger.error('Error creating payment intent', {
+        userId: req.user?.id,
+        amount: req.body.amount,
+        error: error.message
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create payment intent'
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/payments/webhook:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Stripe webhook endpoint
+ *     description: Handle Stripe webhook events for payment processing
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Webhook processed successfully
+ *       400:
+ *         description: Invalid webhook signature
+ */
+router.post('/webhook',
+  webhookLimit,
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      const signature = req.headers['stripe-signature'];
+      
+      if (!signature) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing stripe-signature header'
+        });
+      }
+
+      const result = await stripeService.processWebhook(req.body, signature);
+
+      res.json({
+        success: true,
+        data: result
+      });
+
+    } catch (error) {
+      logger.error('Error processing webhook', {
+        error: error.message,
+        signature: req.headers['stripe-signature'] ? 'present' : 'missing'
+      });
+      
+      if (error.message.includes('No signatures found')) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid webhook signature'
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to process webhook'
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/payments/subscription/{subscriptionId}:
+ *   get:
+ *     tags:
+ *       - Payments
+ *     summary: Get subscription details
+ *     description: Retrieve subscription information
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: subscriptionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Subscription details
+ *       404:
+ *         description: Subscription not found
+ */
+router.get('/subscription/:subscriptionId',
+  authenticate,
+  [param('subscriptionId').isString().notEmpty()],
+  validateRequest,
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      const { subscriptionId } = req.params;
+      
+      const subscription = await stripeService.stripe.subscriptions.retrieve(
+        subscriptionId,
+        { expand: ['latest_invoice', 'customer'] }
+      );
+
+      // Verify ownership (basic security check)
+      const customer = subscription.customer;
+      if (customer.metadata?.userId !== req.user.id.toString()) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied to this subscription'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          subscription: {
+            id: subscription.id,
+            status: subscription.status,
+            current_period_start: subscription.current_period_start,
+            current_period_end: subscription.current_period_end,
+            trial_end: subscription.trial_end,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            latest_invoice: subscription.latest_invoice
+          }
+        }
+      });
+
+    } catch (error) {
+      logger.error('Error fetching subscription', {
+        subscriptionId: req.params.subscriptionId,
+        userId: req.user?.id,
+        error: error.message
+      });
+      
+      if (error.code === 'resource_missing') {
+        return res.status(404).json({
+          success: false,
+          error: 'Subscription not found'
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch subscription'
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/payments/subscription/{subscriptionId}/cancel:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Cancel subscription
+ *     description: Cancel or schedule cancellation of a subscription
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: subscriptionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               immediate:
+ *                 type: boolean
+ *                 description: Cancel immediately or at period end
+ *                 default: false
+ *               reason:
+ *                 type: string
+ *                 description: Cancellation reason
+ *     responses:
+ *       200:
+ *         description: Subscription cancelled successfully
+ */
+router.post('/subscription/:subscriptionId/cancel',
+  authenticate,
+  subscriptionLimit,
+  [
+    param('subscriptionId').isString().notEmpty(),
+    body('immediate').optional().isBoolean(),
+    body('reason').optional().isString().trim().isLength({ max: 500 })
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      const { subscriptionId } = req.params;
+      const { immediate = false, reason = 'User requested cancellation' } = req.body;
+
+      // Verify ownership
+      const subscription = await stripeService.stripe.subscriptions.retrieve(
+        subscriptionId,
+        { expand: ['customer'] }
+      );
+
+      const customer = subscription.customer;
+      if (customer.metadata?.userId !== req.user.id.toString()) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied to this subscription'
+        });
+      }
+
+      const cancelledSubscription = await stripeService.cancelSubscription(
+        subscriptionId,
+        {
+          immediate,
+          cancellationDetails: {
+            comment: reason,
+            feedback: 'other'
+          }
+        }
+      );
+
+      res.json({
+        success: true,
+        data: {
+          subscription: {
+            id: cancelledSubscription.id,
+            status: cancelledSubscription.status,
+            cancel_at_period_end: cancelledSubscription.cancel_at_period_end,
+            cancelled_at: cancelledSubscription.cancelled_at,
+            ended_at: cancelledSubscription.ended_at
+          },
+          message: immediate 
+            ? 'Subscription cancelled immediately' 
+            : 'Subscription will be cancelled at the end of the current period'
+        }
+      });
+
+    } catch (error) {
+      logger.error('Error cancelling subscription', {
+        subscriptionId: req.params.subscriptionId,
+        userId: req.user?.id,
+        error: error.message
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to cancel subscription'
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/payments/usage:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Record usage for billing
+ *     description: Record usage metrics for subscription billing
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - usageType
+ *               - quantity
+ *             properties:
+ *               usageType:
+ *                 type: string
+ *                 enum: [gpu_compute_hour, storage_gb_month, bandwidth_gb]
+ *               quantity:
+ *                 type: number
+ *                 minimum: 0
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Usage recorded successfully
+ */
+router.post('/usage',
+  authenticate,
+  [
+    body('usageType').isIn(['gpu_compute_hour', 'storage_gb_month', 'bandwidth_gb']),
+    body('quantity').isFloat({ min: 0 }),
+    body('timestamp').optional().isISO8601()
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      const { usageType, quantity, timestamp } = req.body;
+      const user = req.user;
+
+      // This would typically look up the user's active subscription
+      // and find the appropriate subscription item for the usage type
+      // For demo purposes, we'll calculate the cost
+
+      const cost = stripeService.calculateUsageCost({
+        [usageType]: quantity
+      });
+
+      res.json({
+        success: true,
+        data: {
+          usageType,
+          quantity,
+          estimatedCost: cost,
+          costFormatted: stripeService.formatCurrency(cost),
+          timestamp: timestamp || new Date().toISOString(),
+          message: 'Usage recorded successfully'
+        }
+      });
+
+    } catch (error) {
+      logger.error('Error recording usage', {
+        userId: req.user?.id,
+        usageType: req.body.usageType,
+        error: error.message
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to record usage'
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/payments/stats:
+ *   get:
+ *     tags:
+ *       - Payments
+ *     summary: Get payment service statistics
+ *     description: Retrieve payment service statistics and metrics
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Payment statistics
+ */
+router.get('/stats',
+  authenticate,
+  async (req, res) => {
+    try {
+      if (!stripeService) {
+        return res.status(503).json({
+          success: false,
+          error: 'Payment service not available'
+        });
+      }
+
+      // Only allow admin users to see full stats
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Admin access required'
+        });
+      }
+
+      const stats = stripeService.getStats();
+
+      res.json({
+        success: true,
+        data: {
+          stats,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      logger.error('Error fetching payment stats', {
+        userId: req.user?.id,
+        error: error.message
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch payment statistics'
+      });
+    }
+  }
+);
+
+module.exports = {
+  router,
+  initializeServices
 };
 
 /**

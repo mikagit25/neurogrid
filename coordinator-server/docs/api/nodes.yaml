@@ -1,0 +1,647 @@
+paths:
+  /api/nodes:
+    get:
+      tags:
+        - Nodes
+      summary: List available nodes
+      description: |
+        Retrieve a paginated list of nodes with filtering and sorting options.
+        Public endpoint showing only active nodes for task assignment.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of items per page
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [online, offline, busy, maintenance]
+          description: Filter by node status
+        - name: region
+          in: query
+          schema:
+            type: string
+          description: Filter by geographical region
+        - name: model
+          in: query
+          schema:
+            type: string
+          description: Filter by supported AI model
+        - name: min_gpu_memory
+          in: query
+          schema:
+            type: integer
+          description: Minimum GPU memory in GB
+        - name: max_price_hour
+          in: query
+          schema:
+            type: number
+          description: Maximum price per hour in USD
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price_asc, price_desc, rating_desc, uptime_desc, created_asc]
+            default: rating_desc
+          description: Sort order for results
+      responses:
+        200:
+          description: List of nodes retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Node'
+        400:
+          $ref: '#/components/responses/ValidationError'
+
+    post:
+      tags:
+        - Nodes
+      summary: Register a new node
+      description: |
+        Register a new compute node with the network.
+        Requires node operator privileges and proper system specifications.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - specifications
+                - location
+                - supported_models
+                - pricing
+              properties:
+                name:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  example: "AI-GPU-Node-001"
+                  description: "Human-readable node name"
+                specifications:
+                  type: object
+                  required:
+                    - gpu_model
+                    - gpu_memory
+                    - cpu_cores
+                    - ram_gb
+                  properties:
+                    gpu_model:
+                      type: string
+                      example: "NVIDIA RTX 4090"
+                      description: "GPU model and brand"
+                    gpu_memory:
+                      type: integer
+                      minimum: 4
+                      example: 24
+                      description: "GPU memory in GB"
+                    cpu_cores:
+                      type: integer
+                      minimum: 2
+                      example: 16
+                      description: "Number of CPU cores"
+                    ram_gb:
+                      type: integer
+                      minimum: 8
+                      example: 64
+                      description: "System RAM in GB"
+                    storage_gb:
+                      type: integer
+                      minimum: 100
+                      example: 1000
+                      description: "Available storage in GB"
+                    network_speed:
+                      type: string
+                      example: "1 Gbps"
+                      description: "Internet connection speed"
+                location:
+                  type: object
+                  required:
+                    - region
+                    - country
+                  properties:
+                    region:
+                      type: string
+                      example: "us-west-2"
+                      description: "AWS-style region identifier"
+                    country:
+                      type: string
+                      example: "United States"
+                      description: "Country name"
+                    city:
+                      type: string
+                      example: "San Francisco"
+                      description: "City name"
+                    coordinates:
+                      type: object
+                      properties:
+                        lat:
+                          type: number
+                          example: 37.7749
+                        lng:
+                          type: number
+                          example: -122.4194
+                supported_models:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                  example: ["llama-2-7b", "stable-diffusion-xl", "whisper-large"]
+                  description: "List of AI models this node can run"
+                pricing:
+                  type: object
+                  required:
+                    - per_hour
+                  properties:
+                    per_hour:
+                      type: number
+                      minimum: 0.01
+                      example: 2.50
+                      description: "Price per hour in USD"
+                    per_token:
+                      type: number
+                      minimum: 0.0001
+                      example: 0.002
+                      description: "Price per token in USD (optional)"
+                    currency:
+                      type: string
+                      default: "USD"
+                      example: "USD"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "High-performance GPU node optimized for AI inference"
+                  description: "Optional node description"
+      responses:
+        201:
+          description: Node registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Node registered successfully"
+                  node_id:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  api_key:
+                    type: string
+                    example: "nk_1234567890abcdef"
+                    description: "API key for node authentication"
+                  setup_instructions:
+                    type: string
+                    example: "Download the node client from..."
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Insufficient privileges (requires node_operator role)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/nodes/{node_id}:
+    get:
+      tags:
+        - Nodes
+      summary: Get node details
+      description: |
+        Retrieve detailed information about a specific node.
+        Includes real-time status, metrics, and availability.
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique node identifier
+      responses:
+        200:
+          description: Node details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Node'
+                  - type: object
+                    properties:
+                      real_time_metrics:
+                        type: object
+                        properties:
+                          cpu_usage:
+                            type: number
+                            example: 45.2
+                          memory_usage:
+                            type: number
+                            example: 78.5
+                          gpu_usage:
+                            type: number
+                            example: 92.1
+                          network_in:
+                            type: number
+                            example: 125.5
+                          network_out:
+                            type: number
+                            example: 89.3
+                          temperature:
+                            type: number
+                            example: 72.0
+                      current_tasks:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            task_id:
+                              type: string
+                              format: uuid
+                            model:
+                              type: string
+                            progress:
+                              type: number
+                            estimated_completion:
+                              type: string
+                              format: date-time
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Nodes
+      summary: Update node configuration
+      description: |
+        Update node settings, pricing, and specifications.
+        Only the node owner or admin can modify node settings.
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                specifications:
+                  type: object
+                  properties:
+                    gpu_memory:
+                      type: integer
+                    cpu_cores:
+                      type: integer
+                    ram_gb:
+                      type: integer
+                    storage_gb:
+                      type: integer
+                supported_models:
+                  type: array
+                  items:
+                    type: string
+                pricing:
+                  type: object
+                  properties:
+                    per_hour:
+                      type: number
+                      minimum: 0.01
+                    per_token:
+                      type: number
+                      minimum: 0.0001
+                description:
+                  type: string
+                  maxLength: 500
+      responses:
+        200:
+          description: Node updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Node updated successfully"
+                  node:
+                    $ref: '#/components/schemas/Node'
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Nodes
+      summary: Unregister node
+      description: |
+        Remove node from the network.
+        Will complete current tasks before deregistration.
+        Only the node owner or admin can delete a node.
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: force
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Force immediate deletion (admin only)
+      responses:
+        200:
+          description: Node deletion initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Node deletion initiated. Will complete current tasks first."
+                  estimated_completion:
+                    type: string
+                    format: date-time
+                    description: "When deletion will be completed"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/nodes/{node_id}/status:
+    patch:
+      tags:
+        - Nodes
+      summary: Update node status
+      description: |
+        Update the operational status of a node.
+        Used by node clients to report availability and issues.
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [online, offline, busy, maintenance]
+                  description: "New node status"
+                message:
+                  type: string
+                  maxLength: 200
+                  description: "Optional status message"
+                estimated_downtime:
+                  type: integer
+                  description: "Estimated downtime in minutes (for maintenance)"
+      responses:
+        200:
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Node status updated"
+                  previous_status:
+                    type: string
+                  new_status:
+                    type: string
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/nodes/{node_id}/metrics:
+    get:
+      tags:
+        - Nodes
+      summary: Get node performance metrics
+      description: |
+        Retrieve historical performance data for a node.
+        Includes uptime, task completion rates, and earnings.
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+          description: Time period for metrics
+        - name: metric_type
+          in: query
+          schema:
+            type: string
+            enum: [performance, earnings, tasks, uptime]
+          description: Specific metric type to retrieve
+      responses:
+        200:
+          description: Node metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  node_id:
+                    type: string
+                    format: uuid
+                  period:
+                    type: string
+                  metrics:
+                    type: object
+                    properties:
+                      uptime_percentage:
+                        type: number
+                        example: 99.5
+                      tasks_completed:
+                        type: integer
+                        example: 1234
+                      tasks_failed:
+                        type: integer
+                        example: 5
+                      avg_response_time:
+                        type: number
+                        example: 2.34
+                      total_earnings:
+                        type: number
+                        example: 456.78
+                      cpu_avg:
+                        type: number
+                        example: 45.2
+                      memory_avg:
+                        type: number
+                        example: 67.8
+                      gpu_avg:
+                        type: number
+                        example: 89.1
+                  time_series:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        value:
+                          type: number
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/nodes/{node_id}/heartbeat:
+    post:
+      tags:
+        - Nodes
+      summary: Node heartbeat
+      description: |
+        Node health check and status report.
+        Should be called every 30 seconds by active nodes.
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - timestamp
+                - status
+              properties:
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: "Current timestamp from node"
+                status:
+                  type: string
+                  enum: [online, busy]
+                  description: "Current node status"
+                system_metrics:
+                  type: object
+                  properties:
+                    cpu_usage:
+                      type: number
+                    memory_usage:
+                      type: number
+                    gpu_usage:
+                      type: number
+                    disk_usage:
+                      type: number
+                    temperature:
+                      type: number
+                current_tasks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      task_id:
+                        type: string
+                        format: uuid
+                      progress:
+                        type: number
+                        minimum: 0
+                        maximum: 100
+                version:
+                  type: string
+                  example: "1.2.3"
+                  description: "Node client version"
+      responses:
+        200:
+          description: Heartbeat received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Heartbeat received"
+                  next_heartbeat:
+                    type: integer
+                    example: 30
+                    description: "Seconds until next heartbeat"
+                  pending_tasks:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+                    description: "New tasks assigned to this node"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        404:
+          $ref: '#/components/responses/NotFoundError'

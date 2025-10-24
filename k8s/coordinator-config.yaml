@@ -1,0 +1,171 @@
+# NeuroGrid Kubernetes ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neurogrid-config
+  namespace: neurogrid
+data:
+  # Application Configuration
+  log-level: "info"
+  rate-limit-enabled: "true"
+  cache-enabled: "true"
+  
+  # Database Configuration
+  db-pool-min: "2"
+  db-pool-max: "20"
+  db-timeout: "30000"
+  
+  # Redis Configuration
+  redis-max-retries: "3"
+  redis-retry-delay: "1000"
+  redis-connect-timeout: "10000"
+  
+  # Rate Limiting Configuration
+  rate-limit-window: "900000"  # 15 minutes
+  rate-limit-max: "1000"
+  rate-limit-skip-successful: "false"
+  
+  # WebSocket Configuration
+  ws-heartbeat-interval: "30000"
+  ws-max-connections: "10000"
+  ws-timeout: "60000"
+  
+  # Monitoring Configuration
+  metrics-enabled: "true"
+  health-check-interval: "30000"
+  
+  # File Upload Configuration
+  upload-max-size: "10485760"  # 10MB
+  upload-allowed-types: "image/jpeg,image/png,image/gif,application/pdf"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: neurogrid-secrets
+  namespace: neurogrid
+type: Opaque
+stringData:
+  # Database
+  database-url: "postgresql://neurogrid:CHANGE_THIS_PASSWORD@postgres-service:5432/neurogrid"
+  
+  # Redis
+  redis-url: "redis://redis-service:6379"
+  
+  # JWT
+  jwt-secret: "CHANGE_THIS_JWT_SECRET_IN_PRODUCTION"
+  
+  # Stripe
+  stripe-secret-key: "sk_live_CHANGE_THIS"
+  stripe-webhook-secret: "whsec_CHANGE_THIS"
+  stripe-public-key: "pk_live_CHANGE_THIS"
+  
+  # Admin Credentials
+  admin-username: "admin"
+  admin-password: "CHANGE_THIS_ADMIN_PASSWORD"
+  
+  # API Keys
+  api-encryption-key: "CHANGE_THIS_32_CHAR_ENCRYPTION_KEY"
+  
+  # External Services
+  email-api-key: "CHANGE_THIS_EMAIL_API_KEY"
+  storage-access-key: "CHANGE_THIS_STORAGE_ACCESS_KEY"
+  storage-secret-key: "CHANGE_THIS_STORAGE_SECRET_KEY"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: coordinator-logs-pv
+  labels:
+    type: local
+    app: neurogrid-coordinator
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/neurogrid/logs"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: coordinator-logs-pvc
+  namespace: neurogrid
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: coordinator-uploads-pv
+  labels:
+    type: local
+    app: neurogrid-coordinator
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/neurogrid/uploads"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: coordinator-uploads-pvc
+  namespace: neurogrid
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neurogrid-coordinator
+  namespace: neurogrid
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: neurogrid
+  name: neurogrid-coordinator-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: neurogrid-coordinator-binding
+  namespace: neurogrid
+subjects:
+- kind: ServiceAccount
+  name: neurogrid-coordinator
+  namespace: neurogrid
+roleRef:
+  kind: Role
+  name: neurogrid-coordinator-role
+  apiGroup: rbac.authorization.k8s.io

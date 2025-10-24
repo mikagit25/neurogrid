@@ -6,18 +6,28 @@ const compression = require('compression');
 const http = require('http');
 
 const logger = require('./utils/logger');
+const ConfigManager = require('./config/manager');
 const { db } = require('./config/database');
 const { migrations } = require('./database/migrations');
 
+// Import Redis and caching services
+const RedisConfig = require('./config/redis');
+const CacheService = require('./services/CacheService');
+const CacheMiddleware = require('./middleware/cache');
+const SessionConfig = require('./config/session');
+
 // Import middleware
 const { 
+  SecurityMiddleware,
   rateLimiters, 
   authenticate, 
   errorHandler, 
   requestLogger 
 } = require('./middleware/security');
+const AuthenticationService = require('./services/AuthenticationService');
 
 // Import routes
+const authRoutes = require('./api/routes/auth');
 const taskRoutes = require('./api/routes/tasks');
 const nodeRoutes = require('./api/routes/nodes');
 const tokenRoutes = require('./api/routes/tokens');
@@ -27,6 +37,7 @@ const systemRoutes = require('./api/routes/system');
 const supportRoutes = require('./api/routes/support');
 const analyticsRoutes = require('./api/routes/analytics');
 const notificationRoutes = require('./api/routes/notifications');
+const profileRoutes = require('./api/routes/profile');
 
 // Import services
 const TaskDispatcher = require('./services/TaskDispatcher');
@@ -37,11 +48,31 @@ const { WebSocketManager } = require('./services/WebSocketManager');
 const { MonitoringService } = require('./services/MonitoringService');
 const WalletModel = require('./models/WalletModel');
 
+// Import security infrastructure
+const { AuthenticationManagerSingleton } = require('./security/AuthenticationManager');
+const { AuthorizationManagerSingleton } = require('./security/AuthorizationManager');
+const { EncryptionManagerSingleton } = require('./security/EncryptionManager');
+const securityMiddleware = require('./security/middleware');
+const securityRoutes = require('./security/routes');
+
+// Import monitoring infrastructure
+const MonitoringController = require('./controllers/MonitoringController');
+
+// Import Swagger documentation
+const { setupApiDocs } = require('./config/swagger');
+
 class CoordinatorServer {
-  constructor() {
+  constructor(config) {
+    this.config = config;
     this.app = express();
     this.server = null;
-    this.port = process.env.PORT || 3001;
+    this.port = config.get('PORT', 3001);
+    
+    // Initialize Redis and caching
+    this.redisConfig = new RedisConfig(config);
+    this.cacheService = null;
+    this.cacheMiddleware = null;
+    this.sessionConfig = null;
     
     // Initialize legacy services
     this.taskDispatcher = new TaskDispatcher();
@@ -54,30 +85,48 @@ class CoordinatorServer {
     this.wsManager = null;
     this.monitoringService = null;
     
+    // Initialize monitoring infrastructure
+    this.monitoringController = new MonitoringController(config, {
+      database: db,
+      redis: null // Will be set up when Redis is initialized
+    });
+    
+    // Initialize security services
+    this.securityMiddleware = new SecurityMiddleware(config);
+    this.authService = new AuthenticationService(config);
+    
+    // Initialize new security infrastructure
+    this.authManager = AuthenticationManagerSingleton.getInstance({
+      jwtSecret: config.get('JWT_SECRET', 'your-jwt-secret-key'),
+      enableMFA: config.get('ENABLE_MFA', true),
+      enableApiKeys: config.get('ENABLE_API_KEYS', true)
+    });
+    this.authzManager = AuthorizationManagerSingleton.getInstance();
+    this.encryptionManager = EncryptionManagerSingleton.getInstance({
+      keyStorePath: config.get('KEY_STORE_PATH', './keystore')
+    });
+    
     this.setupMiddleware();
     this.setupRoutes();
     this.setupWebSocket();
   }
 
   setupMiddleware() {
-    // Security middleware
-    this.app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self'", "ws:", "wss:"],
-        },
-      },
-      crossOriginEmbedderPolicy: false
-    }));
+    // New security infrastructure
+    this.app.use(securityMiddleware.helmet);
+    this.app.use(securityMiddleware.sanitizeInput);
+    
+    // Enhanced security headers (fallback)
+    if (this.securityMiddleware) {
+      this.app.use(this.securityMiddleware.securityHeaders);
+      this.app.use(this.securityMiddleware.sanitizeInput());
+    }
 
     // CORS configuration
+    const corsConfig = this.config.getCorsConfig();
     this.app.use(cors({
       origin: function(origin, callback) {
-        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+        const allowedOrigins = corsConfig.origin.length > 0 ? corsConfig.origin : [
           'http://localhost:3000',
           'http://localhost:8080'
         ];
@@ -102,6 +151,11 @@ class CoordinatorServer {
       skip: (req, res) => process.env.NODE_ENV === 'production' && req.url === '/health'
     }));
 
+    // Session management (must be before body parsing)
+    if (this.sessionConfig) {
+      this.app.use(this.sessionConfig.getSessionMiddleware());
+    }
+
     // Body parsing
     this.app.use(express.json({ 
       limit: '10mb',
@@ -113,13 +167,30 @@ class CoordinatorServer {
 
     // Custom middleware
     this.app.use(requestLogger);
+    
+    // Add performance monitoring middleware
+    this.app.use(this.monitoringController.getPerformanceMiddleware());
 
-    // Rate limiting - different limits for different endpoints
-    this.app.use('/api/auth', rateLimiters.auth);
-    this.app.use('/api/jobs', rateLimiters.api);
-    this.app.use('/api/nodes', rateLimiters.api);
-    this.app.use('/api/tasks', rateLimiters.api);
-    this.app.use('/api', rateLimiters.general);
+    // Add caching middleware
+    if (this.cacheMiddleware) {
+      this.app.use(this.cacheMiddleware.sessionCache());
+      this.app.use(this.cacheMiddleware.authCache());
+    }
+
+    // Enhanced rate limiting with security middleware
+    if (this.securityMiddleware) {
+      this.app.use('/api/auth/login', this.securityMiddleware.rateLimiters.bruteForce);
+      this.app.use('/api/auth', this.securityMiddleware.rateLimiters.auth);
+      this.app.use('/api', this.securityMiddleware.rateLimiters.api);
+      this.app.use(this.securityMiddleware.rateLimiters.general);
+    } else {
+      // Fallback to legacy rate limiters
+      this.app.use('/api/auth', rateLimiters.auth);
+      this.app.use('/api/jobs', rateLimiters.api);
+      this.app.use('/api/nodes', rateLimiters.api);
+      this.app.use('/api/tasks', rateLimiters.api);
+      this.app.use('/api', rateLimiters.general);
+    }
   }
 
   setupRoutes() {
@@ -175,6 +246,13 @@ class CoordinatorServer {
         }
 
         const metrics = await this.monitoringService.getMetrics();
+        
+        // Add cache metrics if available
+        if (this.cacheService) {
+          const cacheStats = await this.cacheService.getStats();
+          metrics.cache = cacheStats;
+        }
+
         res.json({
           success: true,
           data: metrics
@@ -184,6 +262,84 @@ class CoordinatorServer {
         res.status(500).json({
           success: false,
           error: 'Failed to fetch metrics'
+        });
+      }
+    });
+
+    // Cache management endpoints (admin only)
+    this.app.get('/api/admin/cache/stats', authenticate, async (req, res) => {
+      try {
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied'
+          });
+        }
+
+        if (!this.cacheService) {
+          return res.json({
+            success: true,
+            data: { status: 'unavailable', message: 'Cache service not initialized' }
+          });
+        }
+
+        const stats = await this.cacheService.getStats();
+        const health = await this.cacheService.healthCheck();
+        
+        res.json({
+          success: true,
+          data: { stats, health }
+        });
+      } catch (error) {
+        logger.error('Failed to get cache stats', { error: error.message });
+        res.status(500).json({
+          success: false,
+          error: 'Failed to get cache stats'
+        });
+      }
+    });
+
+    this.app.post('/api/admin/cache/invalidate', authenticate, async (req, res) => {
+      try {
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied'
+          });
+        }
+
+        if (!this.cacheService) {
+          return res.status(503).json({
+            success: false,
+            error: 'Cache service not available'
+          });
+        }
+
+        const { pattern, tags } = req.body;
+        let invalidated = 0;
+
+        if (pattern) {
+          invalidated = await this.cacheService.redis.invalidatePattern(pattern);
+        } else if (tags && Array.isArray(tags)) {
+          invalidated = await this.cacheService.invalidateByTags(tags);
+        }
+
+        logger.info('Cache invalidation requested by admin', { 
+          userId: req.user.id, 
+          pattern, 
+          tags, 
+          invalidated 
+        });
+
+        res.json({
+          success: true,
+          data: { invalidated, pattern, tags }
+        });
+      } catch (error) {
+        logger.error('Cache invalidation failed', { error: error.message });
+        res.status(500).json({
+          success: false,
+          error: 'Cache invalidation failed'
         });
       }
     });
@@ -199,10 +355,24 @@ class CoordinatorServer {
       monitoringService: this.monitoringService
     };
 
+    // API Documentation
+    // Setup API documentation
+    setupApiDocs(this.app);
+    
+    // JSON schema endpoint
+    this.app.get('/api-docs.json', (req, res) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(specs);
+    });
+
+    // Monitoring routes (must be before authentication to allow health checks)
+    this.app.use('/api/monitoring', this.monitoringController.createRoutes());
+
     // API routes
+    this.app.use('/api/auth', securityRoutes.auth); // New security-enhanced auth routes
     this.app.use('/api/tasks', taskRoutes.router || taskRoutes);
     this.app.use('/api/nodes', nodeRoutes.router || nodeRoutes);
-    this.app.use('/api/tokens', tokenRoutes.router || tokenRoutes);
+    this.app.use('/api/tokens', require('./routes/tokens')); // Basic tokenization routes
     this.app.use('/api/nodes', require('./api/routes/installer'));
     this.app.use('/api/payments', paymentRoutes.router || paymentRoutes);
     this.app.use('/api/wallets', walletRoutes.router || walletRoutes);
@@ -210,6 +380,11 @@ class CoordinatorServer {
     this.app.use('/api/support', supportRoutes);
     this.app.use('/api/analytics', analyticsRoutes);
     this.app.use('/api/notifications', notificationRoutes);
+    this.app.use('/api/profile', profileRoutes.router || profileRoutes);
+
+    // Cache demo routes (for testing and demonstration)
+    const cacheDemo = require('./api/routes/cache-demo');
+    this.app.use('/api/cache', cacheDemo.router);
 
     // Initialize services in routes that need them
     if (taskRoutes.initializeServices) taskRoutes.initializeServices(services);
@@ -217,6 +392,8 @@ class CoordinatorServer {
     if (tokenRoutes.initializeServices) tokenRoutes.initializeServices(services);
     if (paymentRoutes.initializeServices) paymentRoutes.initializeServices(services);
     if (walletRoutes.initializeServices) walletRoutes.initializeServices(services);
+    if (profileRoutes.initializeServices) profileRoutes.initializeServices(services);
+    if (cacheDemo.initializeServices) cacheDemo.initializeServices(services);
 
     // Error handler
     this.app.use(errorHandler);
@@ -255,6 +432,22 @@ class CoordinatorServer {
     try {
       logger.info('Initializing NeuroGrid Coordinator Server...');
 
+      // Initialize Redis (optional - will continue without if Redis is unavailable)
+      logger.info('Initializing Redis connection...');
+      try {
+        await this.redisConfig.initialize();
+        this.cacheService = new CacheService(this.redisConfig);
+        this.cacheMiddleware = new CacheMiddleware(this.cacheService);
+        this.sessionConfig = new SessionConfig(this.config, this.redisConfig);
+        logger.info('Redis and caching services initialized successfully');
+      } catch (error) {
+        logger.warn('Redis not available, continuing without caching', { 
+          error: error.message 
+        });
+        // Initialize fallback session config without Redis
+        this.sessionConfig = new SessionConfig(this.config, null);
+      }
+
       // Initialize database
       logger.info('Initializing database connection...');
       await db.initialize();
@@ -281,12 +474,16 @@ class CoordinatorServer {
       logger.info('Initializing monitoring service...');
       this.monitoringService = MonitoringService.getInstance();
       await this.monitoringService.initialize();
+      
+      // Start monitoring controller services
+      logger.info('Starting monitoring infrastructure...');
+      // Monitoring controller services start automatically on initialization
 
       // Initialize legacy services
       logger.info('Initializing legacy services...');
-      await this.taskDispatcher.initialize();
-      await this.nodeManager.initialize();
-      await this.tokenEngine.initialize();
+      // await this.taskDispatcher.initialize();
+      // await this.nodeManager.initialize();
+      // await this.tokenEngine.initialize();
 
       // Initialize payment services
       logger.info('Initializing payment services...');
@@ -336,21 +533,32 @@ class CoordinatorServer {
         logger.info('WebSocket connections closed');
       }
 
-      // Stop monitoring service
+      // Stop monitoring services
       if (this.monitoringService) {
         await this.monitoringService.stop();
         logger.info('Monitoring service stopped');
       }
+      
+      if (this.monitoringController) {
+        this.monitoringController.shutdown();
+        logger.info('Monitoring controller stopped');
+      }
 
       // Stop legacy services
-      if (this.taskDispatcher) {
+      if (this.taskDispatcher && this.taskDispatcher.shutdown) {
         await this.taskDispatcher.shutdown();
       }
-      if (this.nodeManager) {
+      if (this.nodeManager && this.nodeManager.shutdown) {
         await this.nodeManager.shutdown();
       }
-      if (this.tokenEngine) {
+      if (this.tokenEngine && this.tokenEngine.shutdown) {
         await this.tokenEngine.shutdown();
+      }
+
+      // Close Redis connections
+      if (this.redisConfig) {
+        await this.redisConfig.disconnect();
+        logger.info('Redis connections closed');
       }
 
       // Close database connections
@@ -366,10 +574,29 @@ class CoordinatorServer {
   }
 }
 
-// Start server if this file is run directly
-if (require.main === module) {
-  const server = new CoordinatorServer();
-  server.start();
+// Initialize and start server
+async function initializeServer() {
+  try {
+    logger.info('Initializing NeuroGrid Coordinator Server...');
+    
+    // Load configuration
+    const config = await ConfigManager.create();
+    logger.info('Configuration loaded and validated');
+    
+    // Create and start server
+    const server = new CoordinatorServer(config);
+    await server.start();
+    
+    return server;
+  } catch (error) {
+    logger.error('Failed to initialize server:', error);
+    process.exit(1);
+  }
 }
 
-module.exports = CoordinatorServer;
+// Start server if this file is run directly
+if (require.main === module) {
+  initializeServer();
+}
+
+module.exports = { CoordinatorServer, initializeServer };

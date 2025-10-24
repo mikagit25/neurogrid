@@ -48,9 +48,14 @@
                         </a>
                     </div>
                 </div>
-                <div class="flex items-center">
-                    <button class="bg-neurogrid-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-neurogrid-700">
-                        Submit Task
+                <div class="flex items-center space-x-4">
+                    <!-- User menu or login -->
+                    <div id="userSection">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    
+                    <button onclick="showTaskSubmission()" class="bg-neurogrid-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-neurogrid-700">
+                        <i class="fas fa-plus mr-2"></i>Submit Task
                     </button>
                 </div>
             </div>
@@ -220,6 +225,7 @@
         
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            initializeUserSection();
             loadStats();
             loadRecentTasks();
             loadActiveNodes();
@@ -232,6 +238,297 @@
                 loadActiveNodes();
             }, 30000);
         });
+
+        // Initialize user section
+        function initializeUserSection() {
+            const userSection = document.getElementById('userSection');
+            const token = localStorage.getItem('authToken');
+
+            if (token) {
+                // User is logged in, show user menu
+                userSection.innerHTML = `
+                    <div class="relative">
+                        <button id="userMenuButton" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-neurogrid-500" onclick="toggleUserMenu()">
+                            <div class="w-8 h-8 bg-neurogrid-100 rounded-full flex items-center justify-center mr-2">
+                                <i class="fas fa-user text-neurogrid-600"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium" id="userDisplayName">Пользователь</span>
+                            <i class="fas fa-chevron-down ml-2 text-gray-400"></i>
+                        </button>
+                        <div id="userDropdown" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="py-1">
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Дашборд
+                                </a>
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user-circle mr-2"></i>Профиль
+                                </a>
+                                <a href="wallet.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-wallet mr-2"></i>Кошелек
+                                </a>
+                                <div class="border-t border-gray-200"></div>
+                                <button onclick="logout()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Load user info
+                loadUserInfo();
+            } else {
+                // User is not logged in, show login/register buttons
+                userSection.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <button onclick="showLoginModal()" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium">
+                            Войти
+                        </button>
+                        <button onclick="showRegisterModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
+                            Регистрация
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const displayName = data.data.displayName || data.data.email.split('@')[0];
+                    document.getElementById('userDisplayName').textContent = displayName;
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+
+        // Toggle user menu
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (userMenuButton && userDropdown && 
+                !userMenuButton.contains(event.target) && 
+                !userDropdown.contains(event.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+
+        // Show login modal
+        function showLoginModal() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Вход в систему</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <form onsubmit="handleLogin(event)">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                    <input type="email" id="loginEmail" class="w-full border border-gray-300 rounded-lg px-4 py-3" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
+                                    <input type="password" id="loginPassword" class="w-full border border-gray-300 rounded-lg px-4 py-3" required>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex space-x-3">
+                                <button type="button" onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                                    Отмена
+                                </button>
+                                <button type="submit" class="flex-1 bg-neurogrid-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
+                                    Войти
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Show register modal
+        function showRegisterModal() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Регистрация</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <form onsubmit="handleRegister(event)">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                    <input type="email" id="registerEmail" class="w-full border border-gray-300 rounded-lg px-4 py-3" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
+                                    <input type="password" id="registerPassword" class="w-full border border-gray-300 rounded-lg px-4 py-3" required minlength="8">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Подтвердите пароль</label>
+                                    <input type="password" id="registerConfirmPassword" class="w-full border border-gray-300 rounded-lg px-4 py-3" required minlength="8">
+                                </div>
+                            </div>
+                            <div class="mt-6 flex space-x-3">
+                                <button type="button" onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                                    Отмена
+                                </button>
+                                <button type="submit" class="flex-1 bg-neurogrid-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
+                                    Регистрация
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('authToken', data.data.accessToken);
+                    
+                    // Close modal and refresh user section
+                    document.querySelector('.fixed').remove();
+                    initializeUserSection();
+                    
+                    showNotificationBanner('Вход выполнен успешно!', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotificationBanner(error.error || 'Ошибка входа', 'error');
+                }
+            } catch (error) {
+                showNotificationBanner('Ошибка подключения к серверу', 'error');
+            }
+        }
+
+        // Handle register
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showNotificationBanner('Пароли не совпадают', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('authToken', data.data.accessToken);
+                    
+                    // Close modal and refresh user section
+                    document.querySelector('.fixed').remove();
+                    initializeUserSection();
+                    
+                    showNotificationBanner('Регистрация выполнена успешно!', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotificationBanner(error.error || 'Ошибка регистрации', 'error');
+                }
+            } catch (error) {
+                showNotificationBanner('Ошибка подключения к серверу', 'error');
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            initializeUserSection();
+            showNotificationBanner('Вы вышли из системы', 'info');
+        }
+
+        // Show notification banner
+        function showNotificationBanner(message, type = 'info') {
+            const banner = document.createElement('div');
+            const typeClasses = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'warning': 'bg-yellow-500',
+                'info': 'bg-blue-500'
+            };
+            
+            banner.className = `fixed top-4 right-4 z-50 ${typeClasses[type]} text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            banner.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(banner);
+            
+            // Animate in
+            setTimeout(() => {
+                banner.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                banner.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (banner.parentElement) {
+                        banner.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
         
         // WebSocket connection
         function connectWebSocket() {

@@ -1,0 +1,700 @@
+paths:
+  /api/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List user tasks
+      description: |
+        Retrieve a paginated list of tasks for the authenticated user.
+        Includes filtering and sorting options for task management.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, assigned, running, completed, failed, cancelled]
+          description: Filter by task status
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [inference, training, embedding, generation]
+          description: Filter by task type
+        - name: model
+          in: query
+          schema:
+            type: string
+          description: Filter by AI model
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter tasks from this date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter tasks until this date
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_desc, created_asc, status_asc, priority_desc]
+            default: created_desc
+      responses:
+        200:
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Task'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Tasks
+      summary: Create a new task
+      description: |
+        Submit a new AI inference or training task.
+        The system will automatically assign it to the best available node.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - model
+                - input_data
+              properties:
+                type:
+                  type: string
+                  enum: [inference, training, embedding, generation]
+                  description: "Type of AI task to perform"
+                model:
+                  type: string
+                  example: "llama-2-7b"
+                  description: "AI model to use for the task"
+                input_data:
+                  type: object
+                  description: "Input data for the task (format depends on task type)"
+                  examples:
+                    inference:
+                      value:
+                        prompt: "Explain quantum computing in simple terms"
+                        max_tokens: 200
+                        temperature: 0.7
+                    generation:
+                      value:
+                        prompt: "A futuristic cityscape at sunset"
+                        width: 1024
+                        height: 1024
+                        steps: 50
+                    embedding:
+                      value:
+                        text: "This is a sample text for embedding"
+                        model_params:
+                          normalize: true
+                parameters:
+                  type: object
+                  description: "Additional task parameters"
+                  properties:
+                    priority:
+                      type: integer
+                      minimum: 1
+                      maximum: 10
+                      default: 5
+                      description: "Task priority (1=lowest, 10=highest)"
+                    max_cost:
+                      type: number
+                      description: "Maximum cost willing to pay in USD"
+                    preferred_region:
+                      type: string
+                      description: "Preferred geographical region for execution"
+                    timeout:
+                      type: integer
+                      description: "Maximum execution time in seconds"
+                    callback_url:
+                      type: string
+                      format: uri
+                      description: "Webhook URL for task completion notification"
+                metadata:
+                  type: object
+                  description: "User-defined metadata for task tracking"
+      responses:
+        201:
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Task created successfully"
+                  task_id:
+                    type: string
+                    format: uuid
+                  estimated_cost:
+                    type: number
+                    description: "Estimated cost in USD"
+                  estimated_completion:
+                    type: string
+                    format: date-time
+                    description: "Estimated completion time"
+                  queue_position:
+                    type: integer
+                    description: "Position in the execution queue"
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        402:
+          description: Insufficient funds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/tasks/{task_id}:
+    get:
+      tags:
+        - Tasks
+      summary: Get task details
+      description: |
+        Retrieve detailed information about a specific task.
+        Includes current status, progress, and results if completed.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Task details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Task'
+                  - type: object
+                    properties:
+                      progress:
+                        type: object
+                        properties:
+                          percentage:
+                            type: number
+                            minimum: 0
+                            maximum: 100
+                          current_step:
+                            type: string
+                          estimated_remaining:
+                            type: integer
+                            description: "Estimated seconds remaining"
+                      logs:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            timestamp:
+                              type: string
+                              format: date-time
+                            level:
+                              type: string
+                              enum: [info, warning, error]
+                            message:
+                              type: string
+                      node_info:
+                        type: object
+                        properties:
+                          node_id:
+                            type: string
+                            format: uuid
+                          node_name:
+                            type: string
+                          region:
+                            type: string
+                          specifications:
+                            type: object
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Access denied - not task owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Tasks
+      summary: Update task parameters
+      description: |
+        Update task parameters while it's still pending or running.
+        Limited updates are allowed based on task status.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  description: "Change task priority (pending tasks only)"
+                max_cost:
+                  type: number
+                  description: "Update maximum cost limit"
+                callback_url:
+                  type: string
+                  format: uri
+                  description: "Update webhook URL"
+                metadata:
+                  type: object
+                  description: "Update metadata"
+      responses:
+        200:
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Task updated successfully"
+                  task:
+                    $ref: '#/components/schemas/Task'
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        409:
+          description: Task cannot be modified in current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    delete:
+      tags:
+        - Tasks
+      summary: Cancel task
+      description: |
+        Cancel a pending or running task.
+        Completed tasks cannot be cancelled.
+        Partial refunds may apply for cancelled running tasks.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: reason
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+          description: Reason for cancellation
+      responses:
+        200:
+          description: Task cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Task cancelled successfully"
+                  refund_amount:
+                    type: number
+                    description: "Refund amount in USD"
+                  cancellation_fee:
+                    type: number
+                    description: "Cancellation fee in USD"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        409:
+          description: Task cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/tasks/{task_id}/results:
+    get:
+      tags:
+        - Tasks
+      summary: Download task results
+      description: |
+        Download the results of a completed task.
+        Results are available for 30 days after completion.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, binary, text]
+            default: json
+          description: Result format preference
+      responses:
+        200:
+          description: Task results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                    format: uuid
+                  results:
+                    type: object
+                    description: "Task results (format varies by task type)"
+                  metadata:
+                    type: object
+                    properties:
+                      execution_time:
+                        type: number
+                        description: "Task execution time in seconds"
+                      tokens_processed:
+                        type: integer
+                        description: "Number of tokens processed"
+                      cost_breakdown:
+                        type: object
+                        properties:
+                          compute_cost:
+                            type: number
+                          network_cost:
+                            type: number
+                          storage_cost:
+                            type: number
+                          total_cost:
+                            type: number
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: "Binary result data"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        410:
+          description: Results expired or deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/tasks/{task_id}/logs:
+    get:
+      tags:
+        - Tasks
+      summary: Get task execution logs
+      description: |
+        Retrieve execution logs for a task.
+        Useful for debugging failed tasks or monitoring progress.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [all, info, warning, error]
+            default: all
+          description: Filter logs by level
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Get logs since this timestamp
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+          description: Maximum number of log entries
+      responses:
+        200:
+          description: Task logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                    format: uuid
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        level:
+                          type: string
+                          enum: [info, warning, error]
+                        message:
+                          type: string
+                        source:
+                          type: string
+                          description: "Log source (node, coordinator, etc.)"
+                        metadata:
+                          type: object
+                          description: "Additional log metadata"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          $ref: '#/components/responses/ForbiddenError'
+        404:
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/tasks/batch:
+    post:
+      tags:
+        - Tasks
+      summary: Create multiple tasks
+      description: |
+        Submit multiple tasks in a single request.
+        Useful for batch processing or parallel execution.
+        All tasks will use the same model and basic parameters.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - model
+                - tasks
+              properties:
+                type:
+                  type: string
+                  enum: [inference, training, embedding, generation]
+                model:
+                  type: string
+                  example: "llama-2-7b"
+                tasks:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    type: object
+                    required:
+                      - input_data
+                    properties:
+                      input_data:
+                        type: object
+                        description: "Input data for this specific task"
+                      metadata:
+                        type: object
+                        description: "Task-specific metadata"
+                parameters:
+                  type: object
+                  description: "Common parameters for all tasks"
+                  properties:
+                    priority:
+                      type: integer
+                      minimum: 1
+                      maximum: 10
+                      default: 5
+                    max_cost_per_task:
+                      type: number
+                    preferred_region:
+                      type: string
+                    callback_url:
+                      type: string
+                      format: uri
+      responses:
+        201:
+          description: Batch tasks created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Batch tasks created successfully"
+                  batch_id:
+                    type: string
+                    format: uuid
+                    description: "Unique identifier for this batch"
+                  task_ids:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+                    description: "IDs of created tasks"
+                  total_estimated_cost:
+                    type: number
+                    description: "Total estimated cost for all tasks"
+                  estimated_completion:
+                    type: string
+                    format: date-time
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        402:
+          description: Insufficient funds for batch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/tasks/batch/{batch_id}:
+    get:
+      tags:
+        - Tasks
+      summary: Get batch status
+      description: |
+        Retrieve status and progress information for a batch of tasks.
+        Shows completion rates and aggregated results.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batch_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Batch status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  batch_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending, running, completed, failed, cancelled]
+                  progress:
+                    type: object
+                    properties:
+                      total_tasks:
+                        type: integer
+                      completed_tasks:
+                        type: integer
+                      failed_tasks:
+                        type: integer
+                      running_tasks:
+                        type: integer
+                      pending_tasks:
+                        type: integer
+                      completion_percentage:
+                        type: number
+                  cost_summary:
+                    type: object
+                    properties:
+                      estimated_total:
+                        type: number
+                      actual_total:
+                        type: number
+                      completed_cost:
+                        type: number
+                  task_summaries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          format: uuid
+                        status:
+                          type: string
+                        progress:
+                          type: number
+                        cost:
+                          type: number
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        404:
+          $ref: '#/components/responses/NotFoundError'

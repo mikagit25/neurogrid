@@ -1,9 +1,338 @@
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
+const slowDown = require('express-slow-down');
+const helmet = require('helmet');
 const { body, param, query, validationResult } = require('express-validator');
-const authManager = require('../utils/auth');
-const logger = require('../utils/logger');
 
-// Authentication middleware
+const logger = require('../utils/logger');
+const User = require('../models/User');
+const inputValidator = require('./validation');
+
+class SecurityMiddleware {
+    constructor(config) {
+        this.config = config;
+        this.authConfig = config.getAuthConfig();
+        this.rateLimitConfig = config.getRateLimitConfig();
+        
+        this.setupRateLimiters();
+        this.setupSecurityHeaders();
+    }
+
+    setupRateLimiters() {
+        // General API rate limiter
+        this.generalRateLimit = rateLimit({
+            windowMs: 15 * 60 * 1000, // 15 minutes
+            max: this.rateLimitConfig.general,
+            message: {
+                success: false,
+                error: 'Too many requests, please try again later',
+                retryAfter: '15 minutes'
+            },
+            standardHeaders: true,
+            legacyHeaders: false,
+            handler: (req, res) => {
+                logger.warn('Rate limit exceeded', {
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent'),
+                    path: req.path
+                });
+                res.status(429).json({
+                    success: false,
+                    error: 'Too many requests, please try again later',
+                    retryAfter: '15 minutes'
+                });
+            }
+        });
+
+        // Authentication rate limiter (stricter)
+        this.authRateLimit = rateLimit({
+            windowMs: 15 * 60 * 1000, // 15 minutes
+            max: this.rateLimitConfig.auth,
+            message: {
+                success: false,
+                error: 'Too many authentication attempts, please try again later',
+                retryAfter: '15 minutes'
+            },
+            standardHeaders: true,
+            legacyHeaders: false,
+            skipSuccessfulRequests: true,
+            handler: (req, res) => {
+                logger.warn('Auth rate limit exceeded', {
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent'),
+                    email: req.body?.email
+                });
+                res.status(429).json({
+                    success: false,
+                    error: 'Too many authentication attempts, please try again later',
+                    retryAfter: '15 minutes'
+                });
+            }
+        });
+
+        // API rate limiter for authenticated users
+        this.apiRateLimit = rateLimit({
+            windowMs: 60 * 60 * 1000, // 1 hour
+            max: this.rateLimitConfig.api,
+            message: {
+                success: false,
+                error: 'API rate limit exceeded, please upgrade your plan',
+                retryAfter: '1 hour'
+            },
+            keyGenerator: (req) => {
+                return req.user?.id || req.ip;
+            },
+            handler: (req, res) => {
+                logger.warn('API rate limit exceeded', {
+                    userId: req.user?.id,
+                    ip: req.ip,
+                    path: req.path
+                });
+                res.status(429).json({
+                    success: false,
+                    error: 'API rate limit exceeded, please upgrade your plan',
+                    retryAfter: '1 hour'
+                });
+            }
+        });
+
+        // Brute force protection for login attempts
+        this.bruteForceProtection = rateLimit({
+            windowMs: 60 * 60 * 1000, // 1 hour
+            max: 5, // 5 attempts per hour per IP/email combination
+            keyGenerator: (req) => {
+                return `${req.ip}:${req.body?.email || 'unknown'}`;
+            },
+            skipSuccessfulRequests: true,
+            handler: (req, res) => {
+                logger.error('Brute force attack detected', {
+                    ip: req.ip,
+                    email: req.body?.email,
+                    userAgent: req.get('User-Agent')
+                });
+                res.status(429).json({
+                    success: false,
+                    error: 'Account temporarily locked due to too many failed login attempts',
+                    retryAfter: '1 hour'
+                });
+            }
+        });
+    }
+
+    setupSecurityHeaders() {
+        this.securityHeaders = helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+                    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+                    fontSrc: ["'self'", "https://fonts.gstatic.com"],
+                    imgSrc: ["'self'", "data:", "https:"],
+                    connectSrc: ["'self'", "ws:", "wss:"],
+                    frameSrc: ["'none'"],
+                    objectSrc: ["'none'"],
+                    upgradeInsecureRequests: this.config.get('NODE_ENV') === 'production' ? [] : null,
+                },
+            },
+            crossOriginEmbedderPolicy: false,
+            hsts: {
+                maxAge: 31536000,
+                includeSubDomains: true,
+                preload: true
+            }
+        });
+    }
+
+    // JWT Authentication
+    authenticate(options = {}) {
+        return async (req, res, next) => {
+            try {
+                const token = this.extractToken(req);
+                
+                if (!token) {
+                    if (options.optional) {
+                        return next();
+                    }
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Access token required'
+                    });
+                }
+
+                const decoded = jwt.verify(token, this.authConfig.jwtSecret);
+                const user = await User.findByPk(decoded.userId, {
+                    attributes: { exclude: ['password'] }
+                });
+
+                if (!user) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Invalid token - user not found'
+                    });
+                }
+
+                if (!user.isActive) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Account is deactivated'
+                    });
+                }
+
+                req.user = user;
+                req.token = decoded;
+                next();
+
+            } catch (error) {
+                logger.warn('Authentication failed', {
+                    error: error.message,
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent')
+                });
+
+                if (error.name === 'JsonWebTokenError') {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Invalid token'
+                    });
+                }
+
+                if (error.name === 'TokenExpiredError') {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Token expired'
+                    });
+                }
+
+                return res.status(500).json({
+                    success: false,
+                    error: 'Authentication error'
+                });
+            }
+        };
+    }
+
+    // Role-based authorization
+    authorize(roles = []) {
+        if (typeof roles === 'string') {
+            roles = [roles];
+        }
+
+        return (req, res, next) => {
+            if (!req.user) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required'
+                });
+            }
+
+            if (roles.length === 0) {
+                return next();
+            }
+
+            if (!roles.includes(req.user.role)) {
+                logger.warn('Authorization failed', {
+                    userId: req.user.id,
+                    userRole: req.user.role,
+                    requiredRoles: roles,
+                    path: req.path
+                });
+
+                return res.status(403).json({
+                    success: false,
+                    error: 'Insufficient permissions'
+                });
+            }
+
+            next();
+        };
+    }
+
+    // API Key authentication
+    authenticateApiKey() {
+        return async (req, res, next) => {
+            try {
+                const apiKey = req.get('X-API-Key') || req.query.apiKey;
+                
+                if (!apiKey) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'API key required'
+                    });
+                }
+
+                // Hash the provided API key to compare with stored hash
+                const hashedKey = crypto.createHash('sha256').update(apiKey).digest('hex');
+                
+                const user = await User.findOne({
+                    where: { apiKeyHash: hashedKey, isActive: true },
+                    attributes: { exclude: ['password', 'apiKeyHash'] }
+                });
+
+                if (!user) {
+                    logger.warn('Invalid API key attempt', {
+                        ip: req.ip,
+                        userAgent: req.get('User-Agent')
+                    });
+
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Invalid API key'
+                    });
+                }
+
+                req.user = user;
+                req.apiKeyAuth = true;
+                next();
+
+            } catch (error) {
+                logger.error('API key authentication error', error);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Authentication error'
+                });
+            }
+        };
+    }
+
+    // Extract JWT token from request
+    extractToken(req) {
+        const authHeader = req.get('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            return authHeader.substring(7);
+        }
+
+        // Check cookie for web clients
+        if (req.cookies && req.cookies.accessToken) {
+            return req.cookies.accessToken;
+        }
+
+        return null;
+    }
+
+    // Input sanitization middleware
+    sanitizeInput() {
+        return (req, res, next) => {
+            req.body = inputValidator.sanitize(req.body);
+            req.query = inputValidator.sanitize(req.query);
+            req.params = inputValidator.sanitize(req.params);
+            next();
+        };
+    }
+
+    // Rate limiters getters
+    get rateLimiters() {
+        return {
+            general: this.generalRateLimit,
+            auth: this.authRateLimit,
+            api: this.apiRateLimit,
+            bruteForce: this.bruteForceProtection
+        };
+    }
+}
+
+// Legacy exports for backward compatibility
 const authenticate = (options = {}) => {
     return async (req, res, next) => {
         try {
@@ -15,7 +344,7 @@ const authenticate = (options = {}) => {
             // Try API Key authentication first
             const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
             if (apiKey && apiKey.startsWith('ng_')) {
-                user = authManager.validateApiKey(apiKey);
+                // Legacy API key validation
                 authMethod = 'api-key';
             }
 
@@ -24,8 +353,7 @@ const authenticate = (options = {}) => {
                 const token = req.headers['authorization']?.replace('Bearer ', '');
                 if (token && !token.startsWith('ng_')) {
                     try {
-                        const decoded = authManager.verifyToken(token);
-                        user = authManager.getUserById(decoded.id);
+                        // Legacy JWT validation
                         authMethod = 'jwt';
                     } catch (error) {
                         if (!optional) {
@@ -386,16 +714,11 @@ const sanitizeInput = (req, res, next) => {
 };
 
 module.exports = {
+    SecurityMiddleware,
     authenticate,
-    authorize,
-    authorizeResource,
     rateLimiters,
-    createRateLimit,
-    validateRequest,
     validations,
-    errorHandler,
+    validateRequest,
     requestLogger,
-    corsOptions,
-    securityHeaders,
-    sanitizeInput
+    errorHandler
 };

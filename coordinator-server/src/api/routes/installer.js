@@ -425,7 +425,7 @@ mkdir -p /var/log/neurogrid
 # Create node executable (embedded base64)
 echo "Installing NeuroGrid Node executable..."
 cat > /opt/neurogrid/neurogrid-node << 'EMBEDDED_EXECUTABLE'
-$(echo '${Buffer.from(await generateNodeExecutable(config)).toString('base64')}' | base64 -d)
+$(echo '${Buffer.from(generateNodeExecutable(config)).toString('base64')}' | base64 -d)
 EMBEDDED_EXECUTABLE
 
 chmod +x /opt/neurogrid/neurogrid-node

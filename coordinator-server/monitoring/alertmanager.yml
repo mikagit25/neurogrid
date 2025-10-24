@@ -1,0 +1,132 @@
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@neurogrid.com'
+  smtp_auth_username: 'alerts@neurogrid.com'
+  smtp_auth_password: 'your-email-password'
+
+route:
+  group_by: ['alertname', 'severity', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'web.hook'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      repeat_interval: 5m
+    - match:
+        severity: high
+      receiver: 'high-alerts'
+      group_wait: 10s
+      repeat_interval: 15m
+    - match:
+        severity: medium
+      receiver: 'medium-alerts'
+      repeat_interval: 1h
+    - match:
+        severity: low
+      receiver: 'low-alerts'
+      repeat_interval: 4h
+
+receivers:
+  - name: 'web.hook'
+    webhook_configs:
+      - url: 'http://coordinator:3000/api/monitoring/alerts/webhook'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'admin@neurogrid.com'
+        subject: '[CRITICAL] NeuroGrid Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#critical-alerts'
+        title: 'CRITICAL Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          🚨 *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          *Time:* {{ .StartsAt }}
+          {{ end }}
+    webhook_configs:
+      - url: 'http://coordinator:3000/api/monitoring/alerts/webhook'
+        send_resolved: true
+
+  - name: 'high-alerts'
+    email_configs:
+      - to: 'admin@neurogrid.com'
+        subject: '[HIGH] NeuroGrid Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#alerts'
+        title: 'HIGH Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          ⚠️ *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          {{ end }}
+
+  - name: 'medium-alerts'
+    email_configs:
+      - to: 'dev-team@neurogrid.com'
+        subject: '[MEDIUM] NeuroGrid Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#alerts'
+        title: 'Medium Alert: {{ .GroupLabels.alertname }}'
+
+  - name: 'low-alerts'
+    email_configs:
+      - to: 'monitoring@neurogrid.com'
+        subject: '[LOW] NeuroGrid Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'medium'
+    equal: ['alertname', 'service']
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'low'
+    equal: ['alertname', 'service']
+  - source_match:
+      severity: 'high'
+    target_match:
+      severity: 'low'
+    equal: ['alertname', 'service']

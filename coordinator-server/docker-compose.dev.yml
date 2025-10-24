@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Development Coordinator Server
+  coordinator-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: neurogrid-coordinator-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_TYPE=sqlite
+      - DB_PATH=./data/neurogrid.db
+      - LOG_LEVEL=debug
+      - DEBUG=neurogrid:*
+    ports:
+      - "3001:3001"
+      - "9229:9229"  # Debug port
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - neurogrid-dev-network
+    restart: unless-stopped
+    command: npm run dev
+
+  # PostgreSQL for development (optional)
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: neurogrid-postgres-dev
+    environment:
+      POSTGRES_DB: neurogrid_dev
+      POSTGRES_USER: neurogrid
+      POSTGRES_PASSWORD: neurogrid_password
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - neurogrid-dev-network
+    restart: unless-stopped
+    profiles:
+      - postgres
+
+  # Redis for development (optional)
+  redis-dev:
+    image: redis:7-alpine
+    container_name: neurogrid-redis-dev
+    command: redis-server --requirepass redis123
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - neurogrid-dev-network
+    restart: unless-stopped
+    profiles:
+      - redis
+
+  # Development admin interface
+  adminer:
+    image: adminer
+    container_name: neurogrid-adminer-dev
+    ports:
+      - "8080:8080"
+    networks:
+      - neurogrid-dev-network
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  neurogrid-dev-network:
+    driver: bridge

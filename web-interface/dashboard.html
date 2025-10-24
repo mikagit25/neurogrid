@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid - Личный кабинет</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neurogrid': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .modal-backdrop { backdrop-filter: blur(4px); }
+        .gradient-bg { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); }
+        .glass-effect { 
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .balance-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+        .node-status-active { 
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="index.html" class="flex items-center">
+                            <div class="w-8 h-8 bg-neurogrid-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">NG</span>
+                            </div>
+                            <span class="ml-3 text-xl font-semibold text-gray-900">NeuroGrid</span>
+                        </a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="#" class="border-neurogrid-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fas fa-tachometer-alt mr-2"></i>
+                            Дашборд
+                        </a>
+                        <a href="node-monitoring.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fas fa-server mr-2"></i>
+                            Узлы
+                        </a>
+                        <a href="analytics.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            Аналитика
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- User Menu -->
+                    <div class="relative">
+                        <button id="userMenuButton" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                            <div class="w-8 h-8 bg-neurogrid-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-neurogrid-600"></i>
+                            </div>
+                            <span class="ml-2 text-gray-700 font-medium" id="userName">Пользователь</span>
+                            <i class="fas fa-chevron-down ml-2 text-gray-400"></i>
+                        </button>
+                        <div id="userMenu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                            <div class="py-1">
+                                <a href="#" onclick="showProfileModal()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user-circle mr-2"></i>Профиль
+                                </a>
+                                <a href="#" onclick="showWalletModal()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-wallet mr-2"></i>Кошелек
+                                </a>
+                                <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- User Type Selector -->
+        <div class="mb-8">
+            <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+                <button id="clientModeBtn" onclick="switchMode('client')" class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-neurogrid-600 shadow-sm">
+                    <i class="fas fa-user mr-2"></i>Заказчик задач
+                </button>
+                <button id="nodeModeBtn" onclick="switchMode('node')" class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-server mr-2"></i>Оператор узла
+                </button>
+            </div>
+        </div>
+
+        <!-- Client Mode Dashboard -->
+        <div id="clientDashboard" class="fade-in">
+            <!-- Balance and Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="balance-card rounded-xl p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-300 text-sm">Баланс токенов</p>
+                            <p class="text-2xl font-bold" id="clientBalance">0.00 NGRID</p>
+                        </div>
+                        <div class="w-12 h-12 bg-neurogrid-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-coins text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <i class="fas fa-arrow-up text-green-400 mr-1"></i>
+                        <span class="text-green-400">+12.5%</span>
+                        <span class="text-gray-300 ml-2">за месяц</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Активные задачи</p>
+                            <p class="text-2xl font-bold text-gray-900" id="activeTasks">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tasks text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Завершенные</p>
+                            <p class="text-2xl font-bold text-gray-900" id="completedTasks">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Потрачено</p>
+                            <p class="text-2xl font-bold text-gray-900" id="totalSpent">0 NGRID</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-credit-card text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Tasks and Quick Actions -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <!-- Recent Tasks -->
+                <div class="xl:col-span-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Последние задачи</h3>
+                            <button onclick="showNewTaskModal()" class="bg-neurogrid-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-neurogrid-700 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Новая задача
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div id="clientTasksList" class="space-y-4">
+                                <!-- Tasks will be loaded here -->
+                                <div class="text-center py-8 text-gray-500">
+                                    <i class="fas fa-tasks text-4xl mb-4"></i>
+                                    <p>Задачи не найдены</p>
+                                    <p class="text-sm">Создайте первую задачу для начала работы</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="space-y-6">
+                    <!-- Wallet Management -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Управление балансом</h3>
+                        <div class="space-y-3">
+                            <button onclick="showDepositModal()" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                <i class="fas fa-plus-circle mr-2"></i>Пополнить баланс
+                            </button>
+                            <button onclick="showWithdrawModal()" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-minus-circle mr-2"></i>Вывести средства
+                            </button>
+                            <button onclick="showTransactionHistory()" class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-history mr-2"></i>История транзакций
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Account Stats -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Статистика аккаунта</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Аккаунт создан:</span>
+                                <span class="font-medium" id="accountCreated">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Всего задач:</span>
+                                <span class="font-medium" id="totalTasksCount">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Успешность:</span>
+                                <span class="font-medium text-green-600" id="successRate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Node Operator Mode Dashboard -->
+        <div id="nodeDashboard" class="hidden">
+            <!-- Node Status and Earnings -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="balance-card rounded-xl p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-300 text-sm">Заработано токенов</p>
+                            <p class="text-2xl font-bold" id="nodeEarnings">0.00 NGRID</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-dollar-sign text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <i class="fas fa-arrow-up text-green-400 mr-1"></i>
+                        <span class="text-green-400">+8.2%</span>
+                        <span class="text-gray-300 ml-2">за неделю</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Статус узла</p>
+                            <p class="text-lg font-bold" id="nodeStatus">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    Не подключен
+                                </span>
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center" id="nodeStatusIcon">
+                            <i class="fas fa-server text-gray-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Выполнено задач</p>
+                            <p class="text-2xl font-bold text-gray-900" id="nodeCompletedTasks">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Рейтинг</p>
+                            <p class="text-2xl font-bold text-gray-900" id="nodeRating">0.0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-star text-yellow-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Node Performance and Management -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <!-- Node Performance Chart -->
+                <div class="xl:col-span-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900">Производительность узла</h3>
+                        </div>
+                        <div class="p-6">
+                            <canvas id="nodePerformanceChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Node Management -->
+                <div class="space-y-6">
+                    <!-- Node Actions -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Управление узлом</h3>
+                        <div class="space-y-3">
+                            <button onclick="showNodeSetup()" class="w-full bg-neurogrid-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
+                                <i class="fas fa-cog mr-2"></i>Настроить узел
+                            </button>
+                            <button onclick="toggleNode()" id="nodeToggleBtn" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                <i class="fas fa-play mr-2"></i>Запустить узел
+                            </button>
+                            <button onclick="showNodeLogs()" class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-file-alt mr-2"></i>Логи узла
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Earnings Management -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Управление доходами</h3>
+                        <div class="space-y-3">
+                            <button onclick="showWithdrawModal()" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                <i class="fas fa-money-bill-wave mr-2"></i>Вывести доходы
+                            </button>
+                            <button onclick="showEarningsHistory()" class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-chart-line mr-2"></i>История доходов
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Node Statistics -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Статистика узла</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Время работы:</span>
+                                <span class="font-medium" id="nodeUptime">0h</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Загрузка CPU:</span>
+                                <span class="font-medium" id="nodeCpuUsage">0%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Использование GPU:</span>
+                                <span class="font-medium" id="nodeGpuUsage">0%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Средний доход/час:</span>
+                                <span class="font-medium text-green-600" id="avgEarningsPerHour">0 NGRID</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Profile Modal -->
+    <div id="profileModal" class="hidden fixed inset-0 z-50 modal-backdrop">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Профиль пользователя</h3>
+                        <button onclick="closeModal('profileModal')" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="profileEmail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">ID пользователя</label>
+                            <input type="text" id="profileUserId" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Дата регистрации</label>
+                            <input type="text" id="profileCreatedAt" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button onclick="closeModal('profileModal')" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:ml-3 sm:w-auto">
+                        Закрыть
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallet Modal -->
+    <div id="walletModal" class="hidden fixed inset-0 z-50 modal-backdrop">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Управление кошельком</h3>
+                        <button onclick="closeModal('walletModal')" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Wallet Tabs -->
+                    <div class="border-b border-gray-200 mb-4">
+                        <nav class="-mb-px flex space-x-8">
+                            <button onclick="switchWalletTab('balance')" id="balanceTab" class="wallet-tab border-b-2 border-neurogrid-500 text-neurogrid-600 py-2 px-1 text-sm font-medium">
+                                Баланс
+                            </button>
+                            <button onclick="switchWalletTab('deposit')" id="depositTab" class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+                                Пополнение
+                            </button>
+                            <button onclick="switchWalletTab('withdraw')" id="withdrawTab" class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+                                Вывод
+                            </button>
+                            <button onclick="switchWalletTab('history')" id="historyTab" class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+                                История
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Wallet Content -->
+                    <div id="walletContent">
+                        <!-- Content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Global variables
+        let currentMode = 'client';
+        let currentUser = null;
+        let performanceChart = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            loadUserData();
+            
+            // Setup user menu toggle
+            document.getElementById('userMenuButton').addEventListener('click', function() {
+                const menu = document.getElementById('userMenu');
+                menu.classList.toggle('hidden');
+            });
+
+            // Close user menu when clicking outside
+            document.addEventListener('click', function(event) {
+                const menu = document.getElementById('userMenu');
+                const button = document.getElementById('userMenuButton');
+                if (!button.contains(event.target) && !menu.contains(event.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+        });
+
+        // Initialize dashboard
+        async function initializeDashboard() {
+            try {
+                // Check authentication
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Load dashboard data
+                await loadUserProfile();
+                await loadDashboardData();
+                
+            } catch (error) {
+                console.error('Dashboard initialization error:', error);
+                showNotification('Ошибка инициализации дашборда', 'error');
+            }
+        }
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.data;
+                    document.getElementById('userName').textContent = currentUser.email || 'Пользователь';
+                } else {
+                    throw new Error('Failed to load user profile');
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            if (currentMode === 'client') {
+                await loadClientData();
+            } else {
+                await loadNodeData();
+            }
+        }
+
+        // Load client dashboard data
+        async function loadClientData() {
+            try {
+                // Load token balance
+                const balanceResponse = await fetch(`/api/tokens/balance/${currentUser.id}`);
+                if (balanceResponse.ok) {
+                    const balanceData = await balanceResponse.json();
+                    document.getElementById('clientBalance').textContent = `${balanceData.balance.toFixed(2)} NGRID`;
+                    document.getElementById('totalSpent').textContent = `${balanceData.totalSpent.toFixed(2)} NGRID`;
+                    document.getElementById('accountCreated').textContent = new Date(balanceData.createdAt).toLocaleDateString('ru-RU');
+                }
+
+                // Load tasks data (mock data for now)
+                loadClientTasks();
+
+            } catch (error) {
+                console.error('Error loading client data:', error);
+                showNotification('Ошибка загрузки данных', 'error');
+            }
+        }
+
+        // Load node dashboard data
+        async function loadNodeData() {
+            try {
+                // Load node statistics
+                const nodeResponse = await fetch(`/api/nodes/stats/${currentUser.id}`);
+                if (nodeResponse.ok) {
+                    const nodeData = await nodeResponse.json();
+                    updateNodeStats(nodeData);
+                }
+
+                // Load earnings data
+                const earningsResponse = await fetch(`/api/tokens/balance/${currentUser.id}`);
+                if (earningsResponse.ok) {
+                    const earningsData = await earningsResponse.json();
+                    document.getElementById('nodeEarnings').textContent = `${earningsData.totalEarned.toFixed(2)} NGRID`;
+                }
+
+                // Initialize performance chart
+                initializePerformanceChart();
+
+            } catch (error) {
+                console.error('Error loading node data:', error);
+                showNotification('Ошибка загрузки данных узла', 'error');
+            }
+        }
+
+        // Switch between client and node mode
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update buttons
+            const clientBtn = document.getElementById('clientModeBtn');
+            const nodeBtn = document.getElementById('nodeModeBtn');
+            
+            if (mode === 'client') {
+                clientBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-neurogrid-600 shadow-sm';
+                nodeBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900';
+                
+                document.getElementById('clientDashboard').classList.remove('hidden');
+                document.getElementById('nodeDashboard').classList.add('hidden');
+                
+                loadClientData();
+            } else {
+                nodeBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-neurogrid-600 shadow-sm';
+                clientBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900';
+                
+                document.getElementById('nodeDashboard').classList.remove('hidden');
+                document.getElementById('clientDashboard').classList.add('hidden');
+                
+                loadNodeData();
+            }
+        }
+
+        // Load client tasks (mock data)
+        function loadClientTasks() {
+            const tasksContainer = document.getElementById('clientTasksList');
+            
+            // Mock tasks data
+            const mockTasks = [
+                { id: 1, model: 'GPT-4', status: 'completed', prompt: 'Analyze market data...', cost: 2.5, createdAt: new Date(Date.now() - 3600000) },
+                { id: 2, model: 'DALL-E 3', status: 'processing', prompt: 'Generate image of...', cost: 1.8, createdAt: new Date(Date.now() - 1800000) },
+                { id: 3, model: 'Claude 3', status: 'queued', prompt: 'Write a summary...', cost: 1.2, createdAt: new Date() }
+            ];
+
+            if (mockTasks.length === 0) {
+                return;
+            }
+
+            let activeTasks = 0;
+            let completedTasks = 0;
+
+            tasksContainer.innerHTML = mockTasks.map(task => {
+                if (task.status === 'processing' || task.status === 'queued') activeTasks++;
+                if (task.status === 'completed') completedTasks++;
+
+                const statusClass = {
+                    'completed': 'bg-green-100 text-green-800',
+                    'processing': 'bg-blue-100 text-blue-800',
+                    'queued': 'bg-yellow-100 text-yellow-800',
+                    'failed': 'bg-red-100 text-red-800'
+                };
+
+                const statusText = {
+                    'completed': 'Завершена',
+                    'processing': 'Выполняется',
+                    'queued': 'В очереди',
+                    'failed': 'Ошибка'
+                };
+
+                return `
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium text-gray-900">${task.model}</h4>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass[task.status]}">
+                                    ${statusText[task.status]}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">${task.prompt}</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <span>Стоимость: ${task.cost} NGRID</span>
+                                <span class="mx-2">•</span>
+                                <span>${task.createdAt.toLocaleString('ru-RU')}</span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update stats
+            document.getElementById('activeTasks').textContent = activeTasks;
+            document.getElementById('completedTasks').textContent = completedTasks;
+            document.getElementById('totalTasksCount').textContent = mockTasks.length;
+            document.getElementById('successRate').textContent = completedTasks > 0 ? Math.round((completedTasks / mockTasks.length) * 100) + '%' : '0%';
+        }
+
+        // Update node statistics
+        function updateNodeStats(nodeData) {
+            // Mock node data if not provided
+            if (!nodeData) {
+                nodeData = {
+                    status: 'offline',
+                    completedTasks: 0,
+                    rating: 0.0,
+                    uptime: 0,
+                    cpuUsage: 0,
+                    gpuUsage: 0,
+                    avgEarningsPerHour: 0
+                };
+            }
+
+            const statusElement = document.getElementById('nodeStatus');
+            const statusIcon = document.getElementById('nodeStatusIcon');
+            
+            if (nodeData.status === 'active') {
+                statusElement.innerHTML = `
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 node-status-active">
+                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
+                        Активен
+                    </span>
+                `;
+                statusIcon.innerHTML = '<i class="fas fa-server text-green-600 text-xl"></i>';
+                statusIcon.className = 'w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center';
+            } else {
+                statusElement.innerHTML = `
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Не подключен
+                    </span>
+                `;
+            }
+
+            document.getElementById('nodeCompletedTasks').textContent = nodeData.completedTasks;
+            document.getElementById('nodeRating').textContent = nodeData.rating.toFixed(1);
+            document.getElementById('nodeUptime').textContent = Math.floor(nodeData.uptime / 3600) + 'h';
+            document.getElementById('nodeCpuUsage').textContent = Math.round(nodeData.cpuUsage) + '%';
+            document.getElementById('nodeGpuUsage').textContent = Math.round(nodeData.gpuUsage) + '%';
+            document.getElementById('avgEarningsPerHour').textContent = nodeData.avgEarningsPerHour.toFixed(2) + ' NGRID';
+        }
+
+        // Initialize performance chart
+        function initializePerformanceChart() {
+            const ctx = document.getElementById('nodePerformanceChart').getContext('2d');
+            
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1h', '2h', '3h', '4h', '5h', '6h'],
+                    datasets: [{
+                        label: 'Задач/час',
+                        data: [0, 2, 1, 4, 3, 5],
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Доходность/час',
+                        data: [0, 1.2, 0.8, 2.4, 1.8, 3.1],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Modal functions
+        function showProfileModal() {
+            if (currentUser) {
+                document.getElementById('profileEmail').value = currentUser.email || '';
+                document.getElementById('profileUserId').value = currentUser.id || '';
+                document.getElementById('profileCreatedAt').value = currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('ru-RU') : '';
+            }
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+        function showWalletModal() {
+            document.getElementById('walletModal').classList.remove('hidden');
+            switchWalletTab('balance');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Wallet modal functions
+        function switchWalletTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.wallet-tab').forEach(btn => {
+                btn.className = 'wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium';
+            });
+            document.getElementById(tab + 'Tab').className = 'wallet-tab border-b-2 border-neurogrid-500 text-neurogrid-600 py-2 px-1 text-sm font-medium';
+
+            // Load content
+            const content = document.getElementById('walletContent');
+            switch(tab) {
+                case 'balance':
+                    loadWalletBalance(content);
+                    break;
+                case 'deposit':
+                    loadDepositForm(content);
+                    break;
+                case 'withdraw':
+                    loadWithdrawForm(content);
+                    break;
+                case 'history':
+                    loadTransactionHistory(content);
+                    break;
+            }
+        }
+
+        function loadWalletBalance(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-3">Текущий баланс</h4>
+                        <div class="text-3xl font-bold text-neurogrid-600" id="modalBalance">Загрузка...</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600" id="modalEarned">0</div>
+                            <div class="text-sm text-gray-600">Заработано</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-red-600" id="modalSpent">0</div>
+                            <div class="text-sm text-gray-600">Потрачено</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Load actual balance
+            loadModalBalance();
+        }
+
+        async function loadModalBalance() {
+            try {
+                const response = await fetch(`/api/tokens/balance/${currentUser.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('modalBalance').textContent = `${data.balance.toFixed(2)} NGRID`;
+                    document.getElementById('modalEarned').textContent = data.totalEarned.toFixed(2);
+                    document.getElementById('modalSpent').textContent = data.totalSpent.toFixed(2);
+                }
+            } catch (error) {
+                console.error('Error loading balance:', error);
+            }
+        }
+
+        function loadDepositForm(container) {
+            container.innerHTML = `
+                <form class="space-y-4" onsubmit="handleDeposit(event)">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Сумма пополнения</label>
+                        <input type="number" min="1" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="100.00" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Валюта</label>
+                        <select class="w-full border border-gray-300 rounded-md px-3 py-2">
+                            <option value="USD">USD - Доллар США</option>
+                            <option value="EUR">EUR - Евро</option>
+                            <option value="RUB">RUB - Российский рубль</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Способ оплаты</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="paymentMethod" value="card" class="mr-2" checked>
+                                <i class="fas fa-credit-card mr-2"></i>Банковская карта
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="paymentMethod" value="crypto" class="mr-2">
+                                <i class="fab fa-bitcoin mr-2"></i>Криптовалюта
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                        Пополнить баланс
+                    </button>
+                </form>
+            `;
+        }
+
+        function loadWithdrawForm(container) {
+            container.innerHTML = `
+                <form class="space-y-4" onsubmit="handleWithdraw(event)">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Сумма вывода</label>
+                        <input type="number" min="1" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="50.00" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Способ вывода</label>
+                        <select class="w-full border border-gray-300 rounded-md px-3 py-2">
+                            <option value="card">Банковская карта</option>
+                            <option value="crypto">Криптокошелек</option>
+                            <option value="paypal">PayPal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Реквизиты</label>
+                        <input type="text" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Номер карты или адрес кошелька" required>
+                    </div>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                        <div class="flex">
+                            <i class="fas fa-exclamation-triangle text-yellow-400 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-yellow-800">
+                                Минимальная сумма вывода: 10 NGRID. Комиссия: 2%.
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                        Вывести средства
+                    </button>
+                </form>
+            `;
+        }
+
+        function loadTransactionHistory(container) {
+            container.innerHTML = `
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between py-3 border-b border-gray-200">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-plus text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium">Пополнение баланса</div>
+                                <div class="text-sm text-gray-500">23 октября 2025, 14:30</div>
+                            </div>
+                        </div>
+                        <div class="text-green-600 font-medium">+100.00 NGRID</div>
+                    </div>
+                    <div class="flex items-center justify-between py-3 border-b border-gray-200">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-brain text-blue-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium">Оплата задачи GPT-4</div>
+                                <div class="text-sm text-gray-500">23 октября 2025, 12:15</div>
+                            </div>
+                        </div>
+                        <div class="text-red-600 font-medium">-2.50 NGRID</div>
+                    </div>
+                    <div class="text-center py-4 text-gray-500">
+                        <i class="fas fa-history text-2xl mb-2"></i>
+                        <p>Больше транзакций нет</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Payment handlers
+        function handleDeposit(event) {
+            event.preventDefault();
+            showNotification('Функция пополнения баланса в разработке', 'info');
+            closeModal('walletModal');
+        }
+
+        function handleWithdraw(event) {
+            event.preventDefault();
+            showNotification('Функция вывода средств в разработке', 'info');
+            closeModal('walletModal');
+        }
+
+        // Other functions
+        function showNewTaskModal() {
+            showNotification('Функция создания задач в разработке', 'info');
+        }
+
+        function showNodeSetup() {
+            window.location.href = 'node-setup.html';
+        }
+
+        function toggleNode() {
+            showNotification('Функция управления узлом в разработке', 'info');
+        }
+
+        function showNodeLogs() {
+            showNotification('Функция просмотра логов в разработке', 'info');
+        }
+
+        function showDepositModal() {
+            showWalletModal();
+            switchWalletTab('deposit');
+        }
+
+        function showWithdrawModal() {
+            showWalletModal();
+            switchWalletTab('withdraw');
+        }
+
+        function showTransactionHistory() {
+            showWalletModal();
+            switchWalletTab('history');
+        }
+
+        function showEarningsHistory() {
+            showTransactionHistory();
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            window.location.href = 'index.html';
+        }
+
+        // Utility functions
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            
+            const typeClasses = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'warning': 'bg-yellow-500',
+                'info': 'bg-blue-500'
+            };
+            
+            notification.className = `${typeClasses[type]} text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        function loadUserData() {
+            // Mock user data loading
+            setTimeout(() => {
+                if (currentMode === 'client') {
+                    loadClientData();
+                } else {
+                    loadNodeData();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

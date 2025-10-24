@@ -22,12 +22,18 @@ USER neurogrid
 # Expose port
 EXPOSE 3001
 
+# Copy scripts and make them executable
+COPY scripts/ ./scripts/
+RUN chmod +x ./scripts/*.sh
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
+  CMD ./health-check.sh || exit 1
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application with entrypoint script
+COPY docker-entrypoint.sh ./
+RUN chmod +x ./docker-entrypoint.sh
+CMD ["./docker-entrypoint.sh"]
 
 # Development Dockerfile
 FROM node:18-alpine AS development

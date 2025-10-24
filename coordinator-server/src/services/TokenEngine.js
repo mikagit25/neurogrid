@@ -1,13 +1,14 @@
 const logger = require('../utils/logger');
+const { db } = require('../config/database-universal');
+const Transaction = require('../models/Transaction');
+const User = require('../models/User');
 
 /**
  * Token Engine Service
- * Manages token economics, rewards, and payments
+ * Manages token economics, rewards, and payments using database
  */
 class TokenEngine {
   constructor() {
-    this.tokenBalances = new Map();
-    this.transactions = new Map();
     this.rewardRates = {
       'standard': 1.0,
       'high': 1.5,
@@ -27,39 +28,31 @@ class TokenEngine {
    */
   async createAccount(userId, initialBalance = 10.0) {
     try {
-      if (this.tokenBalances.has(userId)) {
+      // Check if balance record already exists
+      const existingBalance = await Transaction.getUserBalance(userId);
+      if (existingBalance.balance > 0) {
         logger.warn(`Account already exists for user: ${userId}`);
-        return this.tokenBalances.get(userId);
+        return existingBalance;
       }
 
-      const account = {
-        userId,
-        balance: initialBalance,
-        totalEarned: 0,
-        totalSpent: 0,
-        createdAt: new Date(),
-        lastUpdated: new Date(),
-        transactionCount: 0
-      };
-
-      this.tokenBalances.set(userId, account);
-
-      // Record initial balance transaction
-      await this.recordTransaction({
-        userId,
-        type: 'credit',
+      // Create initial credit transaction
+      await Transaction.create({
+        user_id: userId,
+        transaction_type: 'credit',
         amount: initialBalance,
         description: 'Initial account balance',
-        taskId: null,
-        nodeId: null
+        status: 'completed'
       });
 
-      logger.info(`Created token account for user ${userId}`, {
+      const balance = await Transaction.getUserBalance(userId);
+      
+      logger.info(`Account created for user ${userId}`, {
         userId,
-        initialBalance
+        initialBalance,
+        balance: balance.balance
       });
 
-      return account;
+      return balance;
     } catch (error) {
       logger.error(`Error creating account for user ${userId}:`, error);
       throw error;
@@ -67,298 +60,272 @@ class TokenEngine {
   }
 
   /**
-   * Calculate task cost based on model and priority
+   * Get user balance
    */
-  calculateTaskCost(model, priority = 'standard', estimatedDuration = 1) {
-    const baseCost = this.taskCosts[model] || 0.1;
-    const priorityMultiplier = this.rewardRates[priority] || 1.0;
-    const durationMultiplier = Math.max(0.5, estimatedDuration / 60); // per minute
-    
-    return +(baseCost * priorityMultiplier * durationMultiplier).toFixed(4);
-  }
-
-  /**
-   * Calculate node reward for completing task
-   */
-  calculateNodeReward(taskCost, nodeRating, completionTime, priority = 'standard') {
-    // Base reward is 80% of task cost (20% goes to platform)
-    const baseReward = taskCost * 0.8;
-    
-    // Rating bonus (0.5-1.5x multiplier based on rating)
-    const ratingMultiplier = 0.5 + (nodeRating * 1.0);
-    
-    // Time bonus (faster completion gets bonus, up to 20%)
-    const expectedTime = 300; // 5 minutes expected
-    const timeBonus = completionTime < expectedTime 
-      ? Math.min(0.2, (expectedTime - completionTime) / expectedTime * 0.2)
-      : 0;
-    
-    // Priority multiplier
-    const priorityMultiplier = this.rewardRates[priority] || 1.0;
-    
-    const totalReward = baseReward * ratingMultiplier * priorityMultiplier * (1 + timeBonus);
-    
-    return +Math.max(0.01, totalReward).toFixed(4);
-  }
-
-  /**
-   * Check if user has sufficient balance for task
-   */
-  async checkBalance(userId, requiredAmount) {
-    const account = this.tokenBalances.get(userId);
-    if (!account) {
-      return { sufficient: false, balance: 0, required: requiredAmount };
-    }
-
-    const sufficient = account.balance >= requiredAmount;
-    return {
-      sufficient,
-      balance: account.balance,
-      required: requiredAmount,
-      shortfall: sufficient ? 0 : requiredAmount - account.balance
-    };
-  }
-
-  /**
-   * Debit tokens from user account for task submission
-   */
-  async debitTokens(userId, amount, taskId, description = 'Task submission') {
+  async getUserBalance(userId) {
     try {
-      const account = this.tokenBalances.get(userId);
-      if (!account) {
-        throw new Error(`Account not found for user: ${userId}`);
-      }
-
-      if (account.balance < amount) {
-        throw new Error(`Insufficient balance. Required: ${amount}, Available: ${account.balance}`);
-      }
-
-      // Debit the amount
-      account.balance -= amount;
-      account.totalSpent += amount;
-      account.lastUpdated = new Date();
-      account.transactionCount++;
-
-      // Record transaction
-      await this.recordTransaction({
-        userId,
-        type: 'debit',
-        amount,
-        description,
-        taskId,
-        nodeId: null
-      });
-
-      logger.info(`Debited ${amount} tokens from user ${userId}`, {
-        userId,
-        amount,
-        taskId,
-        newBalance: account.balance
-      });
-
-      return {
-        success: true,
-        newBalance: account.balance,
-        transactionId: await this.getLastTransactionId(userId)
-      };
+      return await Transaction.getUserBalance(userId);
     } catch (error) {
-      logger.error(`Error debiting tokens for user ${userId}:`, error);
+      logger.error(`Error getting balance for user ${userId}:`, error);
       throw error;
     }
   }
 
   /**
-   * Credit tokens to node account for task completion
+   * Process payment for task
    */
-  async creditTokens(nodeId, amount, taskId, description = 'Task completion reward') {
+  async processTaskPayment(userId, taskId, model, priority = 'standard') {
     try {
-      // Get or create node account
-      let account = this.tokenBalances.get(nodeId);
-      if (!account) {
-        account = await this.createAccount(nodeId, 0);
+      // Calculate task cost
+      const baseCost = this.taskCosts[model] || 0.1;
+      const priorityMultiplier = this.rewardRates[priority] || 1.0;
+      const totalCost = baseCost * priorityMultiplier + this.transactionFee;
+
+      // Check if user has sufficient balance
+      const userBalance = await this.getUserBalance(userId);
+      if (userBalance.balance < totalCost) {
+        throw new Error(`Insufficient balance. Required: ${totalCost}, Available: ${userBalance.balance}`);
       }
 
-      // Credit the amount
-      account.balance += amount;
-      account.totalEarned += amount;
-      account.lastUpdated = new Date();
-      account.transactionCount++;
-
-      // Record transaction
-      await this.recordTransaction({
-        userId: nodeId,
-        type: 'credit',
-        amount,
-        description,
-        taskId,
-        nodeId
+      // Create debit transaction for task payment
+      const transaction = await Transaction.create({
+        user_id: userId,
+        job_id: taskId,
+        transaction_type: 'debit',
+        amount: totalCost,
+        description: `Payment for ${model} task (${priority} priority)`,
+        metadata: {
+          model,
+          priority,
+          baseCost,
+          priorityMultiplier,
+          transactionFee: this.transactionFee
+        }
       });
 
-      logger.info(`Credited ${amount} tokens to node ${nodeId}`, {
-        nodeId,
-        amount,
+      logger.info(`Task payment processed for user ${userId}`, {
+        userId,
         taskId,
-        newBalance: account.balance
+        model,
+        priority,
+        amount: totalCost,
+        transactionId: transaction.id
       });
 
       return {
         success: true,
-        newBalance: account.balance,
-        transactionId: await this.getLastTransactionId(nodeId)
+        transactionId: transaction.id,
+        amount: totalCost,
+        remainingBalance: userBalance.balance - totalCost
       };
+
     } catch (error) {
-      logger.error(`Error crediting tokens to node ${nodeId}:`, error);
+      logger.error(`Error processing task payment for user ${userId}:`, error);
       throw error;
     }
   }
 
   /**
-   * Process payment for completed task
+   * Process task completion reward
    */
-  async processTaskPayment(taskId, userId, nodeId, taskData) {
+  async processTaskReward(nodeUserId, taskId, model, priority = 'standard', performanceScore = 1.0) {
     try {
-      const { model, priority, startTime, endTime } = taskData;
-      const completionTime = (endTime - startTime) / 1000; // seconds
+      // Calculate reward
+      const baseReward = this.taskCosts[model] || 0.1;
+      const priorityMultiplier = this.rewardRates[priority] || 1.0;
+      const performanceBonus = Math.max(0, performanceScore - 1) * 0.1; // 10% bonus for good performance
+      const totalReward = (baseReward * priorityMultiplier * 0.8) + performanceBonus; // 80% of task cost as reward
+
+      // Create credit transaction for node reward
+      const transaction = await Transaction.create({
+        user_id: nodeUserId,
+        job_id: taskId,
+        transaction_type: 'credit',
+        amount: totalReward,
+        description: `Reward for completing ${model} task`,
+        metadata: {
+          model,
+          priority,
+          baseReward,
+          priorityMultiplier,
+          performanceScore,
+          performanceBonus
+        }
+      });
+
+      logger.info(`Task reward processed for node user ${nodeUserId}`, {
+        nodeUserId,
+        taskId,
+        model,
+        priority,
+        performanceScore,
+        amount: totalReward,
+        transactionId: transaction.id
+      });
+
+      return {
+        success: true,
+        transactionId: transaction.id,
+        amount: totalReward,
+        performanceScore
+      };
+
+    } catch (error) {
+      logger.error(`Error processing task reward for node user ${nodeUserId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Hold funds in escrow for task
+   */
+  async holdEscrow(userId, taskId, amount) {
+    try {
+      await Transaction.processEscrow(taskId, amount, 'hold');
       
-      // Calculate cost and reward
-      const taskCost = this.calculateTaskCost(model, priority, completionTime / 60);
-      const nodeReward = this.calculateNodeReward(
-        taskCost, 
-        taskData.nodeRating || 0.5, 
-        completionTime, 
-        priority
-      );
-      
-      // Platform fee
-      const platformFee = taskCost - nodeReward;
-
-      // Credit node
-      await this.creditTokens(
-        nodeId, 
-        nodeReward, 
-        taskId, 
-        `Reward for completing task (${model})`
-      );
-
-      // Record platform earnings
-      await this.recordTransaction({
-        userId: 'platform',
-        type: 'credit',
-        amount: platformFee,
-        description: `Platform fee for task ${taskId}`,
-        taskId,
-        nodeId
-      });
-
-      logger.info(`Processed payment for task ${taskId}`, {
-        taskId,
+      logger.info(`Escrow held for task ${taskId}`, {
         userId,
-        nodeId,
-        taskCost,
-        nodeReward,
-        platformFee,
-        completionTime
+        taskId,
+        amount
       });
 
-      return {
-        success: true,
-        taskCost,
-        nodeReward,
-        platformFee,
-        completionTime
-      };
+      return { success: true, amount };
     } catch (error) {
-      logger.error(`Error processing payment for task ${taskId}:`, error);
+      logger.error(`Error holding escrow:`, error);
       throw error;
     }
   }
 
   /**
-   * Handle failed task refund
+   * Release escrow funds
    */
-  async processTaskRefund(taskId, userId, reason = 'Task failed') {
+  async releaseEscrow(taskId, amount) {
     try {
-      // Find the original debit transaction
-      const transactions = Array.from(this.transactions.values());
-      const originalTransaction = transactions.find(t => 
-        t.taskId === taskId && 
-        t.userId === userId && 
-        t.type === 'debit'
-      );
+      await Transaction.processEscrow(taskId, amount, 'release');
+      
+      logger.info(`Escrow released for task ${taskId}`, {
+        taskId,
+        amount
+      });
 
-      if (!originalTransaction) {
-        throw new Error(`Original transaction not found for task ${taskId}`);
+      return { success: true, amount };
+    } catch (error) {
+      logger.error(`Error releasing escrow:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Refund escrow funds
+   */
+  async refundEscrow(taskId, amount) {
+    try {
+      await Transaction.processEscrow(taskId, amount, 'refund');
+      
+      logger.info(`Escrow refunded for task ${taskId}`, {
+        taskId,
+        amount
+      });
+
+      return { success: true, amount };
+    } catch (error) {
+      logger.error(`Error refunding escrow:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add funds to user account
+   */
+  async addFunds(userId, amount, paymentMethod = 'manual', externalTxId = null) {
+    try {
+      const transaction = await Transaction.create({
+        user_id: userId,
+        transaction_type: 'credit',
+        amount: amount,
+        description: `Funds added via ${paymentMethod}`,
+        payment_method: paymentMethod,
+        external_transaction_id: externalTxId
+      });
+
+      const balance = await this.getUserBalance(userId);
+
+      logger.info(`Funds added for user ${userId}`, {
+        userId,
+        amount,
+        paymentMethod,
+        newBalance: balance.balance,
+        transactionId: transaction.id
+      });
+
+      return {
+        success: true,
+        transactionId: transaction.id,
+        amount,
+        newBalance: balance.balance
+      };
+
+    } catch (error) {
+      logger.error(`Error adding funds for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Withdraw funds from user account
+   */
+  async withdrawFunds(userId, amount, withdrawalMethod = 'manual') {
+    try {
+      // Check balance
+      const balance = await this.getUserBalance(userId);
+      if (balance.balance < amount) {
+        throw new Error(`Insufficient balance for withdrawal. Available: ${balance.balance}, Requested: ${amount}`);
       }
 
-      // Refund the amount
-      await this.creditTokens(
-        userId,
-        originalTransaction.amount,
-        taskId,
-        `Refund: ${reason}`
-      );
+      // Check minimum balance after withdrawal
+      if (balance.balance - amount < this.minimumBalance) {
+        throw new Error(`Withdrawal would leave balance below minimum of ${this.minimumBalance}`);
+      }
 
-      logger.info(`Processed refund for task ${taskId}`, {
-        taskId,
+      const transaction = await Transaction.create({
+        user_id: userId,
+        transaction_type: 'debit',
+        amount: amount,
+        description: `Funds withdrawn via ${withdrawalMethod}`,
+        payment_method: withdrawalMethod
+      });
+
+      const newBalance = await this.getUserBalance(userId);
+
+      logger.info(`Funds withdrawn for user ${userId}`, {
         userId,
-        amount: originalTransaction.amount,
-        reason
+        amount,
+        withdrawalMethod,
+        newBalance: newBalance.balance,
+        transactionId: transaction.id
       });
 
       return {
         success: true,
-        refundAmount: originalTransaction.amount
+        transactionId: transaction.id,
+        amount,
+        newBalance: newBalance.balance
       };
+
     } catch (error) {
-      logger.error(`Error processing refund for task ${taskId}:`, error);
+      logger.error(`Error withdrawing funds for user ${userId}:`, error);
       throw error;
     }
-  }
-
-  /**
-   * Get account balance and info
-   */
-  getAccount(userId) {
-    const account = this.tokenBalances.get(userId);
-    if (!account) {
-      return null;
-    }
-
-    return {
-      ...account,
-      netBalance: account.totalEarned - account.totalSpent
-    };
   }
 
   /**
    * Get transaction history for user
    */
-  getTransactionHistory(userId, limit = 50) {
-    const transactions = Array.from(this.transactions.values())
-      .filter(t => t.userId === userId)
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, limit);
-
-    return transactions;
-  }
-
-  /**
-   * Record a transaction
-   */
-  async recordTransaction(transactionData) {
+  async getTransactionHistory(userId, options = {}) {
     try {
-      const transaction = {
-        id: this.generateTransactionId(),
-        ...transactionData,
-        timestamp: new Date(),
-        status: 'completed'
-      };
-
-      this.transactions.set(transaction.id, transaction);
-
-      return transaction;
+      return await Transaction.getUserTransactions(userId, options);
     } catch (error) {
-      logger.error('Error recording transaction:', error);
+      logger.error(`Error getting transaction history for user ${userId}:`, error);
       throw error;
     }
   }
@@ -366,104 +333,63 @@ class TokenEngine {
   /**
    * Get platform statistics
    */
-  getPlatformStats() {
-    const allAccounts = Array.from(this.tokenBalances.values());
-    const allTransactions = Array.from(this.transactions.values());
-    
-    const totalSupply = allAccounts.reduce((sum, acc) => sum + acc.balance, 0);
-    const totalEarned = allAccounts.reduce((sum, acc) => sum + acc.totalEarned, 0);
-    const totalSpent = allAccounts.reduce((sum, acc) => sum + acc.totalSpent, 0);
-    
-    const platformAccount = this.tokenBalances.get('platform');
-    const platformBalance = platformAccount ? platformAccount.balance : 0;
-    
-    const recentTransactions = allTransactions
-      .filter(t => Date.now() - t.timestamp.getTime() < 24 * 60 * 60 * 1000)
-      .length;
-
-    return {
-      totalSupply: +totalSupply.toFixed(4),
-      totalEarned: +totalEarned.toFixed(4),
-      totalSpent: +totalSpent.toFixed(4),
-      platformBalance: +platformBalance.toFixed(4),
-      totalAccounts: allAccounts.length,
-      totalTransactions: allTransactions.length,
-      recentTransactions,
-      averageBalance: allAccounts.length > 0 ? +(totalSupply / allAccounts.length).toFixed(4) : 0
-    };
-  }
-
-  /**
-   * Generate unique transaction ID
-   */
-  generateTransactionId() {
-    return `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * Get last transaction ID for user
-   */
-  async getLastTransactionId(userId) {
-    const transactions = Array.from(this.transactions.values())
-      .filter(t => t.userId === userId)
-      .sort((a, b) => b.timestamp - a.timestamp);
-    
-    return transactions.length > 0 ? transactions[0].id : null;
-  }
-
-  /**
-   * Add tokens to account (admin function)
-   */
-  async addTokens(userId, amount, description = 'Admin credit') {
+  async getPlatformStats() {
     try {
-      let account = this.tokenBalances.get(userId);
-      if (!account) {
-        account = await this.createAccount(userId, 0);
-      }
-
-      await this.creditTokens(userId, amount, null, description);
-
-      logger.info(`Admin added ${amount} tokens to user ${userId}`, {
-        userId,
-        amount,
-        description
-      });
-
-      return this.getAccount(userId);
+      const stats = await Transaction.getTransactionStats();
+      
+      return {
+        totalTransactions: stats.reduce((sum, stat) => sum + parseInt(stat.count), 0),
+        totalVolume: stats.reduce((sum, stat) => sum + parseFloat(stat.total_amount || 0), 0),
+        averageTransactionSize: stats.reduce((sum, stat) => sum + parseFloat(stat.avg_amount || 0), 0) / stats.length || 0,
+        transactionsByType: stats.reduce((acc, stat) => {
+          acc[stat.transaction_type] = {
+            count: parseInt(stat.count),
+            volume: parseFloat(stat.total_amount || 0)
+          };
+          return acc;
+        }, {})
+      };
     } catch (error) {
-      logger.error(`Error adding tokens to user ${userId}:`, error);
+      logger.error('Error getting platform stats:', error);
       throw error;
     }
   }
 
   /**
-   * Set token prices (admin function)
+   * Calculate task cost estimate
    */
-  updatePricing(model, price) {
-    if (typeof price !== 'number' || price < 0) {
-      throw new Error('Price must be a positive number');
+  calculateTaskCost(model, priority = 'standard', estimatedDuration = null) {
+    const baseCost = this.taskCosts[model] || 0.1;
+    const priorityMultiplier = this.rewardRates[priority] || 1.0;
+    let cost = baseCost * priorityMultiplier + this.transactionFee;
+
+    // Duration-based pricing if provided
+    if (estimatedDuration) {
+      const durationMultiplier = Math.max(1, estimatedDuration / 60); // Per minute pricing
+      cost *= durationMultiplier;
     }
 
-    this.taskCosts[model] = price;
-    
-    logger.info(`Updated pricing for ${model}`, {
-      model,
-      newPrice: price
-    });
-
-    return this.taskCosts;
+    return {
+      baseCost,
+      priorityMultiplier,
+      transactionFee: this.transactionFee,
+      totalCost: cost,
+      estimatedReward: cost * 0.8 // Node gets 80% of task cost
+    };
   }
 
   /**
-   * Initialize the token engine
+   * Initialize the service
    */
   async initialize() {
-    logger.info('Token engine initialized');
-    
-    // Create platform account
-    await this.createAccount('platform', 0);
-    
-    return true;
+    logger.info('TokenEngine initialized with database integration');
+  }
+
+  /**
+   * Shutdown the service
+   */
+  async shutdown() {
+    logger.info('TokenEngine shut down');
   }
 }
 

@@ -1,4 +1,6 @@
 const logger = require('../utils/logger');
+const { db } = require('../config/database-universal');
+const Node = require('../models/Node');
 
 /**
  * Node Manager Service
@@ -6,8 +8,6 @@ const logger = require('../utils/logger');
  */
 class NodeManager {
   constructor() {
-    this.nodes = new Map();
-    this.nodeMetrics = new Map();
     this.heartbeatInterval = 30000; // 30 seconds
     this.nodeTimeout = 90000; // 90 seconds
     this.cleanupInterval = null;
@@ -20,39 +20,38 @@ class NodeManager {
    */
   async registerNode(nodeData) {
     try {
-      const node = {
-        id: nodeData.id,
-        endpoint: nodeData.endpoint,
-        publicKey: nodeData.publicKey,
-        capabilities: nodeData.capabilities || {},
-        max_vram_gb: nodeData.max_vram_gb || 0,
-        max_cpu_cores: nodeData.max_cpu_cores || 0,
-        supported_models: nodeData.supported_models || [],
-        region: nodeData.region || 'unknown',
-        version: nodeData.version || '0.1.0',
-        
-        // Status tracking
-        status: 'active',
-        registeredAt: new Date(),
-        lastHeartbeat: new Date(),
-        lastTaskAssignment: null,
-        
-        // Performance metrics
-        rating: nodeData.rating || 0.5, // Start with neutral rating
-        tasks_completed: 0,
-        tasks_failed: 0,
-        total_uptime: 0,
-        avg_response_time: 0,
-        
-        // Current availability
-        available_vram_gb: nodeData.max_vram_gb || 0,
-        available_cpu_cores: nodeData.max_cpu_cores || 0,
-        current_tasks: 0,
-        max_concurrent_tasks: nodeData.max_concurrent_tasks || 1
+      // Prepare node data for database
+      const nodeDbData = {
+        user_id: nodeData.user_id || nodeData.userId,
+        name: nodeData.name || `Node-${nodeData.id?.slice(0, 8)}`,
+        description: nodeData.description,
+        node_type: nodeData.node_type || 'compute',
+        capabilities: {
+          max_vram_gb: nodeData.max_vram_gb || 0,
+          max_cpu_cores: nodeData.max_cpu_cores || 0,
+          supported_models: nodeData.supported_models || [],
+          endpoint: nodeData.endpoint,
+          publicKey: nodeData.publicKey,
+          version: nodeData.version || '0.1.0'
+        },
+        hardware_info: {
+          max_vram_gb: nodeData.max_vram_gb || 0,
+          max_cpu_cores: nodeData.max_cpu_cores || 0,
+          available_vram_gb: nodeData.max_vram_gb || 0,
+          available_cpu_cores: nodeData.max_cpu_cores || 0
+        },
+        network_info: {
+          endpoint: nodeData.endpoint,
+          region: nodeData.region || 'unknown'
+        },
+        location: {
+          region: nodeData.region || 'unknown'
+        },
+        pricing: nodeData.pricing || {}
       };
 
-      this.nodes.set(node.id, node);
-      this.initializeNodeMetrics(node.id);
+      const node = await Node.create(nodeDbData);
+      await this.initializeNodeMetrics(node.id);
 
       logger.info(`Node ${node.id} registered successfully`, {
         nodeId: node.id,
@@ -73,40 +72,43 @@ class NodeManager {
    * Process heartbeat from node
    */
   async processHeartbeat(nodeId, heartbeatData) {
-    const node = this.nodes.get(nodeId);
-    if (!node) {
-      logger.warn(`Heartbeat from unregistered node: ${nodeId}`);
-      return false;
-    }
-
     try {
-      // Update node status
-      node.lastHeartbeat = new Date();
-      node.status = heartbeatData.status || 'active';
+      const node = await Node.findById(nodeId);
+      if (!node) {
+        logger.warn(`Heartbeat from unregistered node: ${nodeId}`);
+        return false;
+      }
+
+      // Determine new status
+      const newStatus = heartbeatData.status === 'busy' ? 'busy' : 'online';
       
-      // Update resource availability
+      // Update hardware info with current availability
+      const updatedHardwareInfo = { ...node.hardware_info };
       if (heartbeatData.resources) {
-        node.available_vram_gb = heartbeatData.resources.available_vram_gb || node.available_vram_gb;
-        node.available_cpu_cores = heartbeatData.resources.available_cpu_cores || node.available_cpu_cores;
-        node.current_tasks = heartbeatData.resources.current_tasks || node.current_tasks;
+        updatedHardwareInfo.available_vram_gb = heartbeatData.resources.available_vram_gb;
+        updatedHardwareInfo.available_cpu_cores = heartbeatData.resources.available_cpu_cores;
+        updatedHardwareInfo.current_tasks = heartbeatData.resources.current_tasks || 0;
       }
 
-      // Update performance metrics
+      // Update node status and last seen
+      await Node.updateStatus(nodeId, newStatus);
+      
+      // Update hardware info
+      await db.query(
+        'UPDATE nodes SET hardware_info = $1, updated_at = $2 WHERE id = $3',
+        [JSON.stringify(updatedHardwareInfo), new Date(), nodeId]
+      );
+
+      // Save performance metrics if provided
       if (heartbeatData.metrics) {
-        this.updateNodeMetrics(nodeId, heartbeatData.metrics);
+        await Node.saveMetrics(nodeId, heartbeatData.metrics);
       }
-
-      // Calculate uptime
-      const now = Date.now();
-      const lastUpdate = node.lastMetricsUpdate || node.registeredAt.getTime();
-      node.total_uptime += (now - lastUpdate);
-      node.lastMetricsUpdate = now;
 
       logger.debug(`Heartbeat processed for node ${nodeId}`, {
         nodeId,
-        status: node.status,
-        availableVram: node.available_vram_gb,
-        currentTasks: node.current_tasks
+        status: newStatus,
+        availableVram: updatedHardwareInfo.available_vram_gb,
+        currentTasks: updatedHardwareInfo.current_tasks
       });
 
       return true;
@@ -119,96 +121,73 @@ class NodeManager {
   /**
    * Get available nodes for task assignment
    */
-  getAvailableNodes(requirements = {}) {
-    const availableNodes = Array.from(this.nodes.values()).filter(node => {
-      // Must be active and healthy
-      if (node.status !== 'active') return false;
+  async getAvailableNodes(requirements = {}) {
+    try {
+      // Build requirements for database query
+      const dbRequirements = {};
       
-      // Check if node is responding (recent heartbeat)
-      const timeSinceHeartbeat = Date.now() - node.lastHeartbeat.getTime();
-      if (timeSinceHeartbeat > this.nodeTimeout) return false;
-      
-      // Must have available task slots
-      if (node.current_tasks >= node.max_concurrent_tasks) return false;
-      
-      // Check minimum requirements if specified
-      if (requirements.minVram && node.available_vram_gb < requirements.minVram) return false;
-      if (requirements.minCpuCores && node.available_cpu_cores < requirements.minCpuCores) return false;
-      if (requirements.models && !requirements.models.some(model => node.supported_models.includes(model))) return false;
-      if (requirements.region && node.region !== requirements.region) return false;
-      
-      return true;
-    });
+      if (requirements.minVram) {
+        dbRequirements.minVramGB = requirements.minVram;
+      }
+      if (requirements.minCpuCores) {
+        dbRequirements.minCpuCores = requirements.minCpuCores;
+      }
+      if (requirements.region) {
+        dbRequirements.region = requirements.region;
+      }
+      if (requirements.nodeType) {
+        dbRequirements.nodeType = requirements.nodeType;
+      }
 
-    // Sort by performance rating and availability
-    return availableNodes.sort((a, b) => {
-      // Primary sort: rating (higher is better)
-      if (Math.abs(b.rating - a.rating) > 0.05) {
-        return b.rating - a.rating;
+      // Get available nodes from database
+      let availableNodes = await Node.getAvailableNodes(dbRequirements);
+      
+      // Additional filtering for model requirements
+      if (requirements.models && requirements.models.length > 0) {
+        availableNodes = availableNodes.filter(node => {
+          const supportedModels = node.capabilities?.supported_models || [];
+          return requirements.models.some(model => supportedModels.includes(model));
+        });
       }
       
-      // Secondary sort: resource availability
-      const aResourceRatio = (a.available_vram_gb / a.max_vram_gb) + (a.available_cpu_cores / a.max_cpu_cores);
-      const bResourceRatio = (b.available_vram_gb / b.max_vram_gb) + (b.available_cpu_cores / b.max_cpu_cores);
-      
-      return bResourceRatio - aResourceRatio;
-    });
+      // Filter out nodes that haven't sent heartbeat recently
+      const now = Date.now();
+      availableNodes = availableNodes.filter(node => {
+        if (!node.last_seen) return false;
+        const timeSinceHeartbeat = now - new Date(node.last_seen).getTime();
+        return timeSinceHeartbeat <= this.nodeTimeout;
+      });
+
+      return availableNodes;
+    } catch (error) {
+      logger.error('Error getting available nodes:', error);
+      return [];
+    }
   }
 
   /**
    * Update node rating based on performance
    */
-  updateNodeRating(nodeId, taskOutcome) {
-    const node = this.nodes.get(nodeId);
-    if (!node) return false;
-
-    const metrics = this.nodeMetrics.get(nodeId);
-    if (!metrics) return false;
-
+  async updateNodeRating(nodeId, taskOutcome) {
     try {
-      // Update task counters
-      if (taskOutcome.success) {
-        node.tasks_completed++;
-      } else {
-        node.tasks_failed++;
-      }
+      const node = await Node.findById(nodeId);
+      if (!node) return false;
 
-      // Calculate success rate
-      const totalTasks = node.tasks_completed + node.tasks_failed;
-      const successRate = totalTasks > 0 ? node.tasks_completed / totalTasks : 0.5;
-
-      // Update average response time
+      // Calculate new rating based on task outcome
+      let rating = taskOutcome.success ? 1 : 0;
       if (taskOutcome.responseTime) {
-        const currentAvg = node.avg_response_time;
-        const newCount = node.tasks_completed;
-        node.avg_response_time = newCount > 1 
-          ? ((currentAvg * (newCount - 1)) + taskOutcome.responseTime) / newCount
-          : taskOutcome.responseTime;
+        // Better response times get higher ratings
+        const responseTimeScore = Math.max(0, 1 - (taskOutcome.responseTime / 30000)); // 30s max
+        rating = (rating + responseTimeScore) / 2;
       }
 
-      // Calculate new rating (weighted average of factors)
-      const uptimeScore = Math.min(node.total_uptime / (7 * 24 * 60 * 60 * 1000), 1); // Max score at 1 week
-      const responseTimeScore = node.avg_response_time > 0 
-        ? Math.max(1 - (node.avg_response_time / 30000), 0) // Penalize response times > 30s
-        : 0.5;
-
-      const newRating = (
-        successRate * 0.4 +           // 40% success rate
-        uptimeScore * 0.3 +           // 30% uptime
-        responseTimeScore * 0.2 +     // 20% response time
-        (node.rating * 0.1)           // 10% historical rating for stability
-      );
-
-      node.rating = Math.max(0, Math.min(1, newRating));
+      // Update node reputation in database
+      await Node.updateReputation(nodeId, rating);
 
       logger.debug(`Updated rating for node ${nodeId}`, {
         nodeId,
-        oldRating: node.rating,
-        newRating,
-        successRate,
-        totalTasks,
-        uptimeScore,
-        responseTimeScore
+        taskOutcome,
+        newRating: rating
       });
 
       return true;
@@ -222,24 +201,17 @@ class NodeManager {
    * Remove node from network
    */
   async removeNode(nodeId, reason = 'manual') {
-    const node = this.nodes.get(nodeId);
-    if (!node) return false;
-
     try {
-      // Mark as offline first
-      node.status = 'offline';
-      node.removedAt = new Date();
-      node.removalReason = reason;
+      const node = await Node.findById(nodeId);
+      if (!node) return false;
 
-      // Clean up
-      this.nodes.delete(nodeId);
-      this.nodeMetrics.delete(nodeId);
+      // Deactivate node in database
+      await Node.deactivate(nodeId);
 
       logger.info(`Node ${nodeId} removed from network`, {
         nodeId,
         reason,
-        uptime: node.total_uptime,
-        tasksCompleted: node.tasks_completed
+        totalJobs: node.total_jobs_completed || 0
       });
 
       return true;
@@ -252,34 +224,59 @@ class NodeManager {
   /**
    * Get network statistics
    */
-  getNetworkStats() {
-    const allNodes = Array.from(this.nodes.values());
-    const activeNodes = allNodes.filter(n => n.status === 'active');
-    
-    const stats = {
-      total_nodes: allNodes.length,
-      active_nodes: activeNodes.length,
-      offline_nodes: allNodes.filter(n => n.status === 'offline').length,
-      busy_nodes: activeNodes.filter(n => n.current_tasks > 0).length,
+  async getNetworkStats() {
+    try {
+      const result = await db.query(`
+        SELECT 
+          COUNT(*) as total_nodes,
+          COUNT(CASE WHEN status = 'online' THEN 1 END) as active_nodes,
+          COUNT(CASE WHEN status = 'offline' THEN 1 END) as offline_nodes,
+          COUNT(CASE WHEN status = 'busy' THEN 1 END) as busy_nodes,
+          AVG(reputation_score) as avg_reputation,
+          SUM(total_jobs_completed) as network_jobs_completed
+        FROM nodes
+      `);
       
-      total_vram_gb: allNodes.reduce((sum, n) => sum + n.max_vram_gb, 0),
-      available_vram_gb: activeNodes.reduce((sum, n) => sum + n.available_vram_gb, 0),
-      
-      total_cpu_cores: allNodes.reduce((sum, n) => sum + n.max_cpu_cores, 0),
-      available_cpu_cores: activeNodes.reduce((sum, n) => sum + n.available_cpu_cores, 0),
-      
-      total_tasks: allNodes.reduce((sum, n) => sum + n.tasks_completed, 0),
-      current_tasks: activeNodes.reduce((sum, n) => sum + n.current_tasks, 0),
-      
-      avg_node_rating: activeNodes.length > 0 
-        ? activeNodes.reduce((sum, n) => sum + n.rating, 0) / activeNodes.length 
-        : 0,
-      
-      regions: [...new Set(allNodes.map(n => n.region))],
-      supported_models: [...new Set(allNodes.flatMap(n => n.supported_models))]
-    };
+      const allNodes = await this.getAllNodes();
+      const activeNodes = allNodes.filter(n => n.status === 'online');
 
-    return stats;
+      const stats = {
+        ...result.rows[0],
+        total_nodes: parseInt(result.rows[0].total_nodes),
+        active_nodes: parseInt(result.rows[0].active_nodes),
+        offline_nodes: parseInt(result.rows[0].offline_nodes),
+        busy_nodes: parseInt(result.rows[0].busy_nodes),
+        avg_reputation: parseFloat(result.rows[0].avg_reputation) || 0,
+        network_jobs_completed: parseInt(result.rows[0].network_jobs_completed) || 0,
+        
+        total_tasks: allNodes.reduce((sum, n) => sum + (n.tasks_completed || 0), 0),
+        current_tasks: activeNodes.reduce((sum, n) => sum + (n.current_tasks || 0), 0),
+        
+        avg_node_rating: activeNodes.length > 0 
+          ? activeNodes.reduce((sum, n) => sum + (n.rating || 0), 0) / activeNodes.length 
+          : 0,
+        
+        regions: [...new Set(allNodes.map(n => n.region).filter(Boolean))],
+        supported_models: [...new Set(allNodes.flatMap(n => n.supported_models || []))]
+      };
+
+      return stats;
+    } catch (error) {
+      logger.error('Error getting network stats:', error);
+      return {
+        total_nodes: 0,
+        active_nodes: 0,
+        offline_nodes: 0,
+        busy_nodes: 0,
+        avg_reputation: 0,
+        network_jobs_completed: 0,
+        total_tasks: 0,
+        current_tasks: 0,
+        avg_node_rating: 0,
+        regions: [],
+        supported_models: []
+      };
+    }
   }
 
   /**
@@ -372,29 +369,48 @@ class NodeManager {
   /**
    * Get specific node information
    */
-  getNode(nodeId) {
-    return this.nodes.get(nodeId) || null;
+  async getNode(nodeId) {
+    try {
+      return await Node.findById(nodeId);
+    } catch (error) {
+      logger.error(`Error getting node ${nodeId}:`, error);
+      return null;
+    }
   }
 
   /**
    * Get all nodes with optional filtering
    */
-  getAllNodes(filter = {}) {
-    let nodes = Array.from(this.nodes.values());
+  async getAllNodes(filter = {}) {
+    try {
+      // Build database query conditions
+      const conditions = {};
+      if (filter.status) {
+        conditions.status = filter.status;
+      }
+      
+      // Get nodes from database
+      let nodes = await db.query(
+        'SELECT * FROM nodes WHERE ($1::text IS NULL OR status = $1) ORDER BY created_at DESC',
+        [filter.status || null]
+      );
+      
+      nodes = nodes.rows;
+      
+      // Additional filtering
+      if (filter.region) {
+        nodes = nodes.filter(n => n.location?.region === filter.region);
+      }
+      
+      if (filter.minRating) {
+        nodes = nodes.filter(n => (n.reputation_score || 0) >= filter.minRating);
+      }
 
-    if (filter.status) {
-      nodes = nodes.filter(n => n.status === filter.status);
+      return nodes;
+    } catch (error) {
+      logger.error('Error getting all nodes:', error);
+      return [];
     }
-    
-    if (filter.region) {
-      nodes = nodes.filter(n => n.region === filter.region);
-    }
-    
-    if (filter.minRating) {
-      nodes = nodes.filter(n => n.rating >= filter.minRating);
-    }
-
-    return nodes;
   }
 
   /**
@@ -403,6 +419,14 @@ class NodeManager {
   async initialize() {
     logger.info('Node manager initialized');
     return true;
+  }
+
+  /**
+   * Shutdown the node manager
+   */
+  async shutdown() {
+    this.stopCleanupTimer();
+    logger.info('Node manager shut down');
   }
 }
 
