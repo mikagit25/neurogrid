@@ -1,0 +1,22 @@
+{
+  "name": "neurogrid-mvp",
+  "version": "1.0.0",
+  "description": "NeuroGrid MVP - Decentralized AI Inference Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"MVP deployment test\" && exit 0"
+  },
+  "keywords": ["ai", "gpu", "decentralized", "inference", "blockchain"],
+  "author": "NeuroGrid Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

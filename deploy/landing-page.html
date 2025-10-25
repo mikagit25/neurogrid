@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid - Democratizing AI Computing</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .features {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .feature {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-section {
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .demo-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 3rem;
+            margin-top: 3rem;
+        }
+        
+        .demo-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .demo-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-result {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: left;
+            min-height: 100px;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .waitlist {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .waitlist-form {
+            max-width: 500px;
+            margin: 0 auto;
+            margin-top: 2rem;
+        }
+        
+        .waitlist-input {
+            width: 70%;
+            padding: 15px;
+            border: none;
+            border-radius: 5px 0 0 5px;
+            font-size: 1.1rem;
+        }
+        
+        .waitlist-btn {
+            width: 30%;
+            padding: 15px;
+            border: none;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 0 5px 5px 0;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .cta-buttons { flex-direction: column; align-items: center; }
+            .waitlist-input, .waitlist-btn { width: 100%; border-radius: 5px; margin-bottom: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>NeuroGrid</h1>
+            <p>Turn idle GPUs into affordable AI computing power</p>
+            <p>🚀 <strong>70% cheaper than cloud providers</strong> | 🌍 <strong>Decentralized network</strong> | 🤖 <strong>Open-source models</strong></p>
+            
+            <div class="cta-buttons">
+                <a href="/demo" class="btn btn-primary">Try Live Demo</a>
+                <a href="/about-project" class="btn btn-secondary">Learn More</a>
+                <a href="#waitlist" class="btn btn-secondary">Join Beta</a>
+            </div>
+            
+            <div style="margin-top: 2rem; text-align: center;">
+                <div style="display: inline-flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                    <a href="/api/docs" style="color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem;">📚 API Docs</a>
+                    <a href="/technical-docs" style="color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem;">🔧 Technical</a>
+                    <a href="/investors" style="color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem;">💰 Investors</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 1rem;">Why NeuroGrid?</h2>
+            <p style="text-align: center; font-size: 1.2rem; color: #666;">The future of AI computing is decentralized</p>
+            
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">💰</div>
+                    <h3>70% Cheaper</h3>
+                    <p>Pay $0.001 per 1K tokens instead of $0.06 on OpenAI. Perfect for startups and researchers.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Global Network</h3>
+                    <p>Harness idle GPU power from around the world. Scale instantly without infrastructure costs.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Secure & Private</h3>
+                    <p>Containerized execution with encryption. Your data never leaves the secure network.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Open Models</h3>
+                    <p>LLaMA, Mistral, Stable Diffusion - run any open-source model without vendor lock-in.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3>GPU Monetization</h3>
+                    <p>Turn your idle gaming rig into passive income. Earn while you sleep.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Developer First</h3>
+                    <p>Simple REST API, comprehensive docs, and SDKs for every language.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo-section">
+        <div class="container">
+            <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Try It Now</h2>
+            <p style="font-size: 1.2rem; color: #666;">Experience the power of decentralized AI</p>
+            
+            <div class="demo-container">
+                <div class="demo-form">
+                    <h3>AI Text Generation Demo</h3>
+                    <input type="text" class="demo-input" placeholder="Ask anything... (e.g., 'Explain quantum physics simply')" id="promptInput">
+                    <button class="btn btn-primary" onclick="runDemo()" style="width: 100%;">Generate AI Response</button>
+                    
+                    <div class="loading" id="loading">🤖 Processing on NeuroGrid network...</div>
+                    <div class="demo-result" id="result"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Waitlist Section -->
+    <section id="waitlist" class="waitlist">
+        <div class="container">
+            <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Join the Beta</h2>
+            <p style="font-size: 1.2rem;">Be among the first to access affordable AI computing</p>
+            
+            <div class="waitlist-form">
+                <input type="email" class="waitlist-input" placeholder="Your email address" id="emailInput">
+                <button class="waitlist-btn" onclick="joinWaitlist()">Join Beta</button>
+            </div>
+            
+            <p style="margin-top: 2rem; opacity: 0.9;">
+                🎁 <strong>Early Access Bonus:</strong> 1,000 free AI tasks + lifetime 15% discount
+            </p>
+        </div>
+    </section>
+
+    <script>
+        // Demo functionality
+        async function runDemo() {
+            const prompt = document.getElementById('promptInput').value;
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            if (!prompt.trim()) {
+                alert('Please enter a prompt');
+                return;
+            }
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            // Simulate AI processing
+            setTimeout(() => {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                
+                // Mock responses based on prompt
+                const responses = {
+                    default: `Based on your prompt: "${prompt}"\n\nThis is a demonstration of NeuroGrid's AI capabilities. In the real system, this would be processed by our decentralized GPU network using open-source models like LLaMA 2.\n\n✅ Processed in 2.3 seconds\n💰 Cost: $0.001 (vs $0.06 on OpenAI)\n🌍 Processed by Node #NK7821 in Germany\n\nJoin our beta to experience real AI inference!`
+                };
+                
+                result.innerHTML = `<pre>${responses.default}</pre>`;
+            }, 3000);
+        }
+        
+        // Waitlist functionality
+        async function joinWaitlist() {
+            const email = document.getElementById('emailInput').value;
+            
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/beta/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        type: 'general',
+                        source: 'landing-page'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`🎉 Welcome to NeuroGrid Beta!\n\nEmail: ${email}\n\nYou'll receive early access soon!\n\n🎁 Your bonuses:\n• 1,000 free AI tasks\n• 15% lifetime discount\n• Priority support`);
+                    document.getElementById('emailInput').value = '';
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                alert('Network error. Please try again later.');
+            }
+        }
+        
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

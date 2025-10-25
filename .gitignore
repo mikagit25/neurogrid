@@ -93,6 +93,10 @@ web_modules/
 # Output of 'npm pack'
 *.tgz
 
+# Archive files (keep only final production archive)
+*.tar.gz
+!neurogrid-production-final.tar.gz
+
 # Yarn Integrity file
 .yarn-integrity
 
