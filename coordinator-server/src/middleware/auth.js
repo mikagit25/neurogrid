@@ -24,7 +24,7 @@ const authenticateToken = async (req, res, next) => {
 
     // Верифицируем токен
     const verification = authService.verifyToken(token);
-    
+
     if (!verification.valid) {
       return res.status(403).json({
         success: false,
@@ -34,7 +34,7 @@ const authenticateToken = async (req, res, next) => {
 
     // Получаем полную информацию о пользователе
     const user = await authService.getUserById(verification.decoded.id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -120,7 +120,7 @@ const optionalAuth = async (req, res, next) => {
     }
 
     const verification = authService.verifyToken(token);
-    
+
     if (verification.valid) {
       const user = await authService.getUserById(verification.decoded.id);
       req.user = user && user.is_active ? user : null;
@@ -224,7 +224,7 @@ const createUserRateLimit = (windowMs, maxRequests) => {
     }
 
     const userRequests = requests.get(userId);
-    
+
     // Удаляем старые запросы
     const recentRequests = userRequests.filter(time => time > windowStart);
     requests.set(userId, recentRequests);

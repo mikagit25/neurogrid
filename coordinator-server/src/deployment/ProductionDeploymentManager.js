@@ -38,24 +38,24 @@ class ProductionDeploymentManager {
     this.rds = new AWS.RDS();
     this.s3 = new AWS.S3();
     this.route53 = new AWS.Route53();
-    
+
     // Container orchestration
     this.docker = new Docker();
     this.k8sConfig = new k8s.KubeConfig();
     this.k8sConfig.loadFromDefault();
     this.k8sApi = this.k8sConfig.makeApiClient(k8s.CoreV1Api);
     this.k8sAppsApi = this.k8sConfig.makeApiClient(k8s.AppsV1Api);
-    
+
     // Deployment state
     this.deployments = new Map();
     this.healthChecks = new Map();
     this.scalingMetrics = new Map();
     this.alertHistory = [];
-    
+
     // Service discovery
     this.serviceRegistry = new Map();
     this.loadBalancers = new Map();
-    
+
     logger.info('Production Deployment Manager initialized');
   }
 
@@ -65,7 +65,7 @@ class ProductionDeploymentManager {
   async deployMainNetInfrastructure() {
     try {
       logger.info('Starting MainNet infrastructure deployment...');
-      
+
       const deploymentResults = {
         timestamp: Date.now(),
         regions: {},
@@ -76,14 +76,14 @@ class ProductionDeploymentManager {
       // Deploy to each region
       for (const region of this.config.regions) {
         logger.info(`Deploying to region: ${region}`);
-        
+
         try {
           const regionDeployment = await this.deployRegionalInfrastructure(region);
           deploymentResults.regions[region] = regionDeployment;
-          
+
           // Wait for stability before next region
           await this.waitForStability(region, 120000); // 2 minutes
-          
+
         } catch (regionError) {
           logger.error(`Failed to deploy to region ${region}:`, regionError);
           deploymentResults.regions[region] = {
@@ -95,22 +95,22 @@ class ProductionDeploymentManager {
 
       // Deploy global services
       deploymentResults.services = await this.deployGlobalServices();
-      
+
       // Configure global load balancing
       await this.configureGlobalLoadBalancing();
-      
+
       // Setup monitoring and alerting
       await this.setupProductionMonitoring();
-      
+
       // Configure disaster recovery
       await this.setupDisasterRecovery();
-      
+
       deploymentResults.status = 'completed';
       deploymentResults.deploymentTime = Date.now() - deploymentResults.timestamp;
-      
+
       logger.info('MainNet infrastructure deployment completed successfully');
       return deploymentResults;
-      
+
     } catch (error) {
       logger.error('MainNet infrastructure deployment failed:', error);
       throw error;
@@ -130,31 +130,31 @@ class ProductionDeploymentManager {
     try {
       // 1. Deploy VPC and networking
       regionConfig.components.networking = await this.deployNetworking(region);
-      
+
       // 2. Deploy database cluster
       regionConfig.components.database = await this.deployDatabaseCluster(region);
-      
+
       // 3. Deploy container cluster
       regionConfig.components.containers = await this.deployContainerCluster(region);
-      
+
       // 4. Deploy coordinator servers
       regionConfig.components.coordinators = await this.deployCoordinatorServers(region);
-      
+
       // 5. Deploy node infrastructure
       regionConfig.components.nodes = await this.deployNodeInfrastructure(region);
-      
+
       // 6. Deploy monitoring stack
       regionConfig.components.monitoring = await this.deployMonitoringStack(region);
-      
+
       // 7. Deploy security services
       regionConfig.components.security = await this.deploySecurityServices(region);
-      
+
       regionConfig.status = 'completed';
       regionConfig.deploymentTime = Date.now() - regionConfig.timestamp;
-      
+
       this.deployments.set(region, regionConfig);
       return regionConfig;
-      
+
     } catch (error) {
       logger.error(`Regional deployment failed for ${region}:`, error);
       regionConfig.status = 'failed';
@@ -284,7 +284,7 @@ class ProductionDeploymentManager {
     };
 
     const stackName = `neurogrid-${region}-networking`;
-    
+
     try {
       const createParams = {
         StackName: stackName,
@@ -298,10 +298,10 @@ class ProductionDeploymentManager {
       };
 
       const result = await this.aws.createStack(createParams).promise();
-      
+
       // Wait for stack creation to complete
       await this.aws.waitFor('stackCreateComplete', { StackName: stackName }).promise();
-      
+
       // Get stack outputs
       const stackDescription = await this.aws.describeStacks({ StackName: stackName }).promise();
       const outputs = stackDescription.Stacks[0].Outputs.reduce((acc, output) => {
@@ -315,7 +315,7 @@ class ProductionDeploymentManager {
         outputs,
         timestamp: Date.now()
       };
-      
+
     } catch (error) {
       logger.error(`Networking deployment failed for ${region}:`, error);
       throw error;
@@ -815,7 +815,7 @@ class ProductionDeploymentManager {
           comment: 'NeuroGrid MainNet CDN',
           defaultRootObject: 'index.html',
           enabled: true,
-          origins: this.config.regions.map((region, index) => ({
+          origins: this.config.regions.map((region, _index) => ({
             id: `neurogrid-${region}`,
             domainName: `${region}.mainnet.neurogrid.network`,
             customOriginConfig: {
@@ -859,7 +859,7 @@ class ProductionDeploymentManager {
    */
   async configureGlobalLoadBalancing() {
     logger.info('Configuring global load balancing...');
-    
+
     // Create Route53 health checks for each region
     for (const region of this.config.regions) {
       const healthCheckParams = {
@@ -886,7 +886,7 @@ class ProductionDeploymentManager {
 
     // Configure weighted routing
     await this.configureWeightedRouting();
-    
+
     logger.info('Global load balancing configured successfully');
   }
 
@@ -938,16 +938,16 @@ class ProductionDeploymentManager {
    */
   async setupProductionMonitoring() {
     logger.info('Setting up production monitoring...');
-    
+
     // Start health check monitoring
     this.startHealthCheckMonitoring();
-    
+
     // Setup alerting
     await this.setupAlerting();
-    
+
     // Configure metrics collection
     this.setupMetricsCollection();
-    
+
     logger.info('Production monitoring setup completed');
   }
 
@@ -971,8 +971,9 @@ class ProductionDeploymentManager {
    * Perform health check for a region
    */
   async performHealthCheck(region) {
+    const startTime = Date.now();
     const healthCheckUrl = `https://${region}.mainnet.neurogrid.network/health`;
-    
+
     const response = await fetch(healthCheckUrl, {
       method: 'GET',
       timeout: 10000
@@ -983,7 +984,7 @@ class ProductionDeploymentManager {
     }
 
     const healthData = await response.json();
-    
+
     // Store health metrics
     this.scalingMetrics.set(region, {
       timestamp: Date.now(),
@@ -1027,19 +1028,19 @@ class ProductionDeploymentManager {
   /**
    * Trigger automatic recovery
    */
-  async triggerAutoRecovery(region, error) {
+  async triggerAutoRecovery(region, _error) {
     logger.warn(`Triggering auto-recovery for ${region} due to repeated failures`);
-    
+
     try {
       // 1. Scale up additional instances
       await this.scaleUpInstances(region, 2);
-      
+
       // 2. Restart failing services
       await this.restartServices(region);
-      
+
       // 3. Update load balancer weights to reduce traffic
       await this.reduceTrafficWeight(region, 0.5);
-      
+
       // 4. Create incident record
       const incident = {
         id: `incident_${Date.now()}`,
@@ -1049,11 +1050,11 @@ class ProductionDeploymentManager {
         actions: ['scale_up', 'restart_services', 'reduce_traffic'],
         status: 'in_progress'
       };
-      
+
       this.alertHistory.push(incident);
-      
+
       logger.info(`Auto-recovery initiated for ${region}: ${incident.id}`);
-      
+
     } catch (recoveryError) {
       logger.error(`Auto-recovery failed for ${region}:`, recoveryError);
       await this.sendAlert('critical', `Auto-recovery failed for ${region}`, recoveryError);
@@ -1065,7 +1066,7 @@ class ProductionDeploymentManager {
    */
   async setupDisasterRecovery() {
     logger.info('Setting up disaster recovery...');
-    
+
     const drConfig = {
       backupSchedule: {
         databases: '0 2 * * *', // Daily at 2 AM
@@ -1093,13 +1094,13 @@ class ProductionDeploymentManager {
 
     // Schedule automated backups
     this.scheduleAutomatedBackups();
-    
+
     // Setup cross-region replication
     await this.setupCrossRegionReplication();
-    
+
     // Configure failover procedures
     await this.configureFailoverProcedures();
-    
+
     logger.info('Disaster recovery setup completed');
     return drConfig;
   }
@@ -1109,7 +1110,7 @@ class ProductionDeploymentManager {
    */
   async waitForStability(region, timeout = 300000) {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       try {
         const isStable = await this.checkDeploymentStability(region);
@@ -1117,13 +1118,13 @@ class ProductionDeploymentManager {
           logger.info(`Region ${region} is stable`);
           return true;
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
       } catch (error) {
         logger.error(`Stability check failed for ${region}:`, error);
       }
     }
-    
+
     throw new Error(`Region ${region} did not stabilize within timeout`);
   }
 
@@ -1133,20 +1134,20 @@ class ProductionDeploymentManager {
   async checkDeploymentStability(region) {
     try {
       // Check service health
-      const healthCheck = await this.performHealthCheck(region);
-      
+      const _healthCheck = await this.performHealthCheck(region);
+
       // Check resource utilization
       const metrics = this.scalingMetrics.get(region);
       if (!metrics || Date.now() - metrics.timestamp > 60000) {
         return false; // No recent metrics
       }
-      
+
       // Verify all services are running
       const services = await this.getRegionServices(region);
       const healthyServices = services.filter(s => s.status === 'ACTIVE' && s.runningCount >= s.desiredCount);
-      
+
       return healthyServices.length === services.length;
-      
+
     } catch (error) {
       logger.error(`Stability check error for ${region}:`, error);
       return false;
@@ -1177,7 +1178,7 @@ class ProductionDeploymentManager {
     for (const region of this.config.regions) {
       const deployment = this.deployments.get(region);
       const metrics = this.scalingMetrics.get(region);
-      
+
       status.regions[region] = {
         status: deployment?.status || 'unknown',
         deploymentTime: deployment?.deploymentTime || 0,
@@ -1185,7 +1186,7 @@ class ProductionDeploymentManager {
         healthy: metrics?.healthy || false,
         services: this.getRegionServiceCount(region)
       };
-      
+
       if (status.regions[region].healthy) {
         status.metrics.healthyRegions++;
       }
@@ -1214,7 +1215,7 @@ class ProductionDeploymentManager {
     return latestTime;
   }
 
-  getRegionServiceCount(region) {
+  getRegionServiceCount(_region) {
     // This would typically query the actual service registry
     return {
       coordinator: 3,
@@ -1224,7 +1225,7 @@ class ProductionDeploymentManager {
     };
   }
 
-  async getRegionServices(region) {
+  async getRegionServices(_region) {
     // Mock implementation - would typically query ECS/Kubernetes
     return [
       { name: 'coordinator', status: 'ACTIVE', runningCount: 3, desiredCount: 3 },

@@ -1,5 +1,6 @@
 const express = require('express');
 const { body, query, param, validationResult } = require('express-validator');
+const { ResponseHelper } = require('../../utils/response');
 const logger = require('../../utils/logger');
 
 const router = express.Router();
@@ -245,7 +246,7 @@ router.post('/tickets/:id/responses', [
 
     const { id } = req.params;
     const { message, author } = req.body;
-    
+
     const ticket = supportTickets.get(id);
     if (!ticket) {
       return res.status(404).json({
@@ -264,7 +265,7 @@ router.post('/tickets/:id/responses', [
 
     ticket.responses.push(response);
     ticket.updatedAt = new Date();
-    
+
     // Update status if needed
     if (ticket.status === 'waiting') {
       ticket.status = 'in_progress';
@@ -499,7 +500,7 @@ function calculateAverageResponseTime(tickets) {
 
   const averageMs = totalTime / count;
   const averageHours = Math.round(averageMs / (1000 * 60 * 60));
-  
+
   return `${averageHours} hours`;
 }
 

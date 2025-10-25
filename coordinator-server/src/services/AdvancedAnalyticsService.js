@@ -15,7 +15,7 @@ class AdvancedAnalyticsService {
       queueSize: 0,
       processingRate: 0
     };
-    
+
     this.initialize();
   }
 
@@ -97,7 +97,7 @@ class AdvancedAnalyticsService {
 
     // Initialize time series data
     this.initializeTimeSeries();
-    
+
     // Start real-time data updates
     this.startRealTimeUpdates();
 
@@ -115,11 +115,11 @@ class AdvancedAnalyticsService {
 
     Object.entries(timeRanges).forEach(([range, config]) => {
       const series = [];
-      
+
       for (let i = config.points - 1; i >= 0; i--) {
         const timestamp = new Date(now - i * config.interval);
         const baseValue = Math.random();
-        
+
         series.push({
           timestamp: timestamp.toISOString(),
           tasks: {
@@ -148,7 +148,7 @@ class AdvancedAnalyticsService {
           }
         });
       }
-      
+
       this.timeSeries.set(range, series);
     });
   }
@@ -168,16 +168,16 @@ class AdvancedAnalyticsService {
   updateRealTimeMetrics() {
     const systemMetrics = this.metrics.get('system');
     const networkMetrics = this.metrics.get('network');
-    
+
     // Simulate real-time changes
     systemMetrics.activeTasks = Math.max(0, systemMetrics.activeTasks + Math.floor(Math.random() * 6) - 3);
     systemMetrics.activeNodes = Math.max(0, systemMetrics.activeNodes + Math.floor(Math.random() * 4) - 2);
     systemMetrics.avgResponseTime = Math.max(20, systemMetrics.avgResponseTime + Math.floor(Math.random() * 20) - 10);
-    
+
     networkMetrics.bandwidth.inbound = Math.max(0, networkMetrics.bandwidth.inbound + (Math.random() - 0.5) * 20);
     networkMetrics.bandwidth.outbound = Math.max(0, networkMetrics.bandwidth.outbound + (Math.random() - 0.5) * 15);
     networkMetrics.latency.average = Math.max(5, networkMetrics.latency.average + Math.floor(Math.random() * 10) - 5);
-    
+
     this.realTimeData = {
       activeConnections: networkMetrics.connections.active,
       currentLoad: Math.floor(Math.random() * 100),
@@ -190,7 +190,7 @@ class AdvancedAnalyticsService {
     // Add new data point to each time series
     const now = new Date();
     const baseValue = Math.random();
-    
+
     const newDataPoint = {
       timestamp: now.toISOString(),
       tasks: {
@@ -280,7 +280,7 @@ class AdvancedAnalyticsService {
   async getSystemMetrics() {
     const systemMetrics = this.metrics.get('system');
     const networkMetrics = this.metrics.get('network');
-    
+
     return {
       tasks: {
         total: systemMetrics.totalTasks,
@@ -318,11 +318,11 @@ class AdvancedAnalyticsService {
   async getNodeAnalytics(limit = 20) {
     // Generate mock node data with realistic distributions
     const nodes = [];
-    
+
     for (let i = 1; i <= limit; i++) {
       const performance = 0.5 + Math.random() * 0.5; // 50-100% performance
       const utilization = Math.random();
-      
+
       nodes.push({
         id: `node-${i.toString().padStart(3, '0')}`,
         name: `GPU-Node-${i}`,
@@ -409,11 +409,11 @@ class AdvancedAnalyticsService {
     const points = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 24;
     const interval = timeRange === '7d' ? 86400000 : timeRange === '30d' ? 86400000 : 3600000;
     const now = new Date();
-    
+
     return Array.from({ length: points }, (_, i) => {
       const timestamp = new Date(now - (points - 1 - i) * interval);
       const baseGrowth = Math.random() * 0.1 + 0.02; // 2-12% growth
-      
+
       return {
         timestamp: timestamp.toISOString(),
         newUsers: Math.floor(baseGrowth * 100),
@@ -427,7 +427,7 @@ class AdvancedAnalyticsService {
   // Get financial analytics
   async getFinancialAnalytics(timeRange = '30d') {
     const businessMetrics = this.metrics.get('business');
-    
+
     return {
       overview: businessMetrics,
       trends: this.generateFinancialTrends(timeRange),
@@ -457,12 +457,12 @@ class AdvancedAnalyticsService {
     const points = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 24;
     const interval = timeRange === '7d' ? 86400000 : timeRange === '30d' ? 86400000 : 3600000;
     const now = new Date();
-    
+
     return Array.from({ length: points }, (_, i) => {
       const timestamp = new Date(now - (points - 1 - i) * interval);
       const baseRevenue = 1000 + Math.random() * 2000;
       const baseCosts = 400 + Math.random() * 600;
-      
+
       return {
         timestamp: timestamp.toISOString(),
         revenue: baseRevenue,
@@ -485,7 +485,7 @@ class AdvancedAnalyticsService {
     };
 
     this.eventLog.unshift(event);
-    
+
     // Keep only last 1000 events
     if (this.eventLog.length > 1000) {
       this.eventLog = this.eventLog.slice(0, 1000);
@@ -500,24 +500,24 @@ class AdvancedAnalyticsService {
 
   updateMetricsFromEvent(event) {
     const systemMetrics = this.metrics.get('system');
-    
+
     switch (event.type) {
-      case 'task_completed':
-        systemMetrics.completedTasks++;
-        systemMetrics.totalTasks++;
-        break;
-      case 'task_failed':
-        systemMetrics.failedTasks++;
-        systemMetrics.totalTasks++;
-        break;
-      case 'node_joined':
-        systemMetrics.activeNodes++;
-        systemMetrics.totalNodes++;
-        break;
-      case 'node_left':
-        systemMetrics.activeNodes = Math.max(0, systemMetrics.activeNodes - 1);
-        systemMetrics.offlineNodes++;
-        break;
+    case 'task_completed':
+      systemMetrics.completedTasks++;
+      systemMetrics.totalTasks++;
+      break;
+    case 'task_failed':
+      systemMetrics.failedTasks++;
+      systemMetrics.totalTasks++;
+      break;
+    case 'node_joined':
+      systemMetrics.activeNodes++;
+      systemMetrics.totalNodes++;
+      break;
+    case 'node_left':
+      systemMetrics.activeNodes = Math.max(0, systemMetrics.activeNodes - 1);
+      systemMetrics.offlineNodes++;
+      break;
     }
   }
 
@@ -526,12 +526,12 @@ class AdvancedAnalyticsService {
     // Simple trend-based predictions
     const timeSeries = this.timeSeries.get('24h');
     const recentData = timeSeries.slice(-6); // Last 6 hours
-    
+
     // Calculate trends
     const taskTrend = this.calculateTrend(recentData.map(d => d.tasks.completed));
     const nodeTrend = this.calculateTrend(recentData.map(d => d.nodes.active));
     const revenueTrend = this.calculateTrend(recentData.map(d => d.business.revenue));
-    
+
     return {
       predictions: {
         nextHour: {
@@ -560,17 +560,17 @@ class AdvancedAnalyticsService {
 
   calculateTrend(values) {
     if (values.length < 2) return 0;
-    
+
     const n = values.length;
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-    
+
     for (let i = 0; i < n; i++) {
       sumX += i;
       sumY += values[i];
       sumXY += i * values[i];
       sumXX += i * i;
     }
-    
+
     return (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
   }
 
@@ -596,11 +596,11 @@ class AdvancedAnalyticsService {
     // Simplified CSV conversion for metrics
     const csvLines = ['Metric,Value,Timestamp'];
     const timestamp = new Date().toISOString();
-    
+
     Object.entries(data.metrics.system || {}).forEach(([key, value]) => {
       csvLines.push(`${key},${value},${timestamp}`);
     });
-    
+
     return csvLines.join('\n');
   }
 }

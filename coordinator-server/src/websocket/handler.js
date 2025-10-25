@@ -14,7 +14,7 @@ class WebSocketHandler {
    */
   handleConnection(ws, req) {
     const clientId = this.generateClientId();
-    
+
     // Store client connection
     this.clients.set(clientId, {
       ws,
@@ -57,17 +57,17 @@ class WebSocketHandler {
       logger.debug(`WebSocket message from ${clientId}:`, message);
 
       switch (message.type) {
-        case 'join_room':
-          this.joinRoom(clientId, message.payload.room);
-          break;
-        case 'leave_room':
-          this.leaveRoom(clientId, message.payload.room);
-          break;
-        case 'ping':
-          this.sendToClient(clientId, { type: 'pong', payload: { timestamp: Date.now() } });
-          break;
-        default:
-          logger.warn(`Unknown message type: ${message.type}`, { clientId, message });
+      case 'join_room':
+        this.joinRoom(clientId, message.payload.room);
+        break;
+      case 'leave_room':
+        this.leaveRoom(clientId, message.payload.room);
+        break;
+      case 'ping':
+        this.sendToClient(clientId, { type: 'pong', payload: { timestamp: Date.now() } });
+        break;
+      default:
+        logger.warn(`Unknown message type: ${message.type}`, { clientId, message });
       }
     } catch (error) {
       logger.error(`Error parsing WebSocket message from ${clientId}:`, error);
@@ -91,7 +91,7 @@ class WebSocketHandler {
 
       // Remove client
       this.clients.delete(clientId);
-      
+
       logger.info(`WebSocket disconnected: ${clientId}`, {
         clientId,
         duration: Date.now() - client.connectedAt.getTime()
@@ -121,7 +121,7 @@ class WebSocketHandler {
     client.rooms.add(roomName);
 
     logger.debug(`Client ${clientId} joined room: ${roomName}`);
-    
+
     this.sendToClient(clientId, {
       type: 'room_joined',
       payload: { room: roomName }

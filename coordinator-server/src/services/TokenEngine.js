@@ -1,7 +1,5 @@
 const logger = require('../utils/logger');
-const { db } = require('../config/database-universal');
 const Transaction = require('../models/Transaction');
-const User = require('../models/User');
 
 /**
  * Token Engine Service
@@ -45,7 +43,7 @@ class TokenEngine {
       });
 
       const balance = await Transaction.getUserBalance(userId);
-      
+
       logger.info(`Account created for user ${userId}`, {
         userId,
         initialBalance,
@@ -182,7 +180,7 @@ class TokenEngine {
   async holdEscrow(userId, taskId, amount) {
     try {
       await Transaction.processEscrow(taskId, amount, 'hold');
-      
+
       logger.info(`Escrow held for task ${taskId}`, {
         userId,
         taskId,
@@ -191,7 +189,7 @@ class TokenEngine {
 
       return { success: true, amount };
     } catch (error) {
-      logger.error(`Error holding escrow:`, error);
+      logger.error('Error holding escrow:', error);
       throw error;
     }
   }
@@ -202,7 +200,7 @@ class TokenEngine {
   async releaseEscrow(taskId, amount) {
     try {
       await Transaction.processEscrow(taskId, amount, 'release');
-      
+
       logger.info(`Escrow released for task ${taskId}`, {
         taskId,
         amount
@@ -210,7 +208,7 @@ class TokenEngine {
 
       return { success: true, amount };
     } catch (error) {
-      logger.error(`Error releasing escrow:`, error);
+      logger.error('Error releasing escrow:', error);
       throw error;
     }
   }
@@ -221,7 +219,7 @@ class TokenEngine {
   async refundEscrow(taskId, amount) {
     try {
       await Transaction.processEscrow(taskId, amount, 'refund');
-      
+
       logger.info(`Escrow refunded for task ${taskId}`, {
         taskId,
         amount
@@ -229,7 +227,7 @@ class TokenEngine {
 
       return { success: true, amount };
     } catch (error) {
-      logger.error(`Error refunding escrow:`, error);
+      logger.error('Error refunding escrow:', error);
       throw error;
     }
   }
@@ -336,7 +334,7 @@ class TokenEngine {
   async getPlatformStats() {
     try {
       const stats = await Transaction.getTransactionStats();
-      
+
       return {
         totalTransactions: stats.reduce((sum, stat) => sum + parseInt(stat.count), 0),
         totalVolume: stats.reduce((sum, stat) => sum + parseFloat(stat.total_amount || 0), 0),

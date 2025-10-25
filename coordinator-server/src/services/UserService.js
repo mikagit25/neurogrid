@@ -14,7 +14,7 @@ class UserService {
    */
   static async create(userData) {
     const { username, email, password, role = 'user' } = userData;
-    
+
     try {
       // Хэшируем пароль
       const saltRounds = 12;
@@ -51,7 +51,7 @@ class UserService {
           throw new Error('Username is already taken');
         }
       }
-      
+
       logger.error('Error creating user:', error);
       throw error;
     }
@@ -103,7 +103,7 @@ class UserService {
   static async verifyPassword(email, password) {
     try {
       const user = await this.findByEmail(email);
-      
+
       if (!user) {
         return {
           success: false,
@@ -119,7 +119,7 @@ class UserService {
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      
+
       if (!isValidPassword) {
         return {
           success: false,
@@ -152,14 +152,14 @@ class UserService {
   static async changePassword(userId, currentPassword, newPassword) {
     try {
       const user = await this.findById(userId);
-      
+
       if (!user) {
         throw new Error('User not found');
       }
 
       // Проверяем текущий пароль
       const isValidCurrentPassword = await bcrypt.compare(currentPassword, user.password_hash);
-      
+
       if (!isValidCurrentPassword) {
         return {
           success: false,

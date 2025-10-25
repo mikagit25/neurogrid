@@ -80,10 +80,10 @@ describe('MetricsCollector', () => {
 
     test('should handle different HTTP methods', () => {
       const methods = ['GET', 'POST', 'PUT', 'DELETE'];
-      
+
       methods.forEach(method => {
         metricsCollector.recordHttpRequest(method, '/api/test', 200, 100);
-        
+
         expect(metricsCollector.httpRequestsTotal.labels).toHaveBeenCalledWith({
           method: method.toLowerCase(),
           route: '/api/test',
@@ -169,10 +169,10 @@ describe('MetricsCollector', () => {
 
     test('should track different auth event types', () => {
       const eventTypes = ['login', 'logout', 'register', '2fa_verify', 'password_reset'];
-      
+
       eventTypes.forEach(type => {
         metricsCollector.recordAuthEvent(type, true);
-        
+
         expect(metricsCollector.authEventsTotal.labels).toHaveBeenCalledWith({
           type,
           success: 'true'
@@ -261,7 +261,7 @@ describe('MetricsCollector', () => {
 
     test('should track payment metrics', () => {
       metricsCollector.recordPayment(100, 'USD', 'stripe', true);
-      
+
       expect(metricsCollector.paymentsTotal.labels).toHaveBeenCalledWith({
         currency: 'USD',
         gateway: 'stripe',
@@ -347,7 +347,7 @@ describe('MetricsCollector', () => {
       metricsCollector.shutdown();
 
       expect(consoleSpy).toHaveBeenCalledWith('MetricsCollector shutdown complete');
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -390,7 +390,7 @@ describe('MetricsCollector', () => {
 
       // Metrics should not be recorded when disabled
       disabledCollector.recordHttpRequest('GET', '/test', 200, 100);
-      
+
       // Verify no metrics were recorded (implementation specific)
       expect(disabledConfig.get).toHaveBeenCalledWith('METRICS_ENABLED', true);
     });

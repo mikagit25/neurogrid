@@ -250,19 +250,19 @@ router.get('/stats', authenticate, async (req, res) => {
     // Calculate date range
     const endDate = new Date();
     const startDate = new Date();
-    
+
     switch (period) {
-      case '7d':
-        startDate.setDate(endDate.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(endDate.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(endDate.getDate() - 90);
-        break;
-      default:
-        startDate.setDate(endDate.getDate() - 30);
+    case '7d':
+      startDate.setDate(endDate.getDate() - 7);
+      break;
+    case '30d':
+      startDate.setDate(endDate.getDate() - 30);
+      break;
+    case '90d':
+      startDate.setDate(endDate.getDate() - 90);
+      break;
+    default:
+      startDate.setDate(endDate.getDate() - 30);
     }
 
     // Get token statistics
@@ -391,7 +391,7 @@ router.post('/regenerate-api-key', authenticate, async (req, res) => {
 
     // Generate new API key
     const newApiKey = authManager.generateApiKey();
-    
+
     // Update user with new API key
     authManager.updateUser(userId, { apiKey: newApiKey });
 

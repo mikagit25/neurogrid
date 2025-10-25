@@ -52,7 +52,7 @@ router.post('/register', [
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const registrationResult = await nodeManager.registerNode({
@@ -128,7 +128,7 @@ router.post('/:id/heartbeat', [
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const result = await nodeManager.processHeartbeat({
@@ -200,7 +200,7 @@ router.get('/', [
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const result = await nodeManager.listNodes({
@@ -263,7 +263,7 @@ router.get('/:id', [
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const node = await nodeManager.getNode(nodeId);
@@ -332,7 +332,7 @@ router.get('/:id/metrics', [
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const metrics = await nodeManager.getNodeMetrics(nodeId, { period, metric });
@@ -384,7 +384,7 @@ router.post('/:id/command', adminAuth, [
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const result = await nodeManager.sendCommand(nodeId, command, parameters);
@@ -428,13 +428,13 @@ router.delete('/:id', [
     }
 
     const nodeId = req.params.id;
-    
+
     // TODO: Add authentication check - only admin or the node itself can deregister
-    
+
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const result = await nodeManager.deregisterNode(nodeId);
@@ -469,7 +469,7 @@ router.get('/stats', async (req, res) => {
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
-        error: "Node service not available"
+        error: 'Node service not available'
       });
     }
     const stats = await nodeManager.getNetworkStats();

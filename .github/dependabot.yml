@@ -1,0 +1,58 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/coordinator-server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "mikagit25"
+    assignees:
+      - "mikagit25"
+    commit-message:
+      prefix: "⬆️"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "security"
+    
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "mikagit25"
+    assignees:
+      - "mikagit25"
+    commit-message:
+      prefix: "🔧"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "dependencies"
+
+  # Enable version updates for Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "mikagit25"
+    assignees:
+      - "mikagit25"
+    commit-message:
+      prefix: "🐳"
+      include: "scope"
+    labels:
+      - "docker"
+      - "dependencies"

@@ -80,7 +80,7 @@ router.get('/balance', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const balance = await tokenEngine.getUserBalance(userId);
-    
+
     res.json({
       success: true,
       data: balance
@@ -143,18 +143,18 @@ router.get('/transactions', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 20, type } = req.query;
-    
+
     const options = {
       page: parseInt(page),
       limit: parseInt(limit)
     };
-    
+
     if (type) {
       options.type = type;
     }
-    
+
     const transactions = await tokenEngine.getTransactionHistory(userId, options);
-    
+
     res.json({
       success: true,
       data: transactions,
@@ -217,16 +217,16 @@ router.get('/transactions', authenticateToken, async (req, res) => {
 router.post('/cost-estimate', authenticateToken, async (req, res) => {
   try {
     const { model, priority = 'standard', estimatedDuration } = req.body;
-    
+
     if (!model) {
       return res.status(400).json({
         success: false,
         error: 'Model is required'
       });
     }
-    
+
     const estimate = tokenEngine.calculateTaskCost(model, priority, estimatedDuration);
-    
+
     res.json({
       success: true,
       data: {
@@ -285,16 +285,16 @@ router.post('/add-funds', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { amount, paymentMethod = 'manual', externalTxId } = req.body;
-    
+
     if (!amount || amount <= 0) {
       return res.status(400).json({
         success: false,
         error: 'Amount must be positive'
       });
     }
-    
+
     const result = await tokenEngine.addFunds(userId, amount, paymentMethod, externalTxId);
-    
+
     res.json({
       success: true,
       data: result
@@ -346,16 +346,16 @@ router.post('/withdraw', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { amount, withdrawalMethod = 'manual' } = req.body;
-    
+
     if (!amount || amount <= 0) {
       return res.status(400).json({
         success: false,
         error: 'Amount must be positive'
       });
     }
-    
+
     const result = await tokenEngine.withdrawFunds(userId, amount, withdrawalMethod);
-    
+
     res.json({
       success: true,
       data: result
@@ -403,7 +403,7 @@ router.post('/withdraw', authenticateToken, async (req, res) => {
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const stats = await tokenEngine.getPlatformStats();
-    
+
     res.json({
       success: true,
       data: stats
@@ -456,16 +456,16 @@ router.post('/process-payment', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { taskId, model, priority = 'standard' } = req.body;
-    
+
     if (!taskId || !model) {
       return res.status(400).json({
         success: false,
         error: 'TaskId and model are required'
       });
     }
-    
+
     const result = await tokenEngine.processTaskPayment(userId, taskId, model, priority);
-    
+
     res.json({
       success: true,
       data: result

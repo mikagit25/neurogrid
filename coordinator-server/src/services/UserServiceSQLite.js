@@ -25,7 +25,7 @@ const logger = require('../utils/logger');
 class UserServiceSQLite {
   static async create(userData) {
     const { username, email, password, role = 'user' } = userData;
-    
+
     try {
       const saltRounds = 12;
       const passwordHash = await bcrypt.hash(password, saltRounds);
@@ -68,7 +68,7 @@ class UserServiceSQLite {
           throw new Error('Username is already taken');
         }
       }
-      
+
       logger.error('Error creating user:', error);
       throw error;
     }
@@ -111,7 +111,7 @@ class UserServiceSQLite {
   static async verifyPassword(email, password) {
     try {
       const user = await this.findByEmail(email);
-      
+
       if (!user) {
         return {
           success: false,
@@ -127,7 +127,7 @@ class UserServiceSQLite {
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      
+
       if (!isValidPassword) {
         return {
           success: false,
@@ -157,13 +157,13 @@ class UserServiceSQLite {
   static async changePassword(userId, currentPassword, newPassword) {
     try {
       const user = await this.findById(userId);
-      
+
       if (!user) {
         throw new Error('User not found');
       }
 
       const isValidCurrentPassword = await bcrypt.compare(currentPassword, user.password_hash);
-      
+
       if (!isValidCurrentPassword) {
         return {
           success: false,

@@ -15,10 +15,10 @@ class PaymentGateway {
     this.exchangeRates = new Map();
     this.pendingTransactions = new Map();
     this.completedTransactions = new Map();
-    
+
     // Initialize payment providers
     this.initializeProviders();
-    
+
     // Start exchange rate updates
     this.startExchangeRateUpdates();
   }
@@ -130,23 +130,23 @@ class PaymentGateway {
 
       // Create provider-specific payment intent
       switch (paymentMethod) {
-        case 'stripe':
-          paymentIntent.providerData = await this.createStripeIntent(paymentIntent);
-          break;
-        case 'paypal':
-          paymentIntent.providerData = await this.createPayPalOrder(paymentIntent);
-          break;
-        case 'crypto':
-          paymentIntent.providerData = await this.createCryptoAddress(paymentIntent);
-          break;
-        case 'bank':
-          paymentIntent.providerData = await this.createBankTransferInfo(paymentIntent);
-          break;
+      case 'stripe':
+        paymentIntent.providerData = await this.createStripeIntent(paymentIntent);
+        break;
+      case 'paypal':
+        paymentIntent.providerData = await this.createPayPalOrder(paymentIntent);
+        break;
+      case 'crypto':
+        paymentIntent.providerData = await this.createCryptoAddress(paymentIntent);
+        break;
+      case 'bank':
+        paymentIntent.providerData = await this.createBankTransferInfo(paymentIntent);
+        break;
       }
 
       this.pendingTransactions.set(transactionId, paymentIntent);
 
-      logger.info(`Created deposit intent`, {
+      logger.info('Created deposit intent', {
         transactionId,
         userId,
         amount,
@@ -196,7 +196,7 @@ class PaymentGateway {
 
       this.pendingTransactions.set(transactionId, withdrawalRequest);
 
-      logger.info(`Created withdrawal request`, {
+      logger.info('Created withdrawal request', {
         transactionId,
         userId,
         tokenAmount,
@@ -261,7 +261,7 @@ class PaymentGateway {
       address: addresses[paymentIntent.currency] || addresses.ETH,
       amount: paymentIntent.amount.toString(),
       currency: paymentIntent.currency,
-      qr_code: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==`,
+      qr_code: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
       network: paymentIntent.currency === 'BTC' ? 'bitcoin' : 'ethereum',
       confirmations_required: paymentIntent.currency === 'BTC' ? 3 : 12
     };
@@ -297,17 +297,17 @@ class PaymentGateway {
       let transactionId, status, providerTransactionId;
 
       switch (provider) {
-        case 'stripe':
-          ({ transactionId, status, providerTransactionId } = this.parseStripeWebhook(payload));
-          break;
-        case 'paypal':
-          ({ transactionId, status, providerTransactionId } = this.parsePayPalWebhook(payload));
-          break;
-        case 'crypto':
-          ({ transactionId, status, providerTransactionId } = this.parseCryptoWebhook(payload));
-          break;
-        default:
-          throw new Error(`Unknown provider: ${provider}`);
+      case 'stripe':
+        ({ transactionId, status, providerTransactionId } = this.parseStripeWebhook(payload));
+        break;
+      case 'paypal':
+        ({ transactionId, status, providerTransactionId } = this.parsePayPalWebhook(payload));
+        break;
+      case 'crypto':
+        ({ transactionId, status, providerTransactionId } = this.parseCryptoWebhook(payload));
+        break;
+      default:
+        throw new Error(`Unknown provider: ${provider}`);
       }
 
       const transaction = this.pendingTransactions.get(transactionId);
@@ -358,7 +358,7 @@ class PaymentGateway {
           `Deposit via ${transaction.provider}`
         );
 
-        logger.info(`Deposit completed`, {
+        logger.info('Deposit completed', {
           transactionId: transaction.id,
           userId: transaction.userId,
           amount: transaction.amount,
@@ -422,7 +422,7 @@ class PaymentGateway {
         'RUB/NGRID': 150.0, // 1 RUB = 150 NGRID tokens
         'GBP/NGRID': 8.5,   // 1 GBP = 8.5 NGRID tokens
         'BTC/NGRID': 300000.0, // 1 BTC = 300,000 NGRID tokens
-        'ETH/NGRID': 20000.0,  // 1 ETH = 20,000 NGRID tokens
+        'ETH/NGRID': 20000.0  // 1 ETH = 20,000 NGRID tokens
       };
 
       // Calculate reverse rates
@@ -449,7 +449,7 @@ class PaymentGateway {
   startExchangeRateUpdates() {
     // Update rates immediately
     this.updateExchangeRates();
-    
+
     // Update every 5 minutes
     setInterval(() => {
       this.updateExchangeRates();
@@ -515,7 +515,7 @@ class PaymentGateway {
    */
   async processWithdrawalPayout(transaction) {
     // Mock withdrawal processing - implement actual payout logic
-    logger.info(`Processing withdrawal payout`, {
+    logger.info('Processing withdrawal payout', {
       transactionId: transaction.id,
       amount: transaction.netAmount,
       destination: transaction.destination
@@ -645,7 +645,7 @@ class PaymentGateway {
     transaction.status = 'approved';
     transaction.approvedAt = new Date();
 
-    logger.info(`Withdrawal approved`, {
+    logger.info('Withdrawal approved', {
       transactionId,
       userId: transaction.userId,
       amount: transaction.netAmount

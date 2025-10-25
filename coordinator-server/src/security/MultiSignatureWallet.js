@@ -15,7 +15,7 @@ class MultiSignatureWallet {
       signatureTimeout: config.signatureTimeout || 3600000, // 1 hour
       ...config
     };
-    
+
     this.wallets = new Map(); // walletId -> wallet data
     this.pendingTransactions = new Map(); // txId -> transaction data
     this.signatures = new Map(); // txId -> signatures
@@ -61,7 +61,7 @@ class MultiSignatureWallet {
         signers.map(async (signer, index) => {
           const signerKeyId = `${walletId}_signer_${index}`;
           const keyPair = await this.generateSignerKeyPair(signerKeyId);
-          
+
           return {
             signerId: signer.id || `signer_${index}`,
             signerKeyId,
@@ -159,7 +159,7 @@ class MultiSignatureWallet {
 
       // Generate transaction ID
       const txId = this.generateTransactionId();
-      
+
       // Determine required threshold
       let requiredSignatures;
       if (type === 'admin' && wallet.requireAllForAdmin) {
@@ -333,22 +333,22 @@ class MultiSignatureWallet {
 
       // Execute based on transaction type
       let executionResult;
-      
+
       switch (pendingTx.type) {
-        case 'transfer':
-          executionResult = await this.executeTransfer(wallet, pendingTx);
-          break;
-        case 'admin':
-          executionResult = await this.executeAdminAction(wallet, pendingTx);
-          break;
-        case 'stake':
-          executionResult = await this.executeStaking(wallet, pendingTx);
-          break;
-        case 'unstake':
-          executionResult = await this.executeUnstaking(wallet, pendingTx);
-          break;
-        default:
-          throw new Error(`Unknown transaction type: ${pendingTx.type}`);
+      case 'transfer':
+        executionResult = await this.executeTransfer(wallet, pendingTx);
+        break;
+      case 'admin':
+        executionResult = await this.executeAdminAction(wallet, pendingTx);
+        break;
+      case 'stake':
+        executionResult = await this.executeStaking(wallet, pendingTx);
+        break;
+      case 'unstake':
+        executionResult = await this.executeUnstaking(wallet, pendingTx);
+        break;
+      default:
+        throw new Error(`Unknown transaction type: ${pendingTx.type}`);
       }
 
       // Update wallet nonce
@@ -437,7 +437,7 @@ class MultiSignatureWallet {
    */
   getPendingTransactions(walletId) {
     const pending = [];
-    
+
     for (const [txId, tx] of this.pendingTransactions) {
       if (tx.walletId === walletId && tx.status === 'pending') {
         // Check if expired
@@ -445,7 +445,7 @@ class MultiSignatureWallet {
           tx.status = 'expired';
           continue;
         }
-        
+
         pending.push({
           txId,
           type: tx.type,
@@ -467,7 +467,7 @@ class MultiSignatureWallet {
   // Helper methods
   async generateSignerKeyPair(signerKeyId) {
     await this.securityManager.generateMasterKey(signerKeyId, crypto.randomBytes(32).toString('hex'));
-    
+
     // Generate public key representation
     const publicKey = crypto.createHash('sha256')
       .update(signerKeyId)
@@ -533,16 +533,16 @@ class MultiSignatureWallet {
   async executeAdminAction(wallet, tx) {
     // Execute administrative actions
     const action = tx.adminAction;
-    
+
     switch (action.type) {
-      case 'add_signer':
-        return await this.addSigner(wallet, action.data);
-      case 'remove_signer':
-        return await this.removeSigner(wallet, action.data);
-      case 'change_threshold':
-        return await this.changeThreshold(wallet, action.data);
-      default:
-        throw new Error(`Unknown admin action: ${action.type}`);
+    case 'add_signer':
+      return await this.addSigner(wallet, action.data);
+    case 'remove_signer':
+      return await this.removeSigner(wallet, action.data);
+    case 'change_threshold':
+      return await this.changeThreshold(wallet, action.data);
+    default:
+      throw new Error(`Unknown admin action: ${action.type}`);
     }
   }
 
@@ -598,7 +598,7 @@ class MultiSignatureWallet {
 
   async removeSigner(wallet, signerData) {
     const signerIndex = wallet.signers.findIndex(s => s.signerId === signerData.signerId);
-    
+
     if (signerIndex === -1) {
       throw new Error('Signer not found');
     }

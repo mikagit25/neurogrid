@@ -50,56 +50,56 @@ const consensus = new ProofOfComputeConsensus();
  *         description: Authentication required
  */
 router.post('/validators/register', authenticate, validateRequest([
-    'stake',
-    'computePower',
-    'publicKey'
+  'stake',
+  'computePower',
+  'publicKey'
 ]), async (req, res) => {
-    try {
-        const { stake, computePower, publicKey, metadata = {} } = req.body;
-        
-        // Validate minimum requirements
-        if (stake < 1000) {
-            return res.status(400).json({
-                success: false,
-                error: 'Minimum stake of 1000 tokens required'
-            });
-        }
-        
-        if (computePower < 1.0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Minimum compute power of 1.0 GFLOPS required'
-            });
-        }
-        
-        const validatorId = consensus.registerValidator(
-            req.user.id,
-            stake,
-            computePower,
-            publicKey,
-            { ...metadata, ipAddress: req.ip }
-        );
-        
-        logger.info(`Validator registered: ${validatorId} for user ${req.user.id}`);
-        
-        res.status(201).json({
-            success: true,
-            data: {
-                validatorId,
-                stake,
-                computePower,
-                status: 'active',
-                registrationTime: new Date().toISOString()
-            }
-        });
-        
-    } catch (error) {
-        logger.error('Validator registration failed:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to register validator'
-        });
+  try {
+    const { stake, computePower, publicKey, metadata = {} } = req.body;
+
+    // Validate minimum requirements
+    if (stake < 1000) {
+      return res.status(400).json({
+        success: false,
+        error: 'Minimum stake of 1000 tokens required'
+      });
     }
+
+    if (computePower < 1.0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Minimum compute power of 1.0 GFLOPS required'
+      });
+    }
+
+    const validatorId = consensus.registerValidator(
+      req.user.id,
+      stake,
+      computePower,
+      publicKey,
+      { ...metadata, ipAddress: req.ip }
+    );
+
+    logger.info(`Validator registered: ${validatorId} for user ${req.user.id}`);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        validatorId,
+        stake,
+        computePower,
+        status: 'active',
+        registrationTime: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error('Validator registration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to register validator'
+    });
+  }
 });
 
 /**
@@ -142,48 +142,48 @@ router.post('/validators/register', authenticate, validateRequest([
  *         description: Authentication required
  */
 router.post('/work/submit', authenticate, validateRequest([
-    'validatorId',
-    'workResult',
-    'proof'
+  'validatorId',
+  'workResult',
+  'proof'
 ]), async (req, res) => {
-    try {
-        const { validatorId, workResult, proof, nonce = 0 } = req.body;
-        
-        // Verify validator ownership
-        const validator = consensus.getValidator(validatorId);
-        if (!validator || validator.nodeId !== req.user.id) {
-            return res.status(403).json({
-                success: false,
-                error: 'Unauthorized validator access'
-            });
-        }
-        
-        const result = consensus.submitComputeWork(
-            validatorId,
-            workResult,
-            proof,
-            nonce
-        );
-        
-        logger.info(`Compute work submitted by validator ${validatorId}`);
-        
-        res.json({
-            success: true,
-            data: {
-                workId: result.workId,
-                validatorId,
-                timestamp: result.timestamp,
-                verificationStatus: result.verified ? 'verified' : 'pending'
-            }
-        });
-        
-    } catch (error) {
-        logger.error('Work submission failed:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to submit work'
-        });
+  try {
+    const { validatorId, workResult, proof, nonce = 0 } = req.body;
+
+    // Verify validator ownership
+    const validator = consensus.getValidator(validatorId);
+    if (!validator || validator.nodeId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized validator access'
+      });
     }
+
+    const result = consensus.submitComputeWork(
+      validatorId,
+      workResult,
+      proof,
+      nonce
+    );
+
+    logger.info(`Compute work submitted by validator ${validatorId}`);
+
+    res.json({
+      success: true,
+      data: {
+        workId: result.workId,
+        validatorId,
+        timestamp: result.timestamp,
+        verificationStatus: result.verified ? 'verified' : 'pending'
+      }
+    });
+
+  } catch (error) {
+    logger.error('Work submission failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to submit work'
+    });
+  }
 });
 
 /**
@@ -210,42 +210,42 @@ router.post('/work/submit', authenticate, validateRequest([
  *         description: Validator not found
  */
 router.get('/challenges/:validatorId', authenticate, async (req, res) => {
-    try {
-        const { validatorId } = req.params;
-        
-        // Verify validator ownership
-        const validator = consensus.getValidator(validatorId);
-        if (!validator || validator.nodeId !== req.user.id) {
-            return res.status(403).json({
-                success: false,
-                error: 'Unauthorized validator access'
-            });
-        }
-        
-        const challenges = consensus.getPendingChallenges(validatorId);
-        
-        res.json({
-            success: true,
-            data: {
-                validatorId,
-                pendingChallenges: challenges.length,
-                challenges: challenges.map(challenge => ({
-                    challengeId: challenge.id,
-                    type: challenge.type,
-                    difficulty: challenge.difficulty,
-                    deadline: challenge.deadline,
-                    parameters: challenge.parameters
-                }))
-            }
-        });
-        
-    } catch (error) {
-        logger.error('Failed to get challenges:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve challenges'
-        });
+  try {
+    const { validatorId } = req.params;
+
+    // Verify validator ownership
+    const validator = consensus.getValidator(validatorId);
+    if (!validator || validator.nodeId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized validator access'
+      });
     }
+
+    const challenges = consensus.getPendingChallenges(validatorId);
+
+    res.json({
+      success: true,
+      data: {
+        validatorId,
+        pendingChallenges: challenges.length,
+        challenges: challenges.map(challenge => ({
+          challengeId: challenge.id,
+          type: challenge.type,
+          difficulty: challenge.difficulty,
+          deadline: challenge.deadline,
+          parameters: challenge.parameters
+        }))
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to get challenges:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve challenges'
+    });
+  }
 });
 
 /**
@@ -268,32 +268,32 @@ router.get('/challenges/:validatorId', authenticate, async (req, res) => {
  *         description: Latest blocks retrieved successfully
  */
 router.get('/blocks/latest', async (req, res) => {
-    try {
-        const limit = Math.min(parseInt(req.query.limit) || 10, 100);
-        const blocks = consensus.getLatestBlocks(limit);
-        
-        res.json({
-            success: true,
-            data: {
-                totalBlocks: consensus.getBlockHeight(),
-                blocks: blocks.map(block => ({
-                    height: block.height,
-                    hash: block.hash,
-                    proposer: block.proposer,
-                    timestamp: block.timestamp,
-                    transactionCount: block.transactions.length,
-                    computeWorkCount: block.computeWork.length
-                }))
-            }
-        });
-        
-    } catch (error) {
-        logger.error('Failed to get latest blocks:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve blocks'
-        });
-    }
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+    const blocks = consensus.getLatestBlocks(limit);
+
+    res.json({
+      success: true,
+      data: {
+        totalBlocks: consensus.getBlockHeight(),
+        blocks: blocks.map(block => ({
+          height: block.height,
+          hash: block.hash,
+          proposer: block.proposer,
+          timestamp: block.timestamp,
+          transactionCount: block.transactions.length,
+          computeWorkCount: block.computeWork.length
+        }))
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to get latest blocks:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve blocks'
+    });
+  }
 });
 
 /**
@@ -314,40 +314,40 @@ router.get('/blocks/latest', async (req, res) => {
  *         description: Validators retrieved successfully
  */
 router.get('/validators', async (req, res) => {
-    try {
-        const { status } = req.query;
-        const validators = consensus.getAllValidators();
-        
-        let filteredValidators = validators;
-        if (status) {
-            filteredValidators = validators.filter(v => v.status === status);
-        }
-        
-        res.json({
-            success: true,
-            data: {
-                totalValidators: validators.length,
-                activeValidators: validators.filter(v => v.status === 'active').length,
-                validators: filteredValidators.map(validator => ({
-                    id: validator.id,
-                    stake: validator.stake,
-                    computePower: validator.computePower,
-                    status: validator.status,
-                    reputation: validator.reputation,
-                    blocksProposed: validator.blocksProposed,
-                    uptime: validator.uptime,
-                    lastActivity: validator.lastActivity
-                }))
-            }
-        });
-        
-    } catch (error) {
-        logger.error('Failed to get validators:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve validators'
-        });
+  try {
+    const { status } = req.query;
+    const validators = consensus.getAllValidators();
+
+    let filteredValidators = validators;
+    if (status) {
+      filteredValidators = validators.filter(v => v.status === status);
     }
+
+    res.json({
+      success: true,
+      data: {
+        totalValidators: validators.length,
+        activeValidators: validators.filter(v => v.status === 'active').length,
+        validators: filteredValidators.map(validator => ({
+          id: validator.id,
+          stake: validator.stake,
+          computePower: validator.computePower,
+          status: validator.status,
+          reputation: validator.reputation,
+          blocksProposed: validator.blocksProposed,
+          uptime: validator.uptime,
+          lastActivity: validator.lastActivity
+        }))
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to get validators:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve validators'
+    });
+  }
 });
 
 /**
@@ -361,30 +361,30 @@ router.get('/validators', async (req, res) => {
  *         description: Metrics retrieved successfully
  */
 router.get('/metrics', async (req, res) => {
-    try {
-        const metrics = consensus.getNetworkMetrics();
-        
-        res.json({
-            success: true,
-            data: {
-                networkHealth: metrics.networkHealth,
-                consensusRate: metrics.consensusRate,
-                averageBlockTime: metrics.averageBlockTime,
-                totalStaked: metrics.totalStaked,
-                networkHashrate: metrics.networkHashrate,
-                byzantineFaultTolerance: metrics.byzantineFaultTolerance,
-                lastBlockHeight: metrics.lastBlockHeight,
-                activeValidatorCount: metrics.activeValidatorCount
-            }
-        });
-        
-    } catch (error) {
-        logger.error('Failed to get consensus metrics:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve metrics'
-        });
-    }
+  try {
+    const metrics = consensus.getNetworkMetrics();
+
+    res.json({
+      success: true,
+      data: {
+        networkHealth: metrics.networkHealth,
+        consensusRate: metrics.consensusRate,
+        averageBlockTime: metrics.averageBlockTime,
+        totalStaked: metrics.totalStaked,
+        networkHashrate: metrics.networkHashrate,
+        byzantineFaultTolerance: metrics.byzantineFaultTolerance,
+        lastBlockHeight: metrics.lastBlockHeight,
+        activeValidatorCount: metrics.activeValidatorCount
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to get consensus metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve metrics'
+    });
+  }
 });
 
 /**
@@ -429,54 +429,54 @@ router.get('/metrics', async (req, res) => {
  *         description: Unauthorized access
  */
 router.post('/validators/:validatorId/stake', authenticate, validateRequest([
-    'amount',
-    'operation'
+  'amount',
+  'operation'
 ]), async (req, res) => {
-    try {
-        const { validatorId } = req.params;
-        const { amount, operation } = req.body;
-        
-        // Verify validator ownership
-        const validator = consensus.getValidator(validatorId);
-        if (!validator || validator.nodeId !== req.user.id) {
-            return res.status(403).json({
-                success: false,
-                error: 'Unauthorized validator access'
-            });
-        }
-        
-        let newStake;
-        if (operation === 'stake') {
-            newStake = consensus.increaseStake(validatorId, amount);
-        } else if (operation === 'unstake') {
-            newStake = consensus.decreaseStake(validatorId, amount);
-        } else {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid operation. Must be "stake" or "unstake"'
-            });
-        }
-        
-        logger.info(`Stake ${operation} for validator ${validatorId}: ${amount} tokens`);
-        
-        res.json({
-            success: true,
-            data: {
-                validatorId,
-                operation,
-                amount,
-                newStake,
-                timestamp: new Date().toISOString()
-            }
-        });
-        
-    } catch (error) {
-        logger.error('Stake operation failed:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Failed to update stake'
-        });
+  try {
+    const { validatorId } = req.params;
+    const { amount, operation } = req.body;
+
+    // Verify validator ownership
+    const validator = consensus.getValidator(validatorId);
+    if (!validator || validator.nodeId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized validator access'
+      });
     }
+
+    let newStake;
+    if (operation === 'stake') {
+      newStake = consensus.increaseStake(validatorId, amount);
+    } else if (operation === 'unstake') {
+      newStake = consensus.decreaseStake(validatorId, amount);
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid operation. Must be "stake" or "unstake"'
+      });
+    }
+
+    logger.info(`Stake ${operation} for validator ${validatorId}: ${amount} tokens`);
+
+    res.json({
+      success: true,
+      data: {
+        validatorId,
+        operation,
+        amount,
+        newStake,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error('Stake operation failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update stake'
+    });
+  }
 });
 
 module.exports = router;

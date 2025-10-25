@@ -87,7 +87,7 @@ router.get('/demo', authenticate, async (req, res) => {
 
     // Try to get from cache
     const cachedData = await cacheService.redis.get(cacheKey);
-    
+
     if (cachedData) {
       return res.json({
         success: true,
@@ -205,7 +205,7 @@ router.delete('/demo/:key', authenticate, async (req, res) => {
  *       200:
  *         description: List of nodes (cached or fresh)
  */
-router.get('/nodes', 
+router.get('/nodes',
   authenticate,
   cacheMiddleware ? cacheMiddleware.cacheResponse(300) : (req, res, next) => next(),
   async (req, res) => {
@@ -225,7 +225,7 @@ router.get('/nodes',
           last_seen: new Date().toISOString()
         },
         {
-          id: 'node-002', 
+          id: 'node-002',
           name: 'GPU Node Beta',
           region: region || 'us-east-1',
           status: status || 'online',

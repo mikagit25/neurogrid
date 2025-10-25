@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
 class ProofOfComputeConsensus extends EventEmitter {
   constructor(config = {}) {
     super();
-    
+
     this.config = {
       blockTime: config.blockTime || 30000, // 30 seconds
       validatorCount: config.validatorCount || 21,
@@ -21,21 +21,21 @@ class ProofOfComputeConsensus extends EventEmitter {
       byzantineThreshold: config.byzantineThreshold || 0.33, // Max 33% byzantine nodes
       ...config
     };
-    
+
     // Consensus state
     this.validators = new Map(); // validatorId -> validator data
     this.blocks = new Map(); // blockHeight -> block data
     this.pendingTransactions = new Map(); // txId -> transaction
     this.challenges = new Map(); // challengeId -> challenge data
     this.votingRounds = new Map(); // roundId -> voting data
-    
+
     // Current state
     this.currentHeight = 0;
     this.currentEpoch = 0;
     this.isValidating = false;
     this.currentValidator = null;
     this.lastBlockTime = Date.now();
-    
+
     // Performance tracking
     this.computeScores = new Map(); // validatorId -> score history
     this.slashingEvents = [];
@@ -46,7 +46,7 @@ class ProofOfComputeConsensus extends EventEmitter {
       slashingEvents: 0,
       validatorRotations: 0
     };
-    
+
     logger.info('Proof-of-Compute Consensus Engine initialized');
   }
 
@@ -244,14 +244,14 @@ class ProofOfComputeConsensus extends EventEmitter {
 
       // Start consensus voting
       const consensusResult = await this.startBlockConsensus(block);
-      
+
       if (consensusResult.accepted) {
         await this.finalizeBlock(block);
-        
+
         // Update metrics
         this.consensusMetrics.blocksProduced++;
         validator.blocksProduced++;
-        
+
         this.emit('blockProduced', {
           height: block.height,
           producer: validatorId,
@@ -302,7 +302,7 @@ class ProofOfComputeConsensus extends EventEmitter {
       };
 
       votingRound.votes.set(validatorId, voteData);
-      
+
       // Update vote tallies
       if (vote === 'accept') {
         votingRound.acceptVotes += validator.stakeAmount;
@@ -345,7 +345,7 @@ class ProofOfComputeConsensus extends EventEmitter {
   async issueComputeChallenge(work) {
     try {
       const challengeId = this.generateChallengeId();
-      
+
       const challenge = {
         challengeId,
         workId: work.workId,
@@ -365,10 +365,10 @@ class ProofOfComputeConsensus extends EventEmitter {
 
       // Select random validators to verify
       const challengeValidators = this.selectChallengeValidators(work.validatorId);
-      
+
       for (const validatorId of challengeValidators) {
         challenge.challengers.push(validatorId);
-        
+
         this.emit('challengeIssued', {
           challengeId,
           challengedValidator: work.validatorId,
@@ -463,7 +463,7 @@ class ProofOfComputeConsensus extends EventEmitter {
       }
 
       const responses = Array.from(challenge.responses.values());
-      
+
       // Analyze responses to determine correctness
       const outputCounts = new Map();
       responses.forEach(response => {
@@ -474,7 +474,7 @@ class ProofOfComputeConsensus extends EventEmitter {
       // Majority consensus determines correct output
       let correctOutput = null;
       let maxCount = 0;
-      
+
       for (const [output, count] of outputCounts) {
         if (count > maxCount) {
           maxCount = count;
@@ -564,7 +564,7 @@ class ProofOfComputeConsensus extends EventEmitter {
       // Check if validator should be removed
       if (validator.stakeAmount < this.config.minStake || validator.reputation < 0.5) {
         validator.active = false;
-        
+
         this.emit('validatorRemoved', {
           validatorId,
           reason: 'slashing_threshold_exceeded',
@@ -605,7 +605,7 @@ class ProofOfComputeConsensus extends EventEmitter {
   getConsensusStatus() {
     const activeValidators = Array.from(this.validators.values()).filter(v => v.active);
     const totalStake = activeValidators.reduce((sum, v) => sum + v.stakeAmount, 0);
-    
+
     return {
       currentHeight: this.currentHeight,
       currentEpoch: this.currentEpoch,
@@ -635,7 +635,7 @@ class ProofOfComputeConsensus extends EventEmitter {
     const expectedHash = crypto.createHash('sha256')
       .update(work.inputHash + work.outputHash + work.executionTime)
       .digest('hex');
-    
+
     return work.computeProof === expectedHash;
   }
 
@@ -687,16 +687,16 @@ class ProofOfComputeConsensus extends EventEmitter {
 
   getPreviousBlockHash() {
     if (this.currentHeight === 0) return '0x0000000000000000000000000000000000000000000000000000000000000000';
-    
+
     const previousBlock = this.blocks.get(this.currentHeight);
     return previousBlock ? previousBlock.hash : null;
   }
 
   calculateMerkleRoot(transactions) {
     if (transactions.length === 0) return '0x0000000000000000000000000000000000000000000000000000000000000000';
-    
+
     const txHashes = transactions.map(tx => crypto.createHash('sha256').update(JSON.stringify(tx)).digest('hex'));
-    
+
     // Simplified Merkle root calculation
     let level = txHashes;
     while (level.length > 1) {
@@ -709,7 +709,7 @@ class ProofOfComputeConsensus extends EventEmitter {
       }
       level = nextLevel;
     }
-    
+
     return level[0];
   }
 
@@ -721,7 +721,7 @@ class ProofOfComputeConsensus extends EventEmitter {
       previousHash: block.previousHash,
       transactionRoot: block.transactionRoot
     });
-    
+
     return crypto.createHash('sha256').update(blockString).digest('hex');
   }
 
@@ -730,13 +730,13 @@ class ProofOfComputeConsensus extends EventEmitter {
     const signature = crypto.createHash('sha256')
       .update(block.hash + validatorId + Date.now())
       .digest('hex');
-    
+
     return signature;
   }
 
   async startBlockConsensus(block) {
     const roundId = `round_${block.height}_${Date.now()}`;
-    
+
     const votingRound = {
       blockHash: block.hash,
       block,
@@ -794,7 +794,7 @@ class ProofOfComputeConsensus extends EventEmitter {
     if (votingRound.acceptVotes >= requiredStake || votingRound.rejectVotes >= requiredStake) {
       votingRound.completed = true;
       votingRound.endTime = Date.now();
-      
+
       this.emit('consensusReached', {
         blockHash,
         accepted: votingRound.acceptVotes >= requiredStake,
@@ -828,23 +828,23 @@ class ProofOfComputeConsensus extends EventEmitter {
   selectChallengeValidators(excludeValidator, count = 3) {
     const activeValidators = Array.from(this.validators.keys())
       .filter(id => id !== excludeValidator && this.validators.get(id).active);
-    
+
     // Randomly select validators
     const selected = [];
     const available = [...activeValidators];
-    
+
     for (let i = 0; i < Math.min(count, available.length); i++) {
       const randomIndex = Math.floor(Math.random() * available.length);
       selected.push(available.splice(randomIndex, 1)[0]);
     }
-    
+
     return selected;
   }
 
   findWorkByChallenge(challengeId) {
     const challenge = this.challenges.get(challengeId);
     if (!challenge) return null;
-    
+
     return Array.from(this.pendingTransactions.values())
       .find(work => work.workId === challenge.workId);
   }
@@ -868,13 +868,13 @@ class ProofOfComputeConsensus extends EventEmitter {
 
   getValidatorRotation() {
     // Simplified rotation logic
-    const activeValidators = Array.from(this.validators.keys()).filter(id => 
+    const activeValidators = Array.from(this.validators.keys()).filter(id =>
       this.validators.get(id).active
     );
-    
+
     const rotationIndex = this.currentHeight % activeValidators.length;
     this.currentValidator = activeValidators[rotationIndex];
-    
+
     return {
       currentValidator: this.currentValidator,
       nextValidator: activeValidators[(rotationIndex + 1) % activeValidators.length],
@@ -921,14 +921,14 @@ class ProofOfComputeConsensus extends EventEmitter {
     const validators = this.getAllValidators();
     const activeValidators = validators.filter(v => v.active);
     const totalStaked = validators.reduce((sum, v) => sum + v.stakeAmount, 0);
-    const avgReputation = validators.length > 0 
-      ? validators.reduce((sum, v) => sum + v.reputation, 0) / validators.length 
+    const avgReputation = validators.length > 0
+      ? validators.reduce((sum, v) => sum + v.reputation, 0) / validators.length
       : 0;
 
     return {
       networkHealth: Math.min(100, (activeValidators.length / this.config.validatorCount) * 100),
-      consensusRate: this.consensusMetrics.blocksProduced > 0 
-        ? (this.consensusMetrics.blocksProduced / (this.currentHeight + 1)) * 100 
+      consensusRate: this.consensusMetrics.blocksProduced > 0
+        ? (this.consensusMetrics.blocksProduced / (this.currentHeight + 1)) * 100
         : 0,
       averageBlockTime: this.config.blockTime,
       totalStaked,
@@ -947,7 +947,7 @@ class ProofOfComputeConsensus extends EventEmitter {
     const blocks = Array.from(this.blocks.values())
       .sort((a, b) => b.height - a.height)
       .slice(0, limit);
-    
+
     return blocks;
   }
 
@@ -974,16 +974,16 @@ class ProofOfComputeConsensus extends EventEmitter {
     if (!validator) {
       throw new Error('Validator not found');
     }
-    
+
     if (amount <= 0) {
       throw new Error('Stake increase amount must be positive');
     }
 
     validator.stakeAmount += amount;
     validator.lastActivity = new Date();
-    
+
     logger.info(`Increased stake for validator ${validatorId} by ${amount}`);
-    
+
     return validator.stakeAmount;
   }
 
@@ -995,7 +995,7 @@ class ProofOfComputeConsensus extends EventEmitter {
     if (!validator) {
       throw new Error('Validator not found');
     }
-    
+
     if (amount <= 0) {
       throw new Error('Stake decrease amount must be positive');
     }
@@ -1006,9 +1006,9 @@ class ProofOfComputeConsensus extends EventEmitter {
 
     validator.stakeAmount -= amount;
     validator.lastActivity = new Date();
-    
+
     logger.info(`Decreased stake for validator ${validatorId} by ${amount}`);
-    
+
     return validator.stakeAmount;
   }
 
@@ -1026,7 +1026,7 @@ class ProofOfComputeConsensus extends EventEmitter {
     validator.reputation = Math.max(0.1, validator.reputation - 0.5);
     validator.active = false;
     validator.status = 'slashed';
-    
+
     // Record slashing event
     const slashingEvent = {
       validatorId,
@@ -1036,15 +1036,15 @@ class ProofOfComputeConsensus extends EventEmitter {
       timestamp: new Date(),
       originalStake: validator.stakeAmount + slashedAmount
     };
-    
+
     validator.slashingHistory.push(slashingEvent);
     this.slashingEvents.push(slashingEvent);
     this.consensusMetrics.slashingEvents++;
-    
+
     logger.warn(`Validator ${validatorId} slashed: ${slashPercentage}% (${slashedAmount} tokens) for ${reason}`);
-    
+
     this.emit('validatorSlashed', slashingEvent);
-    
+
     return {
       slashedAmount,
       remainingStake: validator.stakeAmount,
@@ -1058,7 +1058,7 @@ class ProofOfComputeConsensus extends EventEmitter {
   calculateNetworkHashRate() {
     const activeValidators = this.getAllValidators().filter(v => v.active);
     if (activeValidators.length === 0) return 0;
-    
+
     // Simplified calculation based on validator compute capacity
     return activeValidators.reduce((sum, v) => {
       const capacity = v.computeCapacity.hashRate || v.computeCapacity.gflops || 1;

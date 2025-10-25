@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const { models } = require('../../src/models');
+const testUtils = require('../utils/testUtils');
 
 describe('API Integration Tests', () => {
   let testUser, testToken, testApiKey;
@@ -207,14 +208,14 @@ describe('API Integration Tests', () => {
   describe('Rate Limiting', () => {
     test('should apply rate limiting', async () => {
       // Make multiple requests quickly
-      const requests = Array(6).fill().map(() => 
+      const requests = Array(6).fill().map(() =>
         request(app)
           .get('/api/jobs')
           .set('Authorization', `Bearer ${testToken}`)
       );
 
       const responses = await Promise.all(requests);
-      
+
       // Some requests should be rate limited (429)
       const rateLimitedResponses = responses.filter(r => r.status === 429);
       expect(rateLimitedResponses.length).toBeGreaterThan(0);

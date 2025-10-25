@@ -15,8 +15,8 @@ class CacheMiddleware {
 
       try {
         // Generate cache key
-        const cacheKey = keyGenerator 
-          ? keyGenerator(req) 
+        const cacheKey = keyGenerator
+          ? keyGenerator(req)
           : this.generateCacheKey(req);
 
         // Try to get cached response
@@ -27,9 +27,9 @@ class CacheMiddleware {
         );
 
         if (cachedResponse) {
-          logger.debug('Cache hit for API response', { 
-            path: req.path, 
-            key: cacheKey 
+          logger.debug('Cache hit for API response', {
+            path: req.path,
+            key: cacheKey
           });
 
           // Set cache headers
@@ -43,9 +43,9 @@ class CacheMiddleware {
         }
 
         // Cache miss - continue to route handler
-        logger.debug('Cache miss for API response', { 
-          path: req.path, 
-          key: cacheKey 
+        logger.debug('Cache miss for API response', {
+          path: req.path,
+          key: cacheKey
         });
 
         // Override res.json to cache the response
@@ -60,9 +60,9 @@ class CacheMiddleware {
               data,
               ttl
             ).catch(error => {
-              logger.error('Failed to cache API response', { 
+              logger.error('Failed to cache API response', {
                 error: error.message,
-                path: req.path 
+                path: req.path
               });
             });
 
@@ -79,9 +79,9 @@ class CacheMiddleware {
 
         next();
       } catch (error) {
-        logger.error('Cache middleware error', { 
+        logger.error('Cache middleware error', {
           error: error.message,
-          path: req.path 
+          path: req.path
         });
         next();
       }
@@ -95,17 +95,17 @@ class CacheMiddleware {
         try {
           // Try to get cached result
           const cachedResult = await this.cache.getCachedDbQuery(query, params);
-          
+
           if (cachedResult !== null) {
-            logger.debug('Database query cache hit', { 
-              query: query.substring(0, 50) + '...' 
+            logger.debug('Database query cache hit', {
+              query: query.substring(0, 50) + '...'
             });
             return cachedResult;
           }
 
           // Cache miss - execute query
-          logger.debug('Database query cache miss', { 
-            query: query.substring(0, 50) + '...' 
+          logger.debug('Database query cache miss', {
+            query: query.substring(0, 50) + '...'
           });
 
           const result = await executor();
@@ -137,7 +137,7 @@ class CacheMiddleware {
       try {
         // Try to get session from cache
         const cachedSession = await this.cache.getSession(sessionId);
-        
+
         if (cachedSession) {
           req.session = { ...req.session, ...cachedSession };
           logger.debug('Session cache hit', { sessionId });
@@ -159,9 +159,9 @@ class CacheMiddleware {
 
         next();
       } catch (error) {
-        logger.error('Session cache middleware error', { 
+        logger.error('Session cache middleware error', {
           error: error.message,
-          sessionId 
+          sessionId
         });
         next();
       }
@@ -181,8 +181,8 @@ class CacheMiddleware {
     return async (req, res, next) => {
       try {
         // Generate rate limit key
-        const key = keyGenerator 
-          ? keyGenerator(req) 
+        const key = keyGenerator
+          ? keyGenerator(req)
           : this.generateRateLimitKey(req);
 
         const window = Math.floor(Date.now() / windowMs);
@@ -205,11 +205,11 @@ class CacheMiddleware {
 
         // Check if rate limit exceeded
         if (count > max) {
-          logger.warn('Rate limit exceeded', { 
-            key, 
-            count, 
-            max, 
-            ip: req.ip 
+          logger.warn('Rate limit exceeded', {
+            key,
+            count,
+            max,
+            ip: req.ip
           });
 
           return res.status(429).json({
@@ -222,7 +222,7 @@ class CacheMiddleware {
         // Skip counting for certain responses if configured
         const originalSend = res.send.bind(res);
         res.send = (data) => {
-          const shouldSkip = 
+          const shouldSkip =
             (skipSuccessfulRequests && res.statusCode < 400) ||
             (skipFailedRequests && res.statusCode >= 400);
 
@@ -236,9 +236,9 @@ class CacheMiddleware {
 
         next();
       } catch (error) {
-        logger.error('Rate limit middleware error', { 
+        logger.error('Rate limit middleware error', {
           error: error.message,
-          ip: req.ip 
+          ip: req.ip
         });
         next();
       }
@@ -260,7 +260,7 @@ class CacheMiddleware {
 
         // Try to get cached auth data
         const cachedAuth = await this.cache.getCachedAuthToken(tokenHash);
-        
+
         if (cachedAuth) {
           req.user = cachedAuth.user;
           req.auth = cachedAuth;
@@ -307,9 +307,9 @@ class CacheMiddleware {
         const result = originalJson(data);
 
         // Invalidate cache after successful modification operations
-        if (res.statusCode >= 200 && res.statusCode < 300 && 
+        if (res.statusCode >= 200 && res.statusCode < 300 &&
             ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-          
+
           this.invalidatePatterns(req.cacheInvalidationPatterns, req).catch(error => {
             logger.error('Cache invalidation failed', { error: error.message });
           });
@@ -330,7 +330,7 @@ class CacheMiddleware {
       JSON.stringify(req.query),
       req.user?.id || 'anonymous'
     ];
-    
+
     return keyParts.join(':');
   }
 
@@ -371,22 +371,22 @@ class CacheMiddleware {
         const count = await this.cache.redis.invalidatePattern(resolvedPattern);
         totalInvalidated += count;
 
-        logger.debug('Invalidated cache pattern', { 
-          pattern: resolvedPattern, 
-          count 
+        logger.debug('Invalidated cache pattern', {
+          pattern: resolvedPattern,
+          count
         });
       } catch (error) {
-        logger.error('Pattern invalidation failed', { 
-          pattern, 
-          error: error.message 
+        logger.error('Pattern invalidation failed', {
+          pattern,
+          error: error.message
         });
       }
     }
 
     if (totalInvalidated > 0) {
-      logger.info('Cache invalidation completed', { 
+      logger.info('Cache invalidation completed', {
         patterns: patterns.length,
-        invalidated: totalInvalidated 
+        invalidated: totalInvalidated
       });
     }
   }

@@ -5,11 +5,24 @@ const { authenticate } = require('../../middleware/security');
 const rateLimit = require('express-rate-limit');
 const logger = require('../../utils/logger');
 const StripeService = require('../../services/StripeService');
+const PaymentGateway = require('../../services/PaymentGateway');
+const TokenEngine = require('../../services/TokenEngine');
 
 // Service instances (injected from main app)
 let stripeService = null;
 let userService = null;
 let subscriptionService = null;
+
+// Create payment gateway and token engine instances
+const paymentGateway = new PaymentGateway();
+const tokenEngine = new TokenEngine();
+
+// Withdrawal limits configuration
+const withdrawalLimit = {
+  daily: 10000,
+  monthly: 100000,
+  perTransaction: 5000
+};
 
 // Rate limiting for payment operations
 const paymentLimit = rateLimit({
@@ -107,7 +120,7 @@ router.get('/plans', async (req, res) => {
     }
 
     const plans = stripeService.getPlans();
-    
+
     res.json({
       success: true,
       data: {
@@ -210,9 +223,9 @@ router.post('/create-customer',
       });
 
     } catch (error) {
-      logger.error('Error creating customer', { 
+      logger.error('Error creating customer', {
         userId: req.user?.id,
-        error: error.message 
+        error: error.message
       });
       res.status(500).json({
         success: false,
@@ -326,7 +339,7 @@ router.post('/create-subscription',
         planId: req.body.planId,
         error: error.message
       });
-      
+
       res.status(500).json({
         success: false,
         error: 'Failed to create subscription',
@@ -392,11 +405,11 @@ router.post('/create-payment-intent',
         });
       }
 
-      const { 
-        amount, 
-        currency = 'usd', 
+      const {
+        amount,
+        currency = 'usd',
         description = 'NeuroGrid Credits',
-        paymentMethodId 
+        paymentMethodId
       } = req.body;
       const user = req.user;
 
@@ -446,7 +459,7 @@ router.post('/create-payment-intent',
         amount: req.body.amount,
         error: error.message
       });
-      
+
       res.status(500).json({
         success: false,
         error: 'Failed to create payment intent'
@@ -488,7 +501,7 @@ router.post('/webhook',
       }
 
       const signature = req.headers['stripe-signature'];
-      
+
       if (!signature) {
         return res.status(400).json({
           success: false,
@@ -508,14 +521,14 @@ router.post('/webhook',
         error: error.message,
         signature: req.headers['stripe-signature'] ? 'present' : 'missing'
       });
-      
+
       if (error.message.includes('No signatures found')) {
         return res.status(400).json({
           success: false,
           error: 'Invalid webhook signature'
         });
       }
-      
+
       res.status(500).json({
         success: false,
         error: 'Failed to process webhook'
@@ -560,7 +573,7 @@ router.get('/subscription/:subscriptionId',
       }
 
       const { subscriptionId } = req.params;
-      
+
       const subscription = await stripeService.stripe.subscriptions.retrieve(
         subscriptionId,
         { expand: ['latest_invoice', 'customer'] }
@@ -596,14 +609,14 @@ router.get('/subscription/:subscriptionId',
         userId: req.user?.id,
         error: error.message
       });
-      
+
       if (error.code === 'resource_missing') {
         return res.status(404).json({
           success: false,
           error: 'Subscription not found'
         });
       }
-      
+
       res.status(500).json({
         success: false,
         error: 'Failed to fetch subscription'
@@ -701,8 +714,8 @@ router.post('/subscription/:subscriptionId/cancel',
             cancelled_at: cancelledSubscription.cancelled_at,
             ended_at: cancelledSubscription.ended_at
           },
-          message: immediate 
-            ? 'Subscription cancelled immediately' 
+          message: immediate
+            ? 'Subscription cancelled immediately'
             : 'Subscription will be cancelled at the end of the current period'
         }
       });
@@ -713,7 +726,7 @@ router.post('/subscription/:subscriptionId/cancel',
         userId: req.user?.id,
         error: error.message
       });
-      
+
       res.status(500).json({
         success: false,
         error: 'Failed to cancel subscription'
@@ -801,7 +814,7 @@ router.post('/usage',
         usageType: req.body.usageType,
         error: error.message
       });
-      
+
       res.status(500).json({
         success: false,
         error: 'Failed to record usage'
@@ -858,7 +871,7 @@ router.get('/stats',
         userId: req.user?.id,
         error: error.message
       });
-      
+
       res.status(500).json({
         success: false,
         error: 'Failed to fetch payment statistics'
@@ -935,7 +948,7 @@ router.get('/rates', async (req, res) => {
 
     const rates = {};
     const currencies = ['USD', 'EUR', 'RUB', 'GBP', 'BTC', 'ETH'];
-    
+
     for (const currency of currencies) {
       rates[`${currency}/NGRID`] = paymentGateway.exchangeRates.get(`${currency}/NGRID`) || 0;
       rates[`NGRID/${currency}`] = paymentGateway.exchangeRates.get(`NGRID/${currency}`) || 0;
@@ -1213,7 +1226,7 @@ router.get('/transaction/:id', authenticate, [
       });
     }
 
-    const transaction = paymentGateway.pendingTransactions.get(id) || 
+    const transaction = paymentGateway.pendingTransactions.get(id) ||
                        paymentGateway.completedTransactions.get(id);
 
     if (!transaction || transaction.userId !== userId) {
@@ -1263,7 +1276,7 @@ router.post('/webhook/:provider', [
 ], async (req, res) => {
   try {
     const { provider } = req.params;
-    const signature = req.get('stripe-signature') || 
+    const signature = req.get('stripe-signature') ||
                      req.get('paypal-auth-signature') ||
                      req.get('x-signature');
 

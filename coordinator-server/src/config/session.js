@@ -39,7 +39,7 @@ class SessionConfig {
 
   getSessionConfig() {
     const isProduction = this.config.get('NODE_ENV') === 'production';
-    
+
     return {
       store: this.createSessionStore(),
       secret: this.config.get('SESSION_SECRET', 'your-secret-key-change-in-production'),
@@ -176,24 +176,24 @@ class SessionConfig {
     try {
       const totalSessions = await this.getSessionCount();
       const allSessions = await this.getAllSessions();
-      
+
       // Analyze session data
       const sessionsByDuration = {};
       const sessionsByUserAgent = {};
       let activeSessions = 0;
-      
+
       Object.values(allSessions).forEach(session => {
         if (session && session.cookie) {
           const now = Date.now();
           const expires = new Date(session.cookie.expires).getTime();
-          
+
           if (expires > now) {
             activeSessions++;
-            
+
             const duration = Math.floor((now - (session.createdAt || now)) / 1000 / 60); // minutes
             const durationKey = duration < 60 ? '<1h' : duration < 1440 ? '<1d' : '>1d';
             sessionsByDuration[durationKey] = (sessionsByDuration[durationKey] || 0) + 1;
-            
+
             const userAgent = session.userAgent || 'unknown';
             const browser = this.extractBrowser(userAgent);
             sessionsByUserAgent[browser] = (sessionsByUserAgent[browser] || 0) + 1;
@@ -222,13 +222,13 @@ class SessionConfig {
 
   extractBrowser(userAgent) {
     if (!userAgent) return 'unknown';
-    
+
     if (userAgent.includes('Chrome')) return 'Chrome';
     if (userAgent.includes('Firefox')) return 'Firefox';
     if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
     if (userAgent.includes('Edge')) return 'Edge';
     if (userAgent.includes('Opera')) return 'Opera';
-    
+
     return 'other';
   }
 
@@ -236,7 +236,7 @@ class SessionConfig {
   async healthCheck() {
     try {
       const count = await this.getSessionCount();
-      
+
       return {
         status: 'healthy',
         store: this.store.constructor.name,

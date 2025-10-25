@@ -16,7 +16,7 @@ class EnhancedWebSocketManager {
     this.userSessions = new Map(); // userId -> session data
     this.heartbeatInterval = null;
     this.metricsInterval = null;
-    
+
     this.stats = {
       totalConnections: 0,
       activeConnections: 0,
@@ -37,7 +37,7 @@ class EnhancedWebSocketManager {
   }
 
   initialize(server) {
-    this.wss = new WebSocket.Server({ 
+    this.wss = new WebSocket.Server({
       server,
       path: '/ws',
       verifyClient: this.verifyClient.bind(this),
@@ -48,7 +48,7 @@ class EnhancedWebSocketManager {
     this.startHeartbeat();
     this.startMetricsCollection();
     this.startLiveStreams();
-    
+
     logger.info('Enhanced WebSocket server initialized');
   }
 
@@ -109,7 +109,7 @@ class EnhancedWebSocketManager {
   async generateSystemMetrics() {
     const process = require('process');
     const os = require('os');
-    
+
     return {
       cpu: {
         usage: Math.random() * 100,
@@ -154,7 +154,7 @@ class EnhancedWebSocketManager {
         uptime: Math.floor(Math.random() * 86400)
       });
     }
-    
+
     return {
       nodes,
       summary: {
@@ -185,23 +185,23 @@ class EnhancedWebSocketManager {
     // Enhanced verification with rate limiting
     const ip = info.req.socket.remoteAddress;
     const now = Date.now();
-    
+
     // Simple rate limiting per IP
     if (!this.rateLimits.has(ip)) {
       this.rateLimits.set(ip, { count: 0, resetTime: now + 60000 });
     }
-    
+
     const rateLimit = this.rateLimits.get(ip);
     if (now > rateLimit.resetTime) {
       rateLimit.count = 0;
       rateLimit.resetTime = now + 60000;
     }
-    
+
     if (rateLimit.count > 10) { // Max 10 connections per IP per minute
       logger.warn('WebSocket connection rate limited', { ip });
       return false;
     }
-    
+
     rateLimit.count++;
     return true;
   }
@@ -210,7 +210,7 @@ class EnhancedWebSocketManager {
     const connectionId = this.generateConnectionId();
     const ip = req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
-    
+
     // Initialize enhanced connection
     ws.connectionId = connectionId;
     ws.isAlive = true;
@@ -287,7 +287,7 @@ class EnhancedWebSocketManager {
     try {
       this.stats.messagesReceived++;
       this.stats.dataTransferred += message.length;
-      
+
       const data = JSON.parse(message);
 
       // Rate limiting per connection
@@ -304,39 +304,39 @@ class EnhancedWebSocketManager {
       });
 
       switch (data.type) {
-        case 'authenticate':
-          this.handleAuthentication(ws, data);
-          break;
-        case 'subscribe':
-          this.handleSubscription(ws, data);
-          break;
-        case 'unsubscribe':
-          this.handleUnsubscription(ws, data);
-          break;
-        case 'join_room':
-          this.handleJoinRoom(ws, data);
-          break;
-        case 'leave_room':
-          this.handleLeaveRoom(ws, data);
-          break;
-        case 'start_stream':
-          this.handleStartStream(ws, data);
-          break;
-        case 'stop_stream':
-          this.handleStopStream(ws, data);
-          break;
-        case 'ping':
-          this.handlePing(ws, data);
-          break;
-        case 'get_stats':
-          this.handleGetStats(ws, data);
-          break;
-        case 'request_history':
-          this.handleRequestHistory(ws, data);
-          break;
-        default:
-          // Forward to base WebSocket manager for compatibility
-          this.handleLegacyMessage(ws, data);
+      case 'authenticate':
+        this.handleAuthentication(ws, data);
+        break;
+      case 'subscribe':
+        this.handleSubscription(ws, data);
+        break;
+      case 'unsubscribe':
+        this.handleUnsubscription(ws, data);
+        break;
+      case 'join_room':
+        this.handleJoinRoom(ws, data);
+        break;
+      case 'leave_room':
+        this.handleLeaveRoom(ws, data);
+        break;
+      case 'start_stream':
+        this.handleStartStream(ws, data);
+        break;
+      case 'stop_stream':
+        this.handleStopStream(ws, data);
+        break;
+      case 'ping':
+        this.handlePing(ws, data);
+        break;
+      case 'get_stats':
+        this.handleGetStats(ws, data);
+        break;
+      case 'request_history':
+        this.handleRequestHistory(ws, data);
+        break;
+      default:
+        // Forward to base WebSocket manager for compatibility
+        this.handleLegacyMessage(ws, data);
       }
     } catch (error) {
       logger.error('Enhanced WebSocket message parsing error', {
@@ -351,17 +351,17 @@ class EnhancedWebSocketManager {
   checkRateLimit(ws, messageType) {
     const now = Date.now();
     const key = `${ws.connectionId}-${messageType}`;
-    
+
     if (!this.rateLimits.has(key)) {
       this.rateLimits.set(key, { count: 0, resetTime: now + 60000 });
     }
-    
+
     const limit = this.rateLimits.get(key);
     if (now > limit.resetTime) {
       limit.count = 0;
       limit.resetTime = now + 60000;
     }
-    
+
     // Different limits for different message types
     const limits = {
       authenticate: 5,
@@ -369,20 +369,20 @@ class EnhancedWebSocketManager {
       ping: 120,
       default: 60
     };
-    
+
     const maxCount = limits[messageType] || limits.default;
-    
+
     if (limit.count >= maxCount) {
       return false;
     }
-    
+
     limit.count++;
     return true;
   }
 
   handleJoinRoom(ws, data) {
     const { room } = data.payload || {};
-    
+
     if (!room) {
       this.sendError(ws, 'Room name required', 'ROOM_NAME_REQUIRED');
       return;
@@ -396,7 +396,7 @@ class EnhancedWebSocketManager {
 
     // Add to room
     ws.rooms.add(room);
-    
+
     if (!this.rooms.has(room)) {
       this.rooms.set(room, new Set());
     }
@@ -432,7 +432,7 @@ class EnhancedWebSocketManager {
 
   handleLeaveRoom(ws, data) {
     const { room } = data.payload || {};
-    
+
     if (!room || !ws.rooms.has(room)) {
       this.sendError(ws, 'Not in specified room', 'NOT_IN_ROOM');
       return;
@@ -443,10 +443,10 @@ class EnhancedWebSocketManager {
 
   leaveRoom(ws, room) {
     ws.rooms.delete(room);
-    
+
     if (this.rooms.has(room)) {
       this.rooms.get(room).delete(ws.connectionId);
-      
+
       if (this.rooms.get(room).size === 0) {
         this.rooms.delete(room);
       }
@@ -476,14 +476,14 @@ class EnhancedWebSocketManager {
 
   handleStartStream(ws, data) {
     const { stream } = data.payload || {};
-    
+
     if (!stream || !this.liveStreams.has(stream)) {
       this.sendError(ws, 'Invalid stream', 'INVALID_STREAM');
       return;
     }
 
     const streamConfig = this.liveStreams.get(stream);
-    
+
     // Check stream access permissions
     if (!this.canAccessStream(ws, stream)) {
       this.sendError(ws, `Access denied to stream: ${stream}`, 'STREAM_ACCESS_DENIED');
@@ -514,23 +514,23 @@ class EnhancedWebSocketManager {
 
   handleStopStream(ws, data) {
     const { stream } = data.payload || {};
-    
+
     if (!stream || !this.liveStreams.has(stream)) {
       this.sendError(ws, 'Invalid stream', 'INVALID_STREAM');
       return;
     }
 
     const streamConfig = this.liveStreams.get(stream);
-    
+
     // Unsubscribe from stream channel
     this.handleUnsubscription(ws, {
       payload: { channels: [streamConfig.channel] }
     });
 
     // Check if any other connections are subscribed to this stream
-    const hasSubscribers = this.channels.has(streamConfig.channel) && 
+    const hasSubscribers = this.channels.has(streamConfig.channel) &&
                           this.channels.get(streamConfig.channel).size > 0;
-    
+
     if (!hasSubscribers && streamConfig.active) {
       streamConfig.active = false;
       logger.info('Live stream deactivated', { stream });
@@ -547,7 +547,7 @@ class EnhancedWebSocketManager {
 
   handleGetStats(ws, data) {
     const stats = this.getEnhancedStats();
-    
+
     this.sendToConnection(ws.connectionId, {
       type: 'stats',
       data: stats,
@@ -557,7 +557,7 @@ class EnhancedWebSocketManager {
 
   handleRequestHistory(ws, data) {
     const { channel, limit = 50 } = data.payload || {};
-    
+
     // Mock history data - replace with real history from database
     const history = [];
     for (let i = 0; i < Math.min(limit, 20); i++) {
@@ -695,24 +695,24 @@ class EnhancedWebSocketManager {
 
   calculateAvgConnectionDuration() {
     if (this.stats.activeConnections === 0) return 0;
-    
+
     let totalDuration = 0;
     let count = 0;
-    
+
     for (const userConnections of this.clients.values()) {
       for (const ws of userConnections) {
         totalDuration += Date.now() - ws.connectedAt.getTime();
         count++;
       }
     }
-    
+
     return count > 0 ? Math.round(totalDuration / count / 1000) : 0; // in seconds
   }
 
   getAvailableChannels() {
     return [
       'system',
-      'announcements', 
+      'announcements',
       'notifications',
       'task_events',
       'node_events',
@@ -851,8 +851,8 @@ class EnhancedWebSocketManager {
   getUserPermissions(user) {
     const basePermissions = ['notifications', 'task_events'];
     const adminPermissions = ['system_events', 'node_events', 'admin'];
-    
-    return user.role === 'admin' 
+
+    return user.role === 'admin'
       ? [...basePermissions, ...adminPermissions]
       : basePermissions;
   }
@@ -889,7 +889,7 @@ class EnhancedWebSocketManager {
 
     // Try to send to active connections
     const userSent = this.sendToUser(userId, message);
-    
+
     // If user is not connected, queue the message
     if (userSent === 0) {
       this.queueMessage(userId, message);
@@ -919,7 +919,7 @@ class EnhancedWebSocketManager {
   sendToConnection(connectionIdOrWs, message) {
     try {
       let ws;
-      
+
       if (typeof connectionIdOrWs === 'string') {
         // Find connection by ID
         for (const userConnections of this.clients.values()) {
@@ -1009,7 +1009,7 @@ class EnhancedWebSocketManager {
     if (ws.userId && this.clients.has(ws.userId)) {
       const userConnections = this.clients.get(ws.userId);
       userConnections.delete(ws);
-      
+
       if (userConnections.size === 0) {
         this.clients.delete(ws.userId);
       }
@@ -1021,15 +1021,15 @@ class EnhancedWebSocketManager {
       userSubscriptions.forEach(channel => {
         if (this.channels.has(channel)) {
           this.channels.get(channel).delete(ws.connectionId);
-          
+
           // Check if stream should be deactivated
           const streamEntry = Array.from(this.liveStreams.entries())
             .find(([_, stream]) => stream.channel === channel);
-          
+
           if (streamEntry && this.channels.get(channel).size === 0) {
             streamEntry[1].active = false;
-            logger.info('Live stream deactivated due to no subscribers', { 
-              stream: streamEntry[0] 
+            logger.info('Live stream deactivated due to no subscribers', {
+              stream: streamEntry[0]
             });
           }
         }
@@ -1051,7 +1051,7 @@ class EnhancedWebSocketManager {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
     }
-    
+
     if (this.metricsInterval) {
       clearInterval(this.metricsInterval);
     }
@@ -1126,7 +1126,7 @@ class EnhancedWebSocketManager {
   // Legacy compatibility methods
   handleSubscription(ws, data) {
     const { channels = [] } = data.payload || {};
-    
+
     channels.forEach(channel => {
       // Validate channel access
       if (!this.canAccessChannel(ws, channel)) {
@@ -1136,7 +1136,7 @@ class EnhancedWebSocketManager {
 
       // Add to subscriptions
       ws.subscriptions.add(channel);
-      
+
       if (!this.subscriptions.has(ws.connectionId)) {
         this.subscriptions.set(ws.connectionId, new Set());
       }
@@ -1151,7 +1151,7 @@ class EnhancedWebSocketManager {
       // Check if this activates a live stream
       const streamEntry = Array.from(this.liveStreams.entries())
         .find(([_, stream]) => stream.channel === channel);
-      
+
       if (streamEntry && !streamEntry[1].active) {
         streamEntry[1].active = true;
         logger.info('Live stream activated', { stream: streamEntry[0] });
@@ -1175,10 +1175,10 @@ class EnhancedWebSocketManager {
 
   handleUnsubscription(ws, data) {
     const { channels = [] } = data.payload || {};
-    
+
     channels.forEach(channel => {
       ws.subscriptions.delete(channel);
-      
+
       if (this.subscriptions.has(ws.connectionId)) {
         this.subscriptions.get(ws.connectionId).delete(channel);
       }

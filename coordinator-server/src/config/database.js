@@ -22,20 +22,20 @@ class DatabaseManager {
       database: process.env.DB_NAME || 'neurogrid',
       password: process.env.DB_PASSWORD || 'neurogrid_password',
       port: parseInt(process.env.DB_PORT) || 5432,
-      
+
       // Connection pool settings
       max: parseInt(process.env.DB_POOL_MAX) || 20,
       idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT) || 30000,
       connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT) || 2000,
-      
+
       // SSL configuration
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      
+
       // Query timeout
       query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT) || 30000,
-      
+
       // Connection retry settings
-      acquireTimeoutMillis: parseInt(process.env.DB_ACQUIRE_TIMEOUT) || 60000,
+      acquireTimeoutMillis: parseInt(process.env.DB_ACQUIRE_TIMEOUT) || 60000
     };
   }
 
@@ -45,23 +45,23 @@ class DatabaseManager {
   async initialize() {
     try {
       this.pool = new Pool(this.connectionConfig);
-      
+
       // Test connection
       const client = await this.pool.connect();
       await client.query('SELECT NOW()');
       client.release();
-      
+
       this.isConnected = true;
-      
+
       // Setup event listeners
       this.setupEventListeners();
-      
+
       logger.info('Database connection pool initialized successfully', {
         host: this.connectionConfig.host,
         database: this.connectionConfig.database,
         maxConnections: this.connectionConfig.max
       });
-      
+
       return true;
     } catch (error) {
       logger.error('Failed to initialize database connection pool', { error: error.message });
@@ -74,7 +74,7 @@ class DatabaseManager {
    */
   setupEventListeners() {
     this.pool.on('connect', (client) => {
-      logger.debug('New database client connected', { 
+      logger.debug('New database client connected', {
         processId: client.processID,
         totalCount: this.pool.totalCount,
         idleCount: this.pool.idleCount,
@@ -83,21 +83,21 @@ class DatabaseManager {
     });
 
     this.pool.on('acquire', (client) => {
-      logger.debug('Database client acquired from pool', { 
-        processId: client.processID 
+      logger.debug('Database client acquired from pool', {
+        processId: client.processID
       });
     });
 
     this.pool.on('error', (err, client) => {
-      logger.error('Database pool error', { 
+      logger.error('Database pool error', {
         error: err.message,
-        processId: client?.processID 
+        processId: client?.processID
       });
     });
 
     this.pool.on('remove', (client) => {
-      logger.debug('Database client removed from pool', { 
-        processId: client.processID 
+      logger.debug('Database client removed from pool', {
+        processId: client.processID
       });
     });
   }
@@ -108,18 +108,18 @@ class DatabaseManager {
   async query(text, params = []) {
     const start = Date.now();
     let client;
-    
+
     try {
       client = await this.pool.connect();
       const result = await client.query(text, params);
       const duration = Date.now() - start;
-      
+
       logger.debug('Database query executed', {
         query: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
         duration,
         rowCount: result.rowCount
       });
-      
+
       return result;
     } catch (error) {
       const duration = Date.now() - start;
@@ -141,22 +141,22 @@ class DatabaseManager {
    */
   async transaction(queries) {
     const client = await this.pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       const results = [];
       for (const { text, params } of queries) {
         const result = await client.query(text, params);
         results.push(result);
       }
-      
+
       await client.query('COMMIT');
-      
+
       logger.info('Database transaction completed successfully', {
         queryCount: queries.length
       });
-      
+
       return results;
     } catch (error) {
       await client.query('ROLLBACK');
@@ -177,7 +177,7 @@ class DatabaseManager {
     try {
       const result = await this.query('SELECT 1 as health_check, NOW() as timestamp');
       const stats = this.getPoolStats();
-      
+
       return {
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -200,7 +200,7 @@ class DatabaseManager {
     if (!this.pool) {
       return null;
     }
-    
+
     return {
       totalCount: this.pool.totalCount,
       idleCount: this.pool.idleCount,

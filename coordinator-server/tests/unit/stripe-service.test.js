@@ -40,17 +40,17 @@ describe('StripeService', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Create service instance with test configuration
     stripeService = new StripeService({
       stripeSecretKey: 'sk_test_fake_key',
       webhookSecret: 'whsec_test_secret',
       environment: 'test'
     });
-    
+
     // Access the mocked Stripe instance
     mockStripe = stripeService.stripe;
-    
+
     // Ensure all required mock methods exist
     if (!mockStripe.products) {
       mockStripe.products = {
@@ -186,8 +186,8 @@ describe('StripeService', () => {
         name: 'Existing User'
       };
 
-      mockStripe.customers.list.mockResolvedValue({ 
-        data: [existingCustomer] 
+      mockStripe.customers.list.mockResolvedValue({
+        data: [existingCustomer]
       });
 
       const customer = await stripeService.getOrCreateCustomer(userData);
@@ -446,14 +446,14 @@ describe('StripeService', () => {
       };
 
       const cost = stripeService.calculateUsageCost(usage);
-      
+
       // 5 * 150 + 100 * 10 + 50 * 5 = 750 + 1000 + 250 = 2000 cents
       expect(cost).toBe(2000);
     });
 
     test('should get available plans', () => {
       const plans = stripeService.getPlans();
-      
+
       expect(plans).toHaveLength(3);
       expect(plans[0]).toHaveProperty('key');
       expect(plans[0]).toHaveProperty('name');
@@ -467,7 +467,7 @@ describe('StripeService', () => {
       stripeService.stats.totalRevenue = 50000; // $500.00
 
       const stats = stripeService.getStats();
-      
+
       expect(stats.paymentsProcessed).toBe(10);
       expect(stats.totalRevenue).toBe(50000);
       expect(stats.revenueFormatted).toBe('$500.00');

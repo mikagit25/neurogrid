@@ -17,24 +17,24 @@ const monitoringRoutes = require('./routes/monitoring');
  * @returns {Object} Initialized monitoring services
  */
 function initializeMonitoring(options = {}) {
-    console.log('Initializing monitoring infrastructure...');
-    
-    // Initialize all monitoring services
-    const metricsCollector = MetricsCollectorSingleton.getInstance(options.metrics);
-    const performanceMonitor = PerformanceMonitorSingleton.getInstance(options.performance);
-    const systemAnalytics = SystemAnalyticsSingleton.getInstance(options.analytics);
-    const alertingSystem = AlertingSystemSingleton.getInstance(options.alerting);
-    const dashboardController = DashboardControllerSingleton.getInstance(options.dashboard);
-    
-    console.log('Monitoring infrastructure initialized successfully');
-    
-    return {
-        metricsCollector,
-        performanceMonitor,
-        systemAnalytics,
-        alertingSystem,
-        dashboardController
-    };
+  console.log('Initializing monitoring infrastructure...');
+
+  // Initialize all monitoring services
+  const metricsCollector = MetricsCollectorSingleton.getInstance(options.metrics);
+  const performanceMonitor = PerformanceMonitorSingleton.getInstance(options.performance);
+  const systemAnalytics = SystemAnalyticsSingleton.getInstance(options.analytics);
+  const alertingSystem = AlertingSystemSingleton.getInstance(options.alerting);
+  const dashboardController = DashboardControllerSingleton.getInstance(options.dashboard);
+
+  console.log('Monitoring infrastructure initialized successfully');
+
+  return {
+    metricsCollector,
+    performanceMonitor,
+    systemAnalytics,
+    alertingSystem,
+    dashboardController
+  };
 }
 
 /**
@@ -43,49 +43,49 @@ function initializeMonitoring(options = {}) {
  * @returns {Function} Express middleware
  */
 function getMonitoringMiddleware(options = {}) {
-    const performanceMonitor = PerformanceMonitorSingleton.getInstance();
-    return performanceMonitor.getMiddleware();
+  const performanceMonitor = PerformanceMonitorSingleton.getInstance();
+  return performanceMonitor.getMiddleware();
 }
 
 /**
  * Shutdown all monitoring services
  */
 async function shutdownMonitoring() {
-    console.log('Shutting down monitoring infrastructure...');
-    
-    const services = [
-        MetricsCollectorSingleton.getInstance(),
-        PerformanceMonitorSingleton.getInstance(),
-        SystemAnalyticsSingleton.getInstance(),
-        AlertingSystemSingleton.getInstance(),
-        DashboardControllerSingleton.getInstance()
-    ];
-    
-    await Promise.all(services.map(service => service.shutdown()));
-    
-    console.log('Monitoring infrastructure shutdown complete');
+  console.log('Shutting down monitoring infrastructure...');
+
+  const services = [
+    MetricsCollectorSingleton.getInstance(),
+    PerformanceMonitorSingleton.getInstance(),
+    SystemAnalyticsSingleton.getInstance(),
+    AlertingSystemSingleton.getInstance(),
+    DashboardControllerSingleton.getInstance()
+  ];
+
+  await Promise.all(services.map(service => service.shutdown()));
+
+  console.log('Monitoring infrastructure shutdown complete');
 }
 
 module.exports = {
-    // Core classes
-    MetricsCollector,
-    PerformanceMonitor,
-    SystemAnalytics,
-    AlertingSystem,
-    DashboardController,
-    
-    // Singletons
-    MetricsCollectorSingleton,
-    PerformanceMonitorSingleton,
-    SystemAnalyticsSingleton,
-    AlertingSystemSingleton,
-    DashboardControllerSingleton,
-    
-    // Routes
-    monitoringRoutes,
-    
-    // Utilities
-    initializeMonitoring,
-    getMonitoringMiddleware,
-    shutdownMonitoring
+  // Core classes
+  MetricsCollector,
+  PerformanceMonitor,
+  SystemAnalytics,
+  AlertingSystem,
+  DashboardController,
+
+  // Singletons
+  MetricsCollectorSingleton,
+  PerformanceMonitorSingleton,
+  SystemAnalyticsSingleton,
+  AlertingSystemSingleton,
+  DashboardControllerSingleton,
+
+  // Routes
+  monitoringRoutes,
+
+  // Utilities
+  initializeMonitoring,
+  getMonitoringMiddleware,
+  shutdownMonitoring
 };

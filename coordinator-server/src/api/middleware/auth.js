@@ -9,7 +9,7 @@ const auth = async (req, res, next) => {
     // For now, just pass through
     // In production, validate JWT token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       // For development, allow requests without auth
       req.user = { id: 'demo-user', role: 'user' };

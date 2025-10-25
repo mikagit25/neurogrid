@@ -31,7 +31,7 @@ class TaskDispatcher {
 
       this.pendingTasks.set(task.id, task);
       this.taskQueue.push(task);
-      
+
       // Sort by priority
       this.taskQueue.sort((a, b) => this.getPriorityWeight(b.priority) - this.getPriorityWeight(a.priority));
 
@@ -77,7 +77,7 @@ class TaskDispatcher {
           await this.assignTaskToNode(task, suitableNode);
           tasksToRemove.push(i);
           assignedCount++;
-          
+
           // Remove assigned node from available list
           const nodeIndex = availableNodes.findIndex(n => n.id === suitableNode.id);
           if (nodeIndex > -1) {
@@ -134,7 +134,7 @@ class TaskDispatcher {
       // Then by available resources
       const resourceScoreA = (a.available_vram_gb / a.max_vram_gb) + (a.available_cpu_cores / a.max_cpu_cores);
       const resourceScoreB = (b.available_vram_gb / b.max_vram_gb) + (b.available_cpu_cores / b.max_cpu_cores);
-      
+
       return resourceScoreB - resourceScoreA;
     })[0];
   }
@@ -146,7 +146,7 @@ class TaskDispatcher {
     try {
       // Move task from pending to running
       this.pendingTasks.delete(task.id);
-      
+
       const runningTask = {
         ...task,
         nodeId: node.id,
@@ -155,7 +155,7 @@ class TaskDispatcher {
       };
 
       this.runningTasks.set(task.id, runningTask);
-      
+
       // Track node assignment
       if (!this.nodeAssignments.has(node.id)) {
         this.nodeAssignments.set(node.id, new Set());
@@ -245,7 +245,7 @@ class TaskDispatcher {
         task.status = 'pending';
         delete task.nodeId;
         delete task.assignedAt;
-        
+
         this.pendingTasks.set(taskId, task);
         this.taskQueue.push(task);
 
@@ -326,11 +326,11 @@ class TaskDispatcher {
    */
   cleanup(maxAge = 24 * 60 * 60 * 1000) { // 24 hours
     const cutoff = Date.now() - maxAge;
-    let cleaned = 0;
+    const cleaned = 0;
 
     // This would typically clean up from persistent storage
     logger.debug(`Task dispatcher cleanup completed, removed ${cleaned} old tasks`);
-    
+
     return cleaned;
   }
 
@@ -339,12 +339,12 @@ class TaskDispatcher {
    */
   async initialize() {
     logger.info('Task dispatcher initialized');
-    
+
     // Start periodic queue processing
     setInterval(() => {
       this.processQueue();
     }, 5000); // Process queue every 5 seconds
-    
+
     return true;
   }
 }

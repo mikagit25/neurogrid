@@ -26,7 +26,7 @@ class TestDatabaseMigration {
   async testDatabaseConnection() {
     try {
       const result = await TestUserService.testConnection();
-      
+
       if (result.success) {
         logger.info('Test database connection successful', {
           database: result.database,
@@ -63,7 +63,7 @@ class TestDatabaseMigration {
             AND table_name = $1
           );
         `;
-        
+
         const result = await db.query(query, [table]);
         results[table] = result.rows[0].exists;
       }
@@ -80,7 +80,7 @@ class TestDatabaseMigration {
   async createTestUser() {
     try {
       const testEmail = 'test@neurogrid.local';
-      
+
       const existing = await TestUserService.findByEmail(testEmail);
       if (existing) {
         logger.info('Test user already exists');
@@ -113,7 +113,7 @@ class TestDatabaseMigration {
       const testPassword = 'TestPassword123';
 
       const result = await TestUserService.verifyPassword(testEmail, testPassword);
-      
+
       if (result.success) {
         logger.info('Test user authentication successful');
         return true;
@@ -132,7 +132,7 @@ class TestDatabaseMigration {
     try {
       const testEmail = 'test@neurogrid.local';
       const user = await TestUserService.findByEmail(testEmail);
-      
+
       if (!user) {
         throw new Error('Test user not found');
       }
@@ -174,7 +174,7 @@ class TestDatabaseMigration {
 
       const testUser = await this.createTestUser();
       const authOk = await this.testUserAuthentication();
-      
+
       if (!authOk) {
         throw new Error('Authentication test failed');
       }

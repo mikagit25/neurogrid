@@ -34,7 +34,7 @@ router.post('/generate-installer', [
     }
 
     const { platform, nodeId, hardware, settings } = req.body;
-    
+
     logger.info('Generating installer', {
       platform,
       nodeId,
@@ -44,7 +44,7 @@ router.post('/generate-installer', [
 
     // Generate unique installation token
     const installToken = crypto.randomBytes(32).toString('hex');
-    
+
     // Create installer configuration
     const installerConfig = {
       nodeId,
@@ -63,23 +63,23 @@ router.post('/generate-installer', [
     let filename;
 
     switch (platform) {
-      case 'windows':
-        installerBuffer = await generateWindowsInstaller(installerConfig);
-        contentType = 'application/octet-stream';
-        filename = `neurogrid-node-${nodeId.slice(-8)}.exe`;
-        break;
-      case 'macos':
-        installerBuffer = await generateMacOSInstaller(installerConfig);
-        contentType = 'application/octet-stream';
-        filename = `neurogrid-node-${nodeId.slice(-8)}.pkg`;
-        break;
-      case 'linux':
-        installerBuffer = await generateLinuxInstaller(installerConfig);
-        contentType = 'application/x-shellscript';
-        filename = `neurogrid-node-${nodeId.slice(-8)}.sh`;
-        break;
-      default:
-        throw new Error('Unsupported platform');
+    case 'windows':
+      installerBuffer = await generateWindowsInstaller(installerConfig);
+      contentType = 'application/octet-stream';
+      filename = `neurogrid-node-${nodeId.slice(-8)}.exe`;
+      break;
+    case 'macos':
+      installerBuffer = await generateMacOSInstaller(installerConfig);
+      contentType = 'application/octet-stream';
+      filename = `neurogrid-node-${nodeId.slice(-8)}.pkg`;
+      break;
+    case 'linux':
+      installerBuffer = await generateLinuxInstaller(installerConfig);
+      contentType = 'application/x-shellscript';
+      filename = `neurogrid-node-${nodeId.slice(-8)}.sh`;
+      break;
+    default:
+      throw new Error('Unsupported platform');
     }
 
     // Set response headers for file download
@@ -708,11 +708,11 @@ Supported Models:
 ${config.settings.supportedModels.map(model => '- ' + model).join('\n')}
 
 Installation:
-${config.platform === 'windows' ? 
-  '1. Run install.bat as Administrator\n2. The node will be installed as a Windows service\n3. Service will start automatically' :
-  config.platform === 'macos' ?
-  '1. Run: chmod +x install.sh\n2. Run: ./install.sh\n3. The node will be installed as a LaunchDaemon' :
-  '1. Run: chmod +x neurogrid-node-setup.sh\n2. Run: sudo ./neurogrid-node-setup.sh\n3. The node will be installed as a systemd service'
+${config.platform === 'windows' ?
+    '1. Run install.bat as Administrator\n2. The node will be installed as a Windows service\n3. Service will start automatically' :
+    config.platform === 'macos' ?
+      '1. Run: chmod +x install.sh\n2. Run: ./install.sh\n3. The node will be installed as a LaunchDaemon' :
+      '1. Run: chmod +x neurogrid-node-setup.sh\n2. Run: sudo ./neurogrid-node-setup.sh\n3. The node will be installed as a systemd service'
 }
 
 Support:

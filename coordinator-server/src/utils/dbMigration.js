@@ -3,9 +3,8 @@
  * Утилита для тестирования новых моделей и постепенной миграции
  */
 
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
+const User = require('../models/User');
 
 // Импортируем новые сервисы
 const UserService = require('../services/UserService');
@@ -22,7 +21,7 @@ class DatabaseMigration {
   async testDatabaseConnection() {
     try {
       const result = await UserService.testConnection();
-      
+
       if (result.success) {
         logger.info('Database connection test successful', {
           database: result.database,
@@ -46,7 +45,7 @@ class DatabaseMigration {
     try {
       const requiredTables = [
         'users',
-        'user_profiles', 
+        'user_profiles',
         'user_balances',
         'transactions',
         'nodes',
@@ -65,7 +64,7 @@ class DatabaseMigration {
             AND table_name = $1
           );
         `;
-        
+
         const result = await db.query(query, [table]);
         results[table] = result.rows[0].exists;
       }
@@ -85,7 +84,7 @@ class DatabaseMigration {
   async createTestUser() {
     try {
       const testEmail = 'test@neurogrid.local';
-      
+
       // Проверяем, существует ли уже тестовый пользователь
       const existing = await UserService.findByEmail(testEmail);
       if (existing) {
@@ -123,7 +122,7 @@ class DatabaseMigration {
       const testPassword = 'TestPassword123';
 
       const result = await UserService.verifyPassword(testEmail, testPassword);
-      
+
       if (result.success) {
         logger.info('User authentication test successful');
         return true;
@@ -145,7 +144,7 @@ class DatabaseMigration {
     try {
       const testEmail = 'test@neurogrid.local';
       const user = await UserService.findByEmail(testEmail);
-      
+
       if (!user) {
         throw new Error('Test user not found');
       }
@@ -179,7 +178,7 @@ class DatabaseMigration {
     try {
       const testEmail = 'test@neurogrid.local';
       const user = await UserService.findByEmail(testEmail);
-      
+
       if (!user) {
         throw new Error('Test user not found');
       }
@@ -190,8 +189,8 @@ class DatabaseMigration {
         VALUES ($1, $2, $3, $4)
         RETURNING *
       `, [
-        user.id, 
-        'Test Node', 
+        user.id,
+        'Test Node',
         'offline',
         JSON.stringify({
           gpu_count: 1,
@@ -223,7 +222,7 @@ class DatabaseMigration {
     try {
       const testEmail = 'test@neurogrid.local';
       const user = await UserService.findByEmail(testEmail);
-      
+
       if (!user) {
         throw new Error('Test user not found');
       }
@@ -329,7 +328,7 @@ class DatabaseMigration {
     try {
       const testEmail = 'test@neurogrid.local';
       const user = await User.findByEmail(testEmail);
-      
+
       if (!user) {
         logger.info('No test user found to cleanup');
         return;
@@ -345,7 +344,7 @@ class DatabaseMigration {
       ];
 
       await db.transaction(queries);
-      
+
       logger.info('Test data cleaned up successfully');
 
     } catch (error) {

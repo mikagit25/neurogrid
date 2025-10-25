@@ -6,7 +6,7 @@ beforeAll(async () => {
   // Set test environment
   process.env.NODE_ENV = 'test';
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://test_user:test_pass@localhost:5432/test_neurogrid';
-  
+
   try {
     // Initialize test database
     await db.initialize();
@@ -40,7 +40,7 @@ afterEach(async () => {
 // Global test utilities
 global.testUtils = {
   delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
-  
+
   createTestUser: () => ({
     id: 'test-user-' + Date.now(),
     username: 'testuser',
@@ -48,7 +48,7 @@ global.testUtils = {
     role: 'user',
     created_at: new Date()
   }),
-  
+
   createTestNode: () => ({
     id: 'test-node-' + Date.now(),
     node_id: 'node-' + Math.random().toString(36).substr(2, 9),
@@ -58,7 +58,7 @@ global.testUtils = {
     ip_address: '192.168.1.100',
     created_at: new Date()
   }),
-  
+
   createTestTask: () => ({
     id: 'test-task-' + Date.now(),
     title: 'Test AI Task',

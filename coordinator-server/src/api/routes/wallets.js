@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { body, param, query, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 const { authenticate } = require('../../middleware/security');
 const rateLimit = require('express-rate-limit');
 const logger = require('../../utils/logger');

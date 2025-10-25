@@ -20,10 +20,10 @@ class MigrationManager {
     try {
       // Create migrations table
       await this.createMigrationsTable();
-      
+
       // Ensure directories exist
       await this.ensureDirectories();
-      
+
       logger.info('Migration system initialized');
       return true;
     } catch (error) {
@@ -48,7 +48,7 @@ class MigrationManager {
       
       CREATE INDEX IF NOT EXISTS idx_migrations_version ON schema_migrations(version);
     `;
-    
+
     await db.query(query);
   }
 
@@ -72,25 +72,25 @@ class MigrationManager {
   async migrate() {
     try {
       const pendingMigrations = await this.getPendingMigrations();
-      
+
       if (pendingMigrations.length === 0) {
         logger.info('No pending migrations to run');
         return { migrated: [], skipped: 0 };
       }
 
       const migrated = [];
-      
+
       for (const migration of pendingMigrations) {
         logger.info(`Running migration: ${migration.name}`);
         const startTime = Date.now();
-        
+
         try {
           await this.runMigration(migration);
           const executionTime = Date.now() - startTime;
-          
+
           await this.recordMigration(migration, executionTime);
           migrated.push(migration.name);
-          
+
           logger.info(`Migration completed: ${migration.name} (${executionTime}ms)`);
         } catch (error) {
           logger.error(`Migration failed: ${migration.name}`, { error: error.message });
@@ -112,16 +112,16 @@ class MigrationManager {
   async rollback() {
     try {
       const lastMigration = await this.getLastMigration();
-      
+
       if (!lastMigration) {
         logger.info('No migrations to rollback');
         return null;
       }
 
       logger.info(`Rolling back migration: ${lastMigration.name}`);
-      
+
       const migrationFile = await this.loadMigrationFile(lastMigration.version);
-      
+
       if (migrationFile.down) {
         await db.transaction([
           { text: migrationFile.down, params: [] }
@@ -129,7 +129,7 @@ class MigrationManager {
       }
 
       await this.removeMigrationRecord(lastMigration.version);
-      
+
       logger.info(`Rollback completed: ${lastMigration.name}`);
       return lastMigration;
     } catch (error) {
@@ -174,9 +174,9 @@ class MigrationManager {
   async getPendingMigrations() {
     const appliedMigrations = await this.getAppliedMigrations();
     const availableMigrations = await this.getAvailableMigrations();
-    
+
     const appliedVersions = new Set(appliedMigrations.map(m => m.version));
-    
+
     return availableMigrations.filter(m => !appliedVersions.has(m.version));
   }
 
@@ -189,7 +189,7 @@ class MigrationManager {
       FROM schema_migrations
       ORDER BY version ASC
     `);
-    
+
     return result.rows;
   }
 
@@ -204,11 +204,11 @@ class MigrationManager {
         .sort();
 
       const migrations = [];
-      
+
       for (const file of migrationFiles) {
         const version = file.replace('.js', '');
         const migration = await this.loadMigrationFile(version);
-        
+
         migrations.push({
           version,
           name: migration.name || version,
@@ -230,7 +230,7 @@ class MigrationManager {
    */
   async loadMigrationFile(version) {
     const filePath = path.join(this.migrationsPath, `${version}.js`);
-    
+
     try {
       // Clear require cache to ensure fresh load
       delete require.cache[require.resolve(filePath)];
@@ -245,7 +245,7 @@ class MigrationManager {
    */
   async runMigration(migration) {
     const migrationFile = await this.loadMigrationFile(migration.version);
-    
+
     if (!migrationFile.up) {
       throw new Error(`Migration ${migration.version} missing 'up' function`);
     }
@@ -279,7 +279,7 @@ class MigrationManager {
       ORDER BY version DESC
       LIMIT 1
     `);
-    
+
     return result.rows[0] || null;
   }
 
@@ -333,7 +333,7 @@ module.exports = {
 `;
 
     await fs.writeFile(filePath, template);
-    
+
     logger.info(`Created migration file: ${filename}`);
     return { version, filename, path: filePath };
   }
@@ -345,17 +345,17 @@ module.exports = {
     try {
       const schemaPath = path.join(__dirname, 'schemas.sql');
       const schemaSQL = await fs.readFile(schemaPath, 'utf-8');
-      
+
       logger.info('Running initial schema setup');
       await db.query(schemaSQL);
-      
+
       // Record as initial migration
       const version = '000000000000000_initial_schema';
       await this.recordMigration({
         version,
         name: 'Initial Schema Setup'
       }, 0);
-      
+
       logger.info('Initial schema setup completed');
       return true;
     } catch (error) {
@@ -377,11 +377,11 @@ module.exports = {
       for (const seedFile of seeds) {
         logger.info(`Running seed: ${seedFile}`);
         const seedPath = path.join(this.seedsPath, seedFile);
-        
+
         // Clear require cache
         delete require.cache[require.resolve(seedPath)];
         const seed = require(seedPath);
-        
+
         if (typeof seed.run === 'function') {
           await seed.run(db);
           logger.info(`Seed completed: ${seedFile}`);

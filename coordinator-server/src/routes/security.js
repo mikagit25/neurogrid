@@ -58,7 +58,7 @@ const multiSigWallet = new MultiSignatureWallet();
 router.get('/status', authenticateToken, authorize(['admin']), async (req, res) => {
   try {
     const status = securityManager.getSecurityStatus();
-    
+
     res.json({
       success: true,
       data: status
@@ -100,7 +100,7 @@ router.get('/status', authenticateToken, authorize(['admin']), async (req, res) 
 router.post('/keys/generate', authenticateToken, authorize(['admin']), async (req, res) => {
   try {
     const { keyId, passphrase } = req.body;
-    
+
     if (!keyId || !passphrase) {
       return res.status(400).json({
         success: false,
@@ -114,9 +114,9 @@ router.post('/keys/generate', authenticateToken, authorize(['admin']), async (re
         error: 'Passphrase must be at least 12 characters long'
       });
     }
-    
+
     const result = await securityManager.generateMasterKey(keyId, passphrase);
-    
+
     res.json({
       success: true,
       data: {
@@ -161,16 +161,16 @@ router.post('/keys/generate', authenticateToken, authorize(['admin']), async (re
 router.post('/keys/unlock', authenticateToken, authorize(['admin']), async (req, res) => {
   try {
     const { keyId, passphrase } = req.body;
-    
+
     if (!keyId || !passphrase) {
       return res.status(400).json({
         success: false,
         error: 'KeyId and passphrase are required'
       });
     }
-    
+
     const result = await securityManager.unlockMasterKey(keyId, passphrase);
-    
+
     res.json({
       success: true,
       data: {
@@ -216,16 +216,16 @@ router.post('/keys/unlock', authenticateToken, authorize(['admin']), async (req,
 router.post('/keys/derive', authenticateToken, authorize(['admin']), async (req, res) => {
   try {
     const { masterKeyId, purpose, context = '' } = req.body;
-    
+
     if (!masterKeyId || !purpose) {
       return res.status(400).json({
         success: false,
         error: 'MasterKeyId and purpose are required'
       });
     }
-    
+
     const result = await securityManager.deriveKey(masterKeyId, purpose, context);
-    
+
     res.json({
       success: true,
       data: {
@@ -271,17 +271,17 @@ router.post('/keys/derive', authenticateToken, authorize(['admin']), async (req,
 router.post('/encrypt', authenticateToken, authorize(['admin', 'user']), async (req, res) => {
   try {
     const { keyId, data, additionalData = '' } = req.body;
-    
+
     if (!keyId || !data) {
       return res.status(400).json({
         success: false,
         error: 'KeyId and data are required'
       });
     }
-    
+
     const dataBuffer = Buffer.from(data, 'utf8');
     const result = await securityManager.encryptData(keyId, dataBuffer, additionalData);
-    
+
     res.json({
       success: true,
       data: result.encryptedData
@@ -322,16 +322,16 @@ router.post('/encrypt', authenticateToken, authorize(['admin', 'user']), async (
 router.post('/decrypt', authenticateToken, authorize(['admin', 'user']), async (req, res) => {
   try {
     const { keyId, encryptedData } = req.body;
-    
+
     if (!keyId || !encryptedData) {
       return res.status(400).json({
         success: false,
         error: 'KeyId and encryptedData are required'
       });
     }
-    
+
     const result = await securityManager.decryptData(keyId, encryptedData);
-    
+
     res.json({
       success: true,
       data: {
@@ -372,16 +372,16 @@ router.post('/decrypt', authenticateToken, authorize(['admin', 'user']), async (
 router.post('/backup', authenticateToken, authorize(['admin']), async (req, res) => {
   try {
     const { passphrase } = req.body;
-    
+
     if (!passphrase || passphrase.length < 12) {
       return res.status(400).json({
         success: false,
         error: 'Strong passphrase (12+ characters) is required'
       });
     }
-    
+
     const result = await securityManager.createSecureBackup(passphrase);
-    
+
     res.json({
       success: true,
       data: {
@@ -433,16 +433,16 @@ router.post('/backup', authenticateToken, authorize(['admin']), async (req, res)
 router.post('/multisig/create', authenticateToken, authorize(['admin']), async (req, res) => {
   try {
     const walletConfig = req.body;
-    
+
     if (!walletConfig.walletId || !walletConfig.signers || !walletConfig.threshold) {
       return res.status(400).json({
         success: false,
         error: 'WalletId, signers, and threshold are required'
       });
     }
-    
+
     const result = await multiSigWallet.createMultiSigWallet(walletConfig);
-    
+
     res.json({
       success: true,
       data: result
@@ -475,9 +475,9 @@ router.post('/multisig/create', authenticateToken, authorize(['admin']), async (
 router.get('/multisig/:walletId', authenticateToken, async (req, res) => {
   try {
     const { walletId } = req.params;
-    
+
     const walletInfo = multiSigWallet.getWalletInfo(walletId);
-    
+
     res.json({
       success: true,
       data: walletInfo
@@ -535,9 +535,9 @@ router.post('/multisig/:walletId/initiate', authenticateToken, async (req, res) 
       walletId,
       ...req.body
     };
-    
+
     const result = await multiSigWallet.initiateTransaction(transactionData);
-    
+
     res.json({
       success: true,
       data: result
@@ -584,16 +584,16 @@ router.post('/multisig/sign/:txId', authenticateToken, async (req, res) => {
   try {
     const { txId } = req.params;
     const { signerId, signature } = req.body;
-    
+
     if (!signerId) {
       return res.status(400).json({
         success: false,
         error: 'SignerId is required'
       });
     }
-    
+
     const result = await multiSigWallet.signTransaction(txId, signerId, signature);
-    
+
     res.json({
       success: true,
       data: result
@@ -626,9 +626,9 @@ router.post('/multisig/sign/:txId', authenticateToken, async (req, res) => {
 router.get('/multisig/:walletId/pending', authenticateToken, async (req, res) => {
   try {
     const { walletId } = req.params;
-    
+
     const pendingTx = multiSigWallet.getPendingTransactions(walletId);
-    
+
     res.json({
       success: true,
       data: pendingTx

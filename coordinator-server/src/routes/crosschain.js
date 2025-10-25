@@ -8,26 +8,26 @@ const logger = require('../utils/logger');
 
 // Initialize cross-chain components
 const bridge = new CrossChainBridge({
-    ethereum: {
-        rpcUrl: process.env.ETHEREUM_RPC_URL,
-        bridgeContract: process.env.ETHEREUM_BRIDGE_CONTRACT,
-        privateKey: process.env.ETHEREUM_PRIVATE_KEY
-    },
-    polygon: {
-        rpcUrl: process.env.POLYGON_RPC_URL,
-        bridgeContract: process.env.POLYGON_BRIDGE_CONTRACT,
-        privateKey: process.env.POLYGON_PRIVATE_KEY
-    },
-    bsc: {
-        rpcUrl: process.env.BSC_RPC_URL,
-        bridgeContract: process.env.BSC_BRIDGE_CONTRACT,
-        privateKey: process.env.BSC_PRIVATE_KEY
-    },
-    arbitrum: {
-        rpcUrl: process.env.ARBITRUM_RPC_URL,
-        bridgeContract: process.env.ARBITRUM_BRIDGE_CONTRACT,
-        privateKey: process.env.ARBITRUM_PRIVATE_KEY
-    }
+  ethereum: {
+    rpcUrl: process.env.ETHEREUM_RPC_URL,
+    bridgeContract: process.env.ETHEREUM_BRIDGE_CONTRACT,
+    privateKey: process.env.ETHEREUM_PRIVATE_KEY
+  },
+  polygon: {
+    rpcUrl: process.env.POLYGON_RPC_URL,
+    bridgeContract: process.env.POLYGON_BRIDGE_CONTRACT,
+    privateKey: process.env.POLYGON_PRIVATE_KEY
+  },
+  bsc: {
+    rpcUrl: process.env.BSC_RPC_URL,
+    bridgeContract: process.env.BSC_BRIDGE_CONTRACT,
+    privateKey: process.env.BSC_PRIVATE_KEY
+  },
+  arbitrum: {
+    rpcUrl: process.env.ARBITRUM_RPC_URL,
+    bridgeContract: process.env.ARBITRUM_BRIDGE_CONTRACT,
+    privateKey: process.env.ARBITRUM_PRIVATE_KEY
+  }
 });
 
 const defi = new DeFiIntegration(bridge);
@@ -63,7 +63,7 @@ const defi = new DeFiIntegration(bridge);
  *         fees:
  *           type: object
  *           properties:
- *             bridgeFee: 
+ *             bridgeFee:
  *               type: number
  *             relayerReward:
  *               type: number
@@ -155,47 +155,47 @@ const defi = new DeFiIntegration(bridge);
  *         description: Authentication required
  */
 router.post('/transfer', authenticate, validateRequest([
-    'sourceChain',
-    'targetChain', 
-    'token',
-    'amount',
-    'targetAddress'
+  'sourceChain',
+  'targetChain',
+  'token',
+  'amount',
+  'targetAddress'
 ]), async (req, res) => {
-    try {
-        const { sourceChain, targetChain, token, amount, targetAddress } = req.body;
-        const senderAddress = req.user.address || req.user.id;
+  try {
+    const { sourceChain, targetChain, token, amount, targetAddress } = req.body;
+    const senderAddress = req.user.address || req.user.id;
 
-        const result = await bridge.initiateTransfer({
-            sourceChain,
-            targetChain,
-            token,
-            amount: parseInt(amount),
-            targetAddress,
-            senderAddress
-        });
+    const result = await bridge.initiateTransfer({
+      sourceChain,
+      targetChain,
+      token,
+      amount: parseInt(amount),
+      targetAddress,
+      senderAddress
+    });
 
-        logger.info(`Cross-chain transfer initiated by user ${req.user.id}`, {
-            sourceChain,
-            targetChain,
-            amount,
-            transferId: result.transferId
-        });
+    logger.info(`Cross-chain transfer initiated by user ${req.user.id}`, {
+      sourceChain,
+      targetChain,
+      amount,
+      transferId: result.transferId
+    });
 
-        res.status(201).json({
-            success: true,
-            transferId: result.transferId,
-            lockTxHash: result.lockTxHash,
-            estimatedTime: result.estimatedTime,
-            fees: result.fees
-        });
+    res.status(201).json({
+      success: true,
+      transferId: result.transferId,
+      lockTxHash: result.lockTxHash,
+      estimatedTime: result.estimatedTime,
+      fees: result.fees
+    });
 
-    } catch (error) {
-        logger.error('Cross-chain transfer failed:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
-    }
+  } catch (error) {
+    logger.error('Cross-chain transfer failed:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 /**
@@ -229,29 +229,29 @@ router.post('/transfer', authenticate, validateRequest([
  *         description: Transfer not found
  */
 router.get('/transfers/:transferId', authenticate, async (req, res) => {
-    try {
-        const { transferId } = req.params;
-        const transfer = bridge.bridgeTransactions.get(transferId);
+  try {
+    const { transferId } = req.params;
+    const transfer = bridge.bridgeTransactions.get(transferId);
 
-        if (!transfer) {
-            return res.status(404).json({
-                success: false,
-                error: 'Transfer not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            transfer
-        });
-
-    } catch (error) {
-        logger.error('Failed to get transfer status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve transfer status'
-        });
+    if (!transfer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transfer not found'
+      });
     }
+
+    res.json({
+      success: true,
+      transfer
+    });
+
+  } catch (error) {
+    logger.error('Failed to get transfer status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve transfer status'
+    });
+  }
 });
 
 /**
@@ -304,41 +304,41 @@ router.get('/transfers/:transferId', authenticate, async (req, res) => {
  *                   type: object
  */
 router.get('/transfers', authenticate, async (req, res) => {
-    try {
-        const { limit = 20, offset = 0, status } = req.query;
-        const userAddress = req.user.address || req.user.id;
+  try {
+    const { limit = 20, offset = 0, status } = req.query;
+    const userAddress = req.user.address || req.user.id;
 
-        let transfers = Array.from(bridge.bridgeTransactions.values())
-            .filter(transfer => transfer.senderAddress === userAddress);
+    let transfers = Array.from(bridge.bridgeTransactions.values())
+      .filter(transfer => transfer.senderAddress === userAddress);
 
-        if (status) {
-            transfers = transfers.filter(transfer => transfer.status === status);
-        }
-
-        // Sort by timestamp (newest first)
-        transfers.sort((a, b) => b.timestamp - a.timestamp);
-
-        const total = transfers.length;
-        const paginatedTransfers = transfers.slice(offset, offset + limit);
-
-        res.json({
-            success: true,
-            transfers: paginatedTransfers,
-            total,
-            pagination: {
-                limit: parseInt(limit),
-                offset: parseInt(offset),
-                hasMore: offset + limit < total
-            }
-        });
-
-    } catch (error) {
-        logger.error('Failed to get transfer history:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve transfer history'
-        });
+    if (status) {
+      transfers = transfers.filter(transfer => transfer.status === status);
     }
+
+    // Sort by timestamp (newest first)
+    transfers.sort((a, b) => b.timestamp - a.timestamp);
+
+    const total = transfers.length;
+    const paginatedTransfers = transfers.slice(offset, offset + limit);
+
+    res.json({
+      success: true,
+      transfers: paginatedTransfers,
+      total,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: offset + limit < total
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to get transfer history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve transfer history'
+    });
+  }
 });
 
 /**
@@ -375,33 +375,33 @@ router.get('/transfers', authenticate, async (req, res) => {
  *                         enum: [active, paused]
  */
 router.get('/supported-chains', async (req, res) => {
-    try {
-        const chains = [];
-        
-        for (const [chainName, config] of Object.entries(bridge.config)) {
-            if (chainName !== 'neurogrid' && config.chainId) {
-                chains.push({
-                    name: chainName,
-                    chainId: config.chainId,
-                    confirmations: config.confirmations,
-                    bridgeContract: config.bridgeContract,
-                    status: bridge.pausedChains.has(chainName) ? 'paused' : 'active'
-                });
-            }
-        }
+  try {
+    const chains = [];
 
-        res.json({
-            success: true,
-            chains
+    for (const [chainName, config] of Object.entries(bridge.config)) {
+      if (chainName !== 'neurogrid' && config.chainId) {
+        chains.push({
+          name: chainName,
+          chainId: config.chainId,
+          confirmations: config.confirmations,
+          bridgeContract: config.bridgeContract,
+          status: bridge.pausedChains.has(chainName) ? 'paused' : 'active'
         });
-
-    } catch (error) {
-        logger.error('Failed to get supported chains:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve supported chains'
-        });
+      }
     }
+
+    res.json({
+      success: true,
+      chains
+    });
+
+  } catch (error) {
+    logger.error('Failed to get supported chains:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve supported chains'
+    });
+  }
 });
 
 /**
@@ -441,21 +441,21 @@ router.get('/supported-chains', async (req, res) => {
  *                         type: string
  */
 router.get('/bridge-status', async (req, res) => {
-    try {
-        const status = bridge.getBridgeStatus();
+  try {
+    const status = bridge.getBridgeStatus();
 
-        res.json({
-            success: true,
-            status
-        });
+    res.json({
+      success: true,
+      status
+    });
 
-    } catch (error) {
-        logger.error('Failed to get bridge status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve bridge status'
-        });
-    }
+  } catch (error) {
+    logger.error('Failed to get bridge status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve bridge status'
+    });
+  }
 });
 
 // DeFi Integration Endpoints
@@ -505,45 +505,45 @@ router.get('/bridge-status', async (req, res) => {
  *         description: Invalid swap parameters
  */
 router.post('/defi/swap', authenticate, validateRequest([
-    'tokenIn',
-    'tokenOut',
-    'amountIn',
-    'chain'
+  'tokenIn',
+  'tokenOut',
+  'amountIn',
+  'chain'
 ]), async (req, res) => {
-    try {
-        const { tokenIn, tokenOut, amountIn, chain, minAmountOut, recipient } = req.body;
+  try {
+    const { tokenIn, tokenOut, amountIn, chain, minAmountOut, recipient } = req.body;
 
-        const result = await defi.executeSwap({
-            tokenIn,
-            tokenOut,
-            amountIn: parseInt(amountIn),
-            chain,
-            minAmountOut: minAmountOut ? parseInt(minAmountOut) : undefined,
-            recipient
-        });
+    const result = await defi.executeSwap({
+      tokenIn,
+      tokenOut,
+      amountIn: parseInt(amountIn),
+      chain,
+      minAmountOut: minAmountOut ? parseInt(minAmountOut) : undefined,
+      recipient
+    });
 
-        logger.info(`DeFi swap executed by user ${req.user.id}`, {
-            tokenIn,
-            tokenOut,
-            amountIn,
-            chain,
-            swapId: result.swapId
-        });
+    logger.info(`DeFi swap executed by user ${req.user.id}`, {
+      tokenIn,
+      tokenOut,
+      amountIn,
+      chain,
+      swapId: result.swapId
+    });
 
-        res.status(201).json({
-            success: true,
-            swapId: result.swapId,
-            txHash: result.txHash,
-            swap: result.swap
-        });
+    res.status(201).json({
+      success: true,
+      swapId: result.swapId,
+      txHash: result.txHash,
+      swap: result.swap
+    });
 
-    } catch (error) {
-        logger.error('DeFi swap failed:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
-    }
+  } catch (error) {
+    logger.error('DeFi swap failed:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 /**
@@ -593,53 +593,53 @@ router.post('/defi/swap', authenticate, validateRequest([
  *         description: Liquidity position created
  */
 router.post('/defi/liquidity', authenticate, validateRequest([
-    'protocol',
-    'token0',
-    'token1',
-    'amount0',
-    'amount1',
-    'chain'
+  'protocol',
+  'token0',
+  'token1',
+  'amount0',
+  'amount1',
+  'chain'
 ]), async (req, res) => {
-    try {
-        const { protocol, token0, token1, amount0, amount1, fee, tickLower, tickUpper, chain } = req.body;
+  try {
+    const { protocol, token0, token1, amount0, amount1, fee, tickLower, tickUpper, chain } = req.body;
 
-        let result;
-        if (protocol === 'uniswap-v3') {
-            result = await defi.createUniswapV3Position({
-                token0,
-                token1,
-                fee: fee || 3000,
-                amount0: parseInt(amount0),
-                amount1: parseInt(amount1),
-                tickLower: tickLower || -60,
-                tickUpper: tickUpper || 60,
-                chain
-            });
-        } else {
-            throw new Error(`Unsupported protocol: ${protocol}`);
-        }
-
-        logger.info(`DeFi liquidity position created by user ${req.user.id}`, {
-            protocol,
-            token0,
-            token1,
-            positionId: result.positionId
-        });
-
-        res.status(201).json({
-            success: true,
-            positionId: result.positionId,
-            txHash: result.txHash,
-            position: result.position
-        });
-
-    } catch (error) {
-        logger.error('DeFi liquidity position creation failed:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
+    let result;
+    if (protocol === 'uniswap-v3') {
+      result = await defi.createUniswapV3Position({
+        token0,
+        token1,
+        fee: fee || 3000,
+        amount0: parseInt(amount0),
+        amount1: parseInt(amount1),
+        tickLower: tickLower || -60,
+        tickUpper: tickUpper || 60,
+        chain
+      });
+    } else {
+      throw new Error(`Unsupported protocol: ${protocol}`);
     }
+
+    logger.info(`DeFi liquidity position created by user ${req.user.id}`, {
+      protocol,
+      token0,
+      token1,
+      positionId: result.positionId
+    });
+
+    res.status(201).json({
+      success: true,
+      positionId: result.positionId,
+      txHash: result.txHash,
+      position: result.position
+    });
+
+  } catch (error) {
+    logger.error('DeFi liquidity position creation failed:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 /**
@@ -681,47 +681,47 @@ router.post('/defi/liquidity', authenticate, validateRequest([
  *         description: Supply position created
  */
 router.post('/defi/lending/supply', authenticate, validateRequest([
-    'protocol',
-    'asset',
-    'amount',
-    'chain'
+  'protocol',
+  'asset',
+  'amount',
+  'chain'
 ]), async (req, res) => {
-    try {
-        const { protocol, asset, amount, chain, onBehalfOf } = req.body;
+  try {
+    const { protocol, asset, amount, chain, onBehalfOf } = req.body;
 
-        let result;
-        if (protocol === 'aave') {
-            result = await defi.supplyToAave({
-                asset,
-                amount: parseInt(amount),
-                onBehalfOf,
-                chain
-            });
-        } else {
-            throw new Error(`Unsupported lending protocol: ${protocol}`);
-        }
-
-        logger.info(`DeFi lending supply by user ${req.user.id}`, {
-            protocol,
-            asset,
-            amount,
-            positionId: result.positionId
-        });
-
-        res.status(201).json({
-            success: true,
-            positionId: result.positionId,
-            txHash: result.txHash,
-            position: result.position
-        });
-
-    } catch (error) {
-        logger.error('DeFi lending supply failed:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
+    let result;
+    if (protocol === 'aave') {
+      result = await defi.supplyToAave({
+        asset,
+        amount: parseInt(amount),
+        onBehalfOf,
+        chain
+      });
+    } else {
+      throw new Error(`Unsupported lending protocol: ${protocol}`);
     }
+
+    logger.info(`DeFi lending supply by user ${req.user.id}`, {
+      protocol,
+      asset,
+      amount,
+      positionId: result.positionId
+    });
+
+    res.status(201).json({
+      success: true,
+      positionId: result.positionId,
+      txHash: result.txHash,
+      position: result.position
+    });
+
+  } catch (error) {
+    logger.error('DeFi lending supply failed:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 /**
@@ -760,42 +760,42 @@ router.post('/defi/lending/supply', authenticate, validateRequest([
  *         description: Farming position created
  */
 router.post('/defi/farming/stake', authenticate, validateRequest([
-    'protocol',
-    'poolId',
-    'amount',
-    'chain'
+  'protocol',
+  'poolId',
+  'amount',
+  'chain'
 ]), async (req, res) => {
-    try {
-        const { protocol, poolId, amount, chain } = req.body;
+  try {
+    const { protocol, poolId, amount, chain } = req.body;
 
-        const result = await defi.stakeInFarm({
-            protocol,
-            poolId: parseInt(poolId),
-            amount: parseInt(amount),
-            chain
-        });
+    const result = await defi.stakeInFarm({
+      protocol,
+      poolId: parseInt(poolId),
+      amount: parseInt(amount),
+      chain
+    });
 
-        logger.info(`DeFi farming stake by user ${req.user.id}`, {
-            protocol,
-            poolId,
-            amount,
-            positionId: result.positionId
-        });
+    logger.info(`DeFi farming stake by user ${req.user.id}`, {
+      protocol,
+      poolId,
+      amount,
+      positionId: result.positionId
+    });
 
-        res.status(201).json({
-            success: true,
-            positionId: result.positionId,
-            txHash: result.txHash,
-            position: result.position
-        });
+    res.status(201).json({
+      success: true,
+      positionId: result.positionId,
+      txHash: result.txHash,
+      position: result.position
+    });
 
-    } catch (error) {
-        logger.error('DeFi farming stake failed:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
-    }
+  } catch (error) {
+    logger.error('DeFi farming stake failed:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 /**
@@ -831,22 +831,22 @@ router.post('/defi/farming/stake', authenticate, validateRequest([
  *                         $ref: '#/components/schemas/DeFiPosition'
  */
 router.get('/defi/portfolio', authenticate, async (req, res) => {
-    try {
-        const userAddress = req.user.address || req.user.id;
-        const portfolio = defi.getPortfolioOverview(userAddress);
+  try {
+    const userAddress = req.user.address || req.user.id;
+    const portfolio = defi.getPortfolioOverview(userAddress);
 
-        res.json({
-            success: true,
-            portfolio
-        });
+    res.json({
+      success: true,
+      portfolio
+    });
 
-    } catch (error) {
-        logger.error('Failed to get DeFi portfolio:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve portfolio'
-        });
-    }
+  } catch (error) {
+    logger.error('Failed to get DeFi portfolio:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve portfolio'
+    });
+  }
 });
 
 /**
@@ -878,23 +878,23 @@ router.get('/defi/portfolio', authenticate, async (req, res) => {
  *                         type: number
  */
 router.get('/defi/prices', async (req, res) => {
-    try {
-        await defi.updateTokenPrices();
-        
-        const prices = Object.fromEntries(defi.tokenPrices);
+  try {
+    await defi.updateTokenPrices();
 
-        res.json({
-            success: true,
-            prices
-        });
+    const prices = Object.fromEntries(defi.tokenPrices);
 
-    } catch (error) {
-        logger.error('Failed to get token prices:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve token prices'
-        });
-    }
+    res.json({
+      success: true,
+      prices
+    });
+
+  } catch (error) {
+    logger.error('Failed to get token prices:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve token prices'
+    });
+  }
 });
 
 /**
@@ -924,23 +924,23 @@ router.get('/defi/prices', async (req, res) => {
  *                         type: number
  */
 router.get('/defi/apys', async (req, res) => {
-    try {
-        await defi.updatePoolAPYs();
-        
-        const apys = Object.fromEntries(defi.poolAPYs);
+  try {
+    await defi.updatePoolAPYs();
 
-        res.json({
-            success: true,
-            apys
-        });
+    const apys = Object.fromEntries(defi.poolAPYs);
 
-    } catch (error) {
-        logger.error('Failed to get pool APYs:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve pool APYs'
-        });
-    }
+    res.json({
+      success: true,
+      apys
+    });
+
+  } catch (error) {
+    logger.error('Failed to get pool APYs:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve pool APYs'
+    });
+  }
 });
 
 /**
@@ -954,21 +954,21 @@ router.get('/defi/apys', async (req, res) => {
  *         description: DeFi integration status
  */
 router.get('/defi/status', async (req, res) => {
-    try {
-        const status = defi.getIntegrationStatus();
+  try {
+    const status = defi.getIntegrationStatus();
 
-        res.json({
-            success: true,
-            status
-        });
+    res.json({
+      success: true,
+      status
+    });
 
-    } catch (error) {
-        logger.error('Failed to get DeFi status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve DeFi status'
-        });
-    }
+  } catch (error) {
+    logger.error('Failed to get DeFi status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve DeFi status'
+    });
+  }
 });
 
 // Admin routes for bridge management
@@ -1000,32 +1000,32 @@ router.get('/defi/status', async (req, res) => {
  *         description: Admin access required
  */
 router.post('/admin/pause-chain', authenticate, authorize(['admin']), async (req, res) => {
-    try {
-        const { chainName } = req.body;
-        
-        if (!chainName) {
-            return res.status(400).json({
-                success: false,
-                error: 'Chain name is required'
-            });
-        }
+  try {
+    const { chainName } = req.body;
 
-        bridge.pauseChain(chainName);
-
-        logger.warn(`Chain paused by admin ${req.user.id}: ${chainName}`);
-
-        res.json({
-            success: true,
-            message: `Chain ${chainName} paused successfully`
-        });
-
-    } catch (error) {
-        logger.error('Failed to pause chain:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to pause chain'
-        });
+    if (!chainName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chain name is required'
+      });
     }
+
+    bridge.pauseChain(chainName);
+
+    logger.warn(`Chain paused by admin ${req.user.id}: ${chainName}`);
+
+    res.json({
+      success: true,
+      message: `Chain ${chainName} paused successfully`
+    });
+
+  } catch (error) {
+    logger.error('Failed to pause chain:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to pause chain'
+    });
+  }
 });
 
 /**
@@ -1053,32 +1053,32 @@ router.post('/admin/pause-chain', authenticate, authorize(['admin']), async (req
  *         description: Chain resumed successfully
  */
 router.post('/admin/resume-chain', authenticate, authorize(['admin']), async (req, res) => {
-    try {
-        const { chainName } = req.body;
-        
-        if (!chainName) {
-            return res.status(400).json({
-                success: false,
-                error: 'Chain name is required'
-            });
-        }
+  try {
+    const { chainName } = req.body;
 
-        bridge.resumeChain(chainName);
-
-        logger.info(`Chain resumed by admin ${req.user.id}: ${chainName}`);
-
-        res.json({
-            success: true,
-            message: `Chain ${chainName} resumed successfully`
-        });
-
-    } catch (error) {
-        logger.error('Failed to resume chain:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to resume chain'
-        });
+    if (!chainName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chain name is required'
+      });
     }
+
+    bridge.resumeChain(chainName);
+
+    logger.info(`Chain resumed by admin ${req.user.id}: ${chainName}`);
+
+    res.json({
+      success: true,
+      message: `Chain ${chainName} resumed successfully`
+    });
+
+  } catch (error) {
+    logger.error('Failed to resume chain:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to resume chain'
+    });
+  }
 });
 
 module.exports = router;

@@ -12,7 +12,7 @@ class TaskDispatcher {
     this.dispatchInterval = 5000; // 5 seconds
     this.maxRetries = 3;
     this.dispatchTimer = null;
-    
+
     this.startDispatchTimer();
   }
 
@@ -42,7 +42,7 @@ class TaskDispatcher {
 
       const job = await Job.create(jobData);
 
-      logger.info(`Task added to dispatch queue`, {
+      logger.info('Task added to dispatch queue', {
         taskId: job.id,
         model: taskData.model,
         priority: taskData.priority,
@@ -91,7 +91,7 @@ class TaskDispatcher {
       };
 
       const availableNodes = await Node.getAvailableNodes(requirements);
-      
+
       if (availableNodes.length === 0) {
         logger.debug(`No available nodes for task ${taskId}`);
         return false;
@@ -99,7 +99,7 @@ class TaskDispatcher {
 
       // Select best node (highest reputation with capacity)
       const bestNode = this.selectBestNode(availableNodes, job);
-      
+
       if (!bestNode) {
         logger.debug(`No suitable node found for task ${taskId}`);
         return false;
@@ -129,35 +129,35 @@ class TaskDispatcher {
     // Score nodes based on multiple criteria
     const scoredNodes = availableNodes.map(node => {
       let score = 0;
-      
+
       // Reputation score (0-1) * 40%
       score += (node.reputation_score || 0) * 0.4;
-      
+
       // Resource availability (0-1) * 30%
       const hardwareInfo = node.hardware_info || {};
       const vramRatio = hardwareInfo.available_vram_gb / Math.max(hardwareInfo.max_vram_gb, 1);
       const cpuRatio = hardwareInfo.available_cpu_cores / Math.max(hardwareInfo.max_cpu_cores, 1);
       const resourceScore = (vramRatio + cpuRatio) / 2;
       score += resourceScore * 0.3;
-      
+
       // Lower current load (0-1) * 20%
       const currentTasks = hardwareInfo.current_tasks || 0;
       const maxTasks = 5; // Assume max 5 concurrent tasks
       const loadScore = Math.max(0, 1 - (currentTasks / maxTasks));
       score += loadScore * 0.2;
-      
+
       // Recent activity bonus * 10%
       const lastSeen = new Date(node.last_seen || 0);
       const minutesAgo = (Date.now() - lastSeen.getTime()) / (1000 * 60);
       const activityScore = Math.max(0, 1 - (minutesAgo / 60)); // Full score if seen in last hour
       score += activityScore * 0.1;
-      
+
       return { node, score };
     });
 
     // Sort by score (highest first)
     scoredNodes.sort((a, b) => b.score - a.score);
-    
+
     return scoredNodes.length > 0 ? scoredNodes[0].node : null;
   }
 
@@ -223,7 +223,7 @@ class TaskDispatcher {
   async cancelTask(taskId, reason = 'User cancelled') {
     try {
       const job = await Job.cancel(taskId, reason);
-      
+
       logger.info(`Task ${taskId} cancelled`, {
         taskId,
         reason
@@ -317,7 +317,7 @@ class TaskDispatcher {
       result.rows.forEach(row => {
         const status = row.status;
         const count = parseInt(row.count);
-        
+
         stats.last24h[status] = {
           count,
           avgDuration: parseFloat(row.avg_duration) || 0
@@ -358,7 +358,7 @@ class TaskDispatcher {
   async dispatchPendingTasks() {
     try {
       const pendingJobs = await Job.getPendingJobs(10); // Process up to 10 at a time
-      
+
       if (pendingJobs.length === 0) {
         return;
       }

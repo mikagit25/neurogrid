@@ -5,19 +5,19 @@ const ConfigManager = require('../../src/config/manager');
 describe('E2E Tests - Complete User Workflows', () => {
   let app;
   let server;
-  let testUsers = {};
-  let testData = {};
+  const testUsers = {};
+  const testData = {};
 
   beforeAll(async () => {
     // Initialize test server
     process.env.NODE_ENV = 'test';
     process.env.PORT = '0';
-    
+
     try {
       const config = await ConfigManager.create();
       const testServer = new CoordinatorServer(config);
       await testServer.initialize();
-      
+
       app = testServer.app;
       server = testServer.server;
     } catch (error) {
@@ -37,7 +37,7 @@ describe('E2E Tests - Complete User Workflows', () => {
   describe('Complete User Journey - Task Creation and Management', () => {
     test('User Registration → Login → Profile → Task Creation → Task Management', async () => {
       const timestamp = Date.now();
-      
+
       // Step 1: User Registration
       const userData = {
         username: `e2euser_${timestamp}`,
@@ -52,7 +52,7 @@ describe('E2E Tests - Complete User Workflows', () => {
 
       expect(registerResponse.body.success).toBe(true);
       expect(registerResponse.body.user.username).toBe(userData.username);
-      
+
       testUsers.regular = {
         ...userData,
         id: registerResponse.body.user.id
@@ -69,7 +69,7 @@ describe('E2E Tests - Complete User Workflows', () => {
 
       expect(loginResponse.body.success).toBe(true);
       expect(loginResponse.body.token).toBeDefined();
-      
+
       testUsers.regular.token = loginResponse.body.token;
 
       // Step 3: Get User Profile
@@ -108,7 +108,7 @@ describe('E2E Tests - Complete User Workflows', () => {
       expect(createTaskResponse.body.success).toBe(true);
       expect(createTaskResponse.body.task.title).toBe(taskData.title);
       expect(createTaskResponse.body.task.status).toBe('pending');
-      
+
       testData.task = createTaskResponse.body.task;
 
       // Step 5: List user's tasks
@@ -119,7 +119,7 @@ describe('E2E Tests - Complete User Workflows', () => {
 
       expect(listTasksResponse.body.success).toBe(true);
       expect(listTasksResponse.body.tasks.length).toBeGreaterThan(0);
-      
+
       const userTask = listTasksResponse.body.tasks.find(t => t.id === testData.task.id);
       expect(userTask).toBeDefined();
 
@@ -166,7 +166,7 @@ describe('E2E Tests - Complete User Workflows', () => {
   describe('Complete Admin Journey - Node Management', () => {
     test('Admin Registration → Node Registration → Node Management → Network Stats', async () => {
       const timestamp = Date.now();
-      
+
       // Step 1: Admin Registration
       const adminData = {
         username: `admin_${timestamp}`,
@@ -181,7 +181,7 @@ describe('E2E Tests - Complete User Workflows', () => {
         .expect(201);
 
       expect(registerResponse.body.success).toBe(true);
-      
+
       testUsers.admin = {
         ...adminData,
         id: registerResponse.body.user.id
@@ -229,7 +229,7 @@ describe('E2E Tests - Complete User Workflows', () => {
       expect(registerNodeResponse.body.success).toBe(true);
       expect(registerNodeResponse.body.node.node_id).toBe(nodeData.node_id);
       expect(registerNodeResponse.body.node.status).toBe('pending');
-      
+
       testData.node = registerNodeResponse.body.node;
 
       // Step 4: List all nodes
@@ -327,7 +327,7 @@ describe('E2E Tests - Complete User Workflows', () => {
 
       // Step 4: Process payment for task
       const paymentResponse = await request(app)
-        .post(`/api/payments/process`)
+        .post('/api/payments/process')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           task_id: testData.paidTask.id,
@@ -435,7 +435,7 @@ describe('E2E Tests - Complete User Workflows', () => {
       // Step 3: Mark notifications as read
       if (notificationsResponse.body.notifications.length > 0) {
         const notificationId = notificationsResponse.body.notifications[0].id;
-        
+
         const markReadResponse = await request(app)
           .put(`/api/notifications/${notificationId}/read`)
           .set('Authorization', `Bearer ${userToken}`)
@@ -538,7 +538,7 @@ describe('E2E Tests - Complete User Workflows', () => {
       const userToken = testUsers.regular.token;
 
       // Create multiple concurrent requests
-      const concurrentRequests = Array(20).fill().map((_, index) => 
+      const concurrentRequests = Array(20).fill().map((_, index) =>
         request(app)
           .post('/api/tasks')
           .set('Authorization', `Bearer ${userToken}`)

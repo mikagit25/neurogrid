@@ -27,12 +27,12 @@ class UniversalDatabase {
       } else {
         await this.initializePostgreSQL();
       }
-      
+
       this.isConnected = true;
       logger.info(`Database initialized (${this.dbType})`, {
         type: this.dbType
       });
-      
+
     } catch (error) {
       logger.error('Database initialization failed:', error);
       throw error;
@@ -45,12 +45,12 @@ class UniversalDatabase {
   async initializeSQLite() {
     const dbPath = process.env.DB_PATH || './data/neurogrid.db';
     const dbDir = path.dirname(dbPath);
-    
+
     // Create data directory if it doesn't exist
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
-    
+
     return new Promise((resolve, reject) => {
       this.sqlite = new sqlite3.Database(dbPath, (err) => {
         if (err) {
@@ -76,11 +76,11 @@ class UniversalDatabase {
       password: process.env.DB_PASSWORD || 'neurogrid_password',
       max: parseInt(process.env.DB_POOL_MAX) || 20,
       idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT) || 30000,
-      connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT) || 2000,
+      connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT) || 2000
     };
 
     this.pool = new Pool(poolConfig);
-    
+
     // Test connection
     const client = await this.pool.connect();
     client.release();
@@ -95,25 +95,25 @@ class UniversalDatabase {
     }
 
     const start = Date.now();
-    
+
     try {
       let result;
-      
+
       if (this.dbType === 'sqlite') {
         result = await this.querySQLite(text, params);
       } else {
         result = await this.queryPostgreSQL(text, params);
       }
-      
+
       const duration = Date.now() - start;
       logger.debug('Database query executed', {
         query: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
         duration,
         rowCount: result.rows ? result.rows.length : result.changes
       });
-      
+
       return result;
-      
+
     } catch (error) {
       const duration = Date.now() - start;
       logger.error('Database query failed', {
@@ -132,7 +132,7 @@ class UniversalDatabase {
     return new Promise((resolve, reject) => {
       // Convert PostgreSQL-style parameters ($1, $2) to SQLite-style (?)
       const sqliteQuery = text.replace(/\$(\d+)/g, '?');
-      
+
       if (text.trim().toUpperCase().startsWith('SELECT')) {
         this.sqlite.all(sqliteQuery, params, (err, rows) => {
           if (err) {
@@ -146,10 +146,10 @@ class UniversalDatabase {
           if (err) {
             reject(err);
           } else {
-            resolve({ 
-              rows: [], 
+            resolve({
+              rows: [],
               rowCount: this.changes,
-              lastID: this.lastID 
+              lastID: this.lastID
             });
           }
         });
@@ -220,7 +220,7 @@ class UniversalDatabase {
     } else if (this.pool) {
       await this.pool.end();
     }
-    
+
     this.isConnected = false;
     logger.info('Database connection closed');
   }
@@ -244,7 +244,7 @@ class UniversalDatabase {
         responseTime,
         connected: true
       };
-      
+
     } catch (error) {
       return {
         status: 'unhealthy',

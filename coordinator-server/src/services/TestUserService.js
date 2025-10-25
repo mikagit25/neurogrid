@@ -22,7 +22,7 @@ const logger = require('../utils/logger');
 class TestUserService {
   static async create(userData) {
     const { username, email, password, role = 'user' } = userData;
-    
+
     try {
       const saltRounds = 12;
       const passwordHash = await bcrypt.hash(password, saltRounds);
@@ -74,7 +74,7 @@ class TestUserService {
   static async verifyPassword(email, password) {
     try {
       const user = await this.findByEmail(email);
-      
+
       if (!user) {
         return {
           success: false,
@@ -83,7 +83,7 @@ class TestUserService {
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      
+
       if (!isValidPassword) {
         return {
           success: false,

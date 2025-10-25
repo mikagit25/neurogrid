@@ -76,7 +76,7 @@ class AuthService {
   async authenticateUser(email, password) {
     try {
       const result = await UserServiceSQLite.verifyPassword(email, password);
-      
+
       if (!result.success) {
         return result;
       }
@@ -127,7 +127,7 @@ class AuthService {
   async updateUserProfile(userId, updates) {
     try {
       const updatedUser = await UserServiceSQLite.updateProfile(userId, updates);
-      
+
       logger.info('User profile updated', {
         userId,
         service: this.name
@@ -157,7 +157,7 @@ class AuthService {
       }
 
       const result = await UserServiceSQLite.changePassword(userId, currentPassword, newPassword);
-      
+
       logger.info('Password changed successfully', {
         userId,
         service: this.name
@@ -230,12 +230,12 @@ class AuthService {
   }
 
   /**
-   * Обновление access токена через refresh токен  
+   * Обновление access токена через refresh токен
    */
   async refreshAccessToken(refreshToken) {
     try {
       const decoded = jwt.verify(refreshToken, JWT_SECRET);
-      
+
       if (decoded.type !== 'refresh') {
         throw new Error('Invalid refresh token');
       }
@@ -246,7 +246,7 @@ class AuthService {
       }
 
       const tokens = this.generateTokens(user);
-      
+
       logger.info('Token refreshed successfully', {
         userId: user.id,
         service: this.name
@@ -315,7 +315,7 @@ class AuthService {
   async deactivateUser(userId) {
     try {
       const result = await UserServiceSQLite.deactivate(userId);
-      
+
       logger.info('User deactivated', {
         userId,
         service: this.name
@@ -341,7 +341,7 @@ class AuthService {
   async getActiveUsers(limit = 50, offset = 0) {
     try {
       const users = await UserServiceSQLite.getActiveUsers(limit, offset);
-      
+
       return {
         success: true,
         users: users.map(user => this.sanitizeUser(user))

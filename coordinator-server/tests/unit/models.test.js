@@ -1,5 +1,6 @@
 const { models } = require('../../src/models');
 const { db } = require('../../src/config/database');
+const testUtils = require('../utils/testUtils');
 
 describe('Database Models', () => {
   describe('User Model', () => {
@@ -10,9 +11,9 @@ describe('Database Models', () => {
         password_hash: 'hashedpassword',
         role: 'user'
       };
-      
+
       const user = await models.User.create(userData);
-      
+
       expect(user).toBeDefined();
       expect(user.id).toBeDefined();
       expect(user.username).toBe(userData.username);
@@ -25,9 +26,9 @@ describe('Database Models', () => {
       const testUser = await testUtils.createTestUser({
         email: 'findme@example.com'
       });
-      
+
       const foundUser = await models.User.findByEmail('findme@example.com');
-      
+
       expect(foundUser).toBeDefined();
       expect(foundUser.id).toBe(testUser.id);
       expect(foundUser.email).toBe('findme@example.com');
@@ -37,9 +38,9 @@ describe('Database Models', () => {
       const testUser = await testUtils.createTestUser({
         username: 'findmeuser'
       });
-      
+
       const foundUser = await models.User.findByUsername('findmeuser');
-      
+
       expect(foundUser).toBeDefined();
       expect(foundUser.id).toBe(testUser.id);
       expect(foundUser.username).toBe('findmeuser');
@@ -47,11 +48,11 @@ describe('Database Models', () => {
 
     test('should update user', async () => {
       const testUser = await testUtils.createTestUser();
-      
+
       const updatedUser = await models.User.update(testUser.id, {
         email: 'updated@example.com'
       });
-      
+
       expect(updatedUser.email).toBe('updated@example.com');
       expect(updatedUser.updated_at).not.toBe(testUser.updated_at);
     });
@@ -60,9 +61,9 @@ describe('Database Models', () => {
       await testUtils.createTestUser({ username: 'active1', email: 'active1@example.com', is_active: true });
       await testUtils.createTestUser({ username: 'active2', email: 'active2@example.com', is_active: true });
       await testUtils.createTestUser({ username: 'inactive1', email: 'inactive1@example.com', is_active: false });
-      
+
       const activeUsers = await models.User.getActiveUsers();
-      
+
       expect(activeUsers.length).toBe(2);
       expect(activeUsers.every(user => user.is_active)).toBe(true);
     });
@@ -83,9 +84,9 @@ describe('Database Models', () => {
         status: 'online',
         node_type: 'compute'
       };
-      
+
       const node = await models.Node.create(nodeData);
-      
+
       expect(node).toBeDefined();
       expect(node.id).toBeDefined();
       expect(node.user_id).toBe(testUser.id);
@@ -96,9 +97,9 @@ describe('Database Models', () => {
     test('should find nodes by user ID', async () => {
       await testUtils.createTestNode(testUser.id, { name: 'Node 1' });
       await testUtils.createTestNode(testUser.id, { name: 'Node 2' });
-      
+
       const userNodes = await models.Node.findByUserId(testUser.id);
-      
+
       expect(userNodes.length).toBe(2);
       expect(userNodes.every(node => node.user_id === testUser.id)).toBe(true);
     });
@@ -107,9 +108,9 @@ describe('Database Models', () => {
       await testUtils.createTestNode(testUser.id, { status: 'online', is_verified: true });
       await testUtils.createTestNode(testUser.id, { status: 'offline', is_verified: true });
       await testUtils.createTestNode(testUser.id, { status: 'online', is_verified: false });
-      
+
       const availableNodes = await models.Node.findAvailableNodes();
-      
+
       expect(availableNodes.length).toBe(1);
       expect(availableNodes[0].status).toBe('online');
       expect(availableNodes[0].is_verified).toBe(true);
@@ -117,9 +118,9 @@ describe('Database Models', () => {
 
     test('should update node status', async () => {
       const node = await testUtils.createTestNode(testUser.id, { status: 'offline' });
-      
+
       const updatedNode = await models.Node.updateStatus(node.id, 'online');
-      
+
       expect(updatedNode.status).toBe('online');
       expect(updatedNode.last_seen).toBeDefined();
     });
@@ -142,9 +143,9 @@ describe('Database Models', () => {
         status: 'pending',
         priority: 5
       };
-      
+
       const job = await models.Job.create(jobData);
-      
+
       expect(job).toBeDefined();
       expect(job.id).toBeDefined();
       expect(job.user_id).toBe(testUser.id);
@@ -156,9 +157,9 @@ describe('Database Models', () => {
       await testUtils.createTestJob(testUser.id, { status: 'pending', priority: 8 });
       await testUtils.createTestJob(testUser.id, { status: 'pending', priority: 3 });
       await testUtils.createTestJob(testUser.id, { status: 'completed' });
-      
+
       const pendingJobs = await models.Job.findPendingJobs();
-      
+
       expect(pendingJobs.length).toBe(2);
       expect(pendingJobs.every(job => job.status === 'pending')).toBe(true);
       // Should be ordered by priority DESC
@@ -167,9 +168,9 @@ describe('Database Models', () => {
 
     test('should assign job to node', async () => {
       const job = await testUtils.createTestJob(testUser.id, { status: 'pending' });
-      
+
       const assignedJob = await models.Job.assignToNode(job.id, testNode.id);
-      
+
       expect(assignedJob.node_id).toBe(testNode.id);
       expect(assignedJob.status).toBe('assigned');
       expect(assignedJob.started_at).toBeDefined();
@@ -177,9 +178,9 @@ describe('Database Models', () => {
 
     test('should update job progress', async () => {
       const job = await testUtils.createTestJob(testUser.id);
-      
+
       const updatedJob = await models.Job.updateProgress(job.id, 50, 'Processing...');
-      
+
       expect(updatedJob.progress).toBe(50);
       expect(updatedJob.logs).toBe('Processing...');
     });
@@ -187,9 +188,9 @@ describe('Database Models', () => {
     test('should complete job', async () => {
       const job = await testUtils.createTestJob(testUser.id);
       const outputData = { result: 'success', accuracy: 0.95 };
-      
+
       const completedJob = await models.Job.completeJob(job.id, outputData, 10.50);
-      
+
       expect(completedJob.status).toBe('completed');
       expect(completedJob.progress).toBe(100);
       expect(completedJob.output_data).toEqual(outputData);
@@ -212,13 +213,13 @@ describe('Database Models', () => {
         amount: 100.00,
         description: 'Test credit'
       };
-      
+
       const transaction = await models.Transaction.createTransaction(transactionData);
-      
+
       expect(transaction).toBeDefined();
       expect(transaction.user_id).toBe(testUser.id);
       expect(transaction.amount).toBe(100.00);
-      
+
       const balance = await models.Transaction.getUserBalance(testUser.id);
       expect(balance.balance).toBe(100.00);
     });
@@ -230,14 +231,14 @@ describe('Database Models', () => {
         transaction_type: 'credit',
         amount: 100.00
       });
-      
+
       // Then debit
       await models.Transaction.createTransaction({
         user_id: testUser.id,
         transaction_type: 'debit',
         amount: 30.00
       });
-      
+
       const balance = await models.Transaction.getUserBalance(testUser.id);
       expect(balance.balance).toBe(70.00);
     });
@@ -249,19 +250,19 @@ describe('Database Models', () => {
         transaction_type: 'credit',
         amount: 100.00
       });
-      
+
       const job = await testUtils.createTestJob(testUser.id);
-      
+
       // Hold funds in escrow
       await models.Transaction.processEscrow(job.id, 50.00, 'hold');
-      
+
       let balance = await models.Transaction.getUserBalance(testUser.id);
       expect(balance.balance).toBe(50.00);
       expect(balance.escrow_balance).toBe(50.00);
-      
+
       // Release escrow
       await models.Transaction.processEscrow(job.id, 50.00, 'release');
-      
+
       balance = await models.Transaction.getUserBalance(testUser.id);
       expect(balance.balance).toBe(50.00);
       expect(balance.escrow_balance).toBe(0.00);

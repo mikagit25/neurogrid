@@ -12,7 +12,7 @@ describe('Redis Caching Integration', () => {
   beforeAll(async () => {
     // Initialize Redis for testing
     redisConfig = new RedisConfig();
-    
+
     try {
       await redisConfig.initialize();
       cacheService = new CacheService(redisConfig);
@@ -42,7 +42,7 @@ describe('Redis Caching Integration', () => {
           email: 'cache.test@example.com',
           password: 'TestPassword123!'
         });
-      
+
       testUser = loginResponse.body.data.user;
       authToken = loginResponse.body.data.token;
     }
@@ -166,7 +166,7 @@ describe('Redis Caching Integration', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('timestamp');
-      
+
       if (cacheService) {
         expect(response.body.data).toHaveProperty('stats');
         expect(response.body.data).toHaveProperty('health');
@@ -185,13 +185,13 @@ describe('Redis Caching Integration', () => {
 
       const testData = { message: 'test data', timestamp: new Date() };
       const key = 'test:direct:1';
-      
+
       // Cache data
       await cacheService.set(key, testData, 60);
-      
+
       // Retrieve data
       const retrieved = await cacheService.get(key);
-      
+
       expect(retrieved).toEqual(testData);
     });
 
@@ -203,17 +203,17 @@ describe('Redis Caching Integration', () => {
 
       const testData = { message: 'expiring data' };
       const key = 'test:expiring:1';
-      
+
       // Cache with 1 second TTL
       await cacheService.set(key, testData, 1);
-      
+
       // Should be available immediately
       let retrieved = await cacheService.get(key);
       expect(retrieved).toEqual(testData);
-      
+
       // Wait for expiration
       await new Promise(resolve => setTimeout(resolve, 1100));
-      
+
       // Should be null after expiration
       retrieved = await cacheService.get(key);
       expect(retrieved).toBeNull();
@@ -252,7 +252,7 @@ describe('Redis Caching Integration', () => {
       }
 
       const health = await cacheService.healthCheck();
-      
+
       expect(health).toHaveProperty('status');
       expect(health).toHaveProperty('latency');
       expect(health).toHaveProperty('memory');
@@ -272,7 +272,7 @@ describe('Redis Caching Integration', () => {
       await cacheService.get('stats:nonexistent');
 
       const stats = await cacheService.getStats();
-      
+
       expect(stats).toHaveProperty('hits');
       expect(stats).toHaveProperty('misses');
       expect(stats).toHaveProperty('keys');

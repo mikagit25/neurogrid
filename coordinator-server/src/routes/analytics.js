@@ -20,19 +20,19 @@ const analyticsEngine = new AdvancedAnalyticsEngine();
  *         description: Analytics report generated successfully
  */
 router.get('/report', authenticate, async (req, res) => {
-    try {
-        const report = await analyticsEngine.generateAnalyticsReport();
-        res.json({
-            success: true,
-            data: report
-        });
-    } catch (error) {
-        logger.error('Failed to generate analytics report:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to generate analytics report'
-        });
-    }
+  try {
+    const report = await analyticsEngine.generateAnalyticsReport();
+    res.json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    logger.error('Failed to generate analytics report:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate analytics report'
+    });
+  }
 });
 
 /**
@@ -55,21 +55,21 @@ router.get('/report', authenticate, async (req, res) => {
  *         description: Network predictions generated successfully
  */
 router.get('/predictions/network', authenticate, async (req, res) => {
-    try {
-        const timeHorizon = parseInt(req.query.timeHorizon) || 7200000;
-        const predictions = await analyticsEngine.predictNetworkHealth(timeHorizon);
-        
-        res.json({
-            success: true,
-            data: predictions
-        });
-    } catch (error) {
-        logger.error('Failed to generate network predictions:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to generate network predictions'
-        });
-    }
+  try {
+    const timeHorizon = parseInt(req.query.timeHorizon) || 7200000;
+    const predictions = await analyticsEngine.predictNetworkHealth(timeHorizon);
+
+    res.json({
+      success: true,
+      data: predictions
+    });
+  } catch (error) {
+    logger.error('Failed to generate network predictions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate network predictions'
+    });
+  }
 });
 
 /**
@@ -98,23 +98,23 @@ router.get('/predictions/network', authenticate, async (req, res) => {
  *         description: Node predictions generated successfully
  */
 router.get('/predictions/node/:nodeId', authenticate, async (req, res) => {
-    try {
-        const { nodeId } = req.params;
-        const timeHorizon = parseInt(req.query.timeHorizon) || 3600000;
-        
-        const predictions = await analyticsEngine.predictNodePerformance(nodeId, timeHorizon);
-        
-        res.json({
-            success: true,
-            data: predictions
-        });
-    } catch (error) {
-        logger.error('Failed to generate node predictions:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to generate node predictions'
-        });
-    }
+  try {
+    const { nodeId } = req.params;
+    const timeHorizon = parseInt(req.query.timeHorizon) || 3600000;
+
+    const predictions = await analyticsEngine.predictNodePerformance(nodeId, timeHorizon);
+
+    res.json({
+      success: true,
+      data: predictions
+    });
+  } catch (error) {
+    logger.error('Failed to generate node predictions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate node predictions'
+    });
+  }
 });
 
 /**
@@ -130,20 +130,20 @@ router.get('/predictions/node/:nodeId', authenticate, async (req, res) => {
  *         description: Anomaly detection completed
  */
 router.get('/anomalies', authenticate, async (req, res) => {
-    try {
-        const anomalies = await analyticsEngine.detectAnomalies();
-        
-        res.json({
-            success: true,
-            data: anomalies
-        });
-    } catch (error) {
-        logger.error('Failed to detect anomalies:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to detect anomalies'
-        });
-    }
+  try {
+    const anomalies = await analyticsEngine.detectAnomalies();
+
+    res.json({
+      success: true,
+      data: anomalies
+    });
+  } catch (error) {
+    logger.error('Failed to detect anomalies:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to detect anomalies'
+    });
+  }
 });
 
 /**
@@ -172,23 +172,23 @@ router.get('/anomalies', authenticate, async (req, res) => {
  *         description: DeFi analytics generated successfully
  */
 router.get('/defi/:protocol', authenticate, async (req, res) => {
-    try {
-        const { protocol } = req.params;
-        const timeHorizon = parseInt(req.query.timeHorizon) || 86400000;
-        
-        const predictions = await analyticsEngine.predictDeFiYield(protocol, timeHorizon);
-        
-        res.json({
-            success: true,
-            data: predictions
-        });
-    } catch (error) {
-        logger.error('Failed to generate DeFi analytics:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to generate DeFi analytics'
-        });
-    }
+  try {
+    const { protocol } = req.params;
+    const timeHorizon = parseInt(req.query.timeHorizon) || 86400000;
+
+    const predictions = await analyticsEngine.predictDeFiYield(protocol, timeHorizon);
+
+    res.json({
+      success: true,
+      data: predictions
+    });
+  } catch (error) {
+    logger.error('Failed to generate DeFi analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate DeFi analytics'
+    });
+  }
 });
 
 /**
@@ -239,29 +239,29 @@ router.get('/defi/:protocol', authenticate, async (req, res) => {
  *         description: Node metrics collected successfully
  */
 router.post('/metrics/node', authenticate, async (req, res) => {
-    try {
-        const { nodeId, metrics } = req.body;
-        
-        if (!nodeId || !metrics) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing nodeId or metrics'
-            });
-        }
-        
-        const result = analyticsEngine.collectNodeMetrics(nodeId, metrics);
-        
-        res.status(201).json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        logger.error('Failed to collect node metrics:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to collect node metrics'
-        });
+  try {
+    const { nodeId, metrics } = req.body;
+
+    if (!nodeId || !metrics) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing nodeId or metrics'
+      });
     }
+
+    const result = analyticsEngine.collectNodeMetrics(nodeId, metrics);
+
+    res.status(201).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    logger.error('Failed to collect node metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to collect node metrics'
+    });
+  }
 });
 
 /**
@@ -319,29 +319,29 @@ router.post('/metrics/node', authenticate, async (req, res) => {
  *         description: Network metrics collected successfully
  */
 router.post('/metrics/network', authenticate, authorize(['admin', 'validator']), async (req, res) => {
-    try {
-        const { metrics } = req.body;
-        
-        if (!metrics) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing metrics'
-            });
-        }
-        
-        const result = analyticsEngine.collectNetworkMetrics(metrics);
-        
-        res.status(201).json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        logger.error('Failed to collect network metrics:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to collect network metrics'
-        });
+  try {
+    const { metrics } = req.body;
+
+    if (!metrics) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing metrics'
+      });
     }
+
+    const result = analyticsEngine.collectNetworkMetrics(metrics);
+
+    res.status(201).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    logger.error('Failed to collect network metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to collect network metrics'
+    });
+  }
 });
 
 /**
@@ -392,29 +392,29 @@ router.post('/metrics/network', authenticate, authorize(['admin', 'validator']),
  *         description: DeFi metrics collected successfully
  */
 router.post('/metrics/defi', authenticate, async (req, res) => {
-    try {
-        const { protocol, metrics } = req.body;
-        
-        if (!protocol || !metrics) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing protocol or metrics'
-            });
-        }
-        
-        const result = analyticsEngine.collectDeFiMetrics(protocol, metrics);
-        
-        res.status(201).json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        logger.error('Failed to collect DeFi metrics:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to collect DeFi metrics'
-        });
+  try {
+    const { protocol, metrics } = req.body;
+
+    if (!protocol || !metrics) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing protocol or metrics'
+      });
     }
+
+    const result = analyticsEngine.collectDeFiMetrics(protocol, metrics);
+
+    res.status(201).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    logger.error('Failed to collect DeFi metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to collect DeFi metrics'
+    });
+  }
 });
 
 /**
@@ -430,35 +430,35 @@ router.post('/metrics/defi', authenticate, async (req, res) => {
  *         description: Dashboard data retrieved successfully
  */
 router.get('/dashboard', authenticate, async (req, res) => {
-    try {
-        const [report, anomalies] = await Promise.all([
-            analyticsEngine.generateAnalyticsReport(),
-            analyticsEngine.detectAnomalies()
-        ]);
-        
-        const dashboardData = {
-            summary: report.summary,
-            networkHealth: report.networkPredictions,
-            recentAnomalies: anomalies.anomalies.slice(0, 5),
-            topNodes: Object.entries(report.nodeAnalytics)
-                .sort(([,a], [,b]) => b.currentPerformance - a.currentPerformance)
-                .slice(0, 10),
-            defiOverview: report.defiInsights,
-            crossChainStats: report.crossChainAnalytics,
-            systemAlerts: report.alerts
-        };
-        
-        res.json({
-            success: true,
-            data: dashboardData
-        });
-    } catch (error) {
-        logger.error('Failed to get dashboard data:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to get dashboard data'
-        });
-    }
+  try {
+    const [report, anomalies] = await Promise.all([
+      analyticsEngine.generateAnalyticsReport(),
+      analyticsEngine.detectAnomalies()
+    ]);
+
+    const dashboardData = {
+      summary: report.summary,
+      networkHealth: report.networkPredictions,
+      recentAnomalies: anomalies.anomalies.slice(0, 5),
+      topNodes: Object.entries(report.nodeAnalytics)
+        .sort(([,a], [,b]) => b.currentPerformance - a.currentPerformance)
+        .slice(0, 10),
+      defiOverview: report.defiInsights,
+      crossChainStats: report.crossChainAnalytics,
+      systemAlerts: report.alerts
+    };
+
+    res.json({
+      success: true,
+      data: dashboardData
+    });
+  } catch (error) {
+    logger.error('Failed to get dashboard data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get dashboard data'
+    });
+  }
 });
 
 module.exports = router;

@@ -51,17 +51,17 @@ class RedisConfig {
 
       // Test connection
       await this.client.ping();
-      
+
       // Create publisher and subscriber clients for pub/sub
       this.publisher = this.client.duplicate();
       this.subscriber = this.client.duplicate();
-      
+
       await this.publisher.connect();
       await this.subscriber.connect();
 
       this.isConnected = true;
       this.retryCount = 0;
-      
+
       logger.info('Redis connection established successfully');
 
       return this.client;
@@ -70,7 +70,7 @@ class RedisConfig {
         error: error.message,
         retryCount: this.retryCount
       });
-      
+
       this.isConnected = false;
       throw error;
     }
@@ -104,17 +104,17 @@ class RedisConfig {
         await this.client.quit();
         logger.info('Redis client disconnected');
       }
-      
+
       if (this.publisher && this.publisher.isOpen) {
         await this.publisher.quit();
         logger.info('Redis publisher disconnected');
       }
-      
+
       if (this.subscriber && this.subscriber.isOpen) {
         await this.subscriber.quit();
         logger.info('Redis subscriber disconnected');
       }
-      
+
       this.isConnected = false;
     } catch (error) {
       logger.error('Error disconnecting from Redis', { error: error.message });
@@ -132,7 +132,7 @@ class RedisConfig {
   async get(key, defaultValue = null) {
     try {
       if (!this.isConnected) return defaultValue;
-      
+
       const value = await this.client.get(key);
       return value ? JSON.parse(value) : defaultValue;
     } catch (error) {
@@ -144,7 +144,7 @@ class RedisConfig {
   async set(key, value, ttl = null) {
     try {
       if (!this.isConnected) return false;
-      
+
       const serialized = JSON.stringify(value);
       if (ttl) {
         await this.client.setEx(key, ttl, serialized);
@@ -161,7 +161,7 @@ class RedisConfig {
   async del(key) {
     try {
       if (!this.isConnected) return false;
-      
+
       const result = await this.client.del(key);
       return result > 0;
     } catch (error) {
@@ -173,7 +173,7 @@ class RedisConfig {
   async exists(key) {
     try {
       if (!this.isConnected) return false;
-      
+
       const result = await this.client.exists(key);
       return result > 0;
     } catch (error) {
@@ -186,7 +186,7 @@ class RedisConfig {
   async hget(hash, field) {
     try {
       if (!this.isConnected) return null;
-      
+
       const value = await this.client.hGet(hash, field);
       return value ? JSON.parse(value) : null;
     } catch (error) {
@@ -198,7 +198,7 @@ class RedisConfig {
   async hset(hash, field, value) {
     try {
       if (!this.isConnected) return false;
-      
+
       const serialized = JSON.stringify(value);
       const result = await this.client.hSet(hash, field, serialized);
       return result >= 0;
@@ -211,10 +211,10 @@ class RedisConfig {
   async hgetall(hash) {
     try {
       if (!this.isConnected) return {};
-      
+
       const result = await this.client.hGetAll(hash);
       const parsed = {};
-      
+
       Object.keys(result).forEach(key => {
         try {
           parsed[key] = JSON.parse(result[key]);
@@ -222,7 +222,7 @@ class RedisConfig {
           parsed[key] = result[key]; // Keep as string if not JSON
         }
       });
-      
+
       return parsed;
     } catch (error) {
       logger.error('Redis HGETALL error', { hash, error: error.message });
@@ -234,7 +234,7 @@ class RedisConfig {
   async publish(channel, message) {
     try {
       if (!this.isConnected) return 0;
-      
+
       const serialized = JSON.stringify(message);
       const result = await this.publisher.publish(channel, serialized);
       return result;
@@ -247,7 +247,7 @@ class RedisConfig {
   async subscribe(channel, callback) {
     try {
       if (!this.isConnected) return false;
-      
+
       await this.subscriber.subscribe(channel, (message) => {
         try {
           const parsed = JSON.parse(message);
@@ -268,7 +268,7 @@ class RedisConfig {
     try {
       // Try to get from cache first
       let value = await this.get(key);
-      
+
       if (value !== null) {
         logger.debug('Cache hit', { key });
         return value;
@@ -320,7 +320,7 @@ class RedisConfig {
   async invalidatePattern(pattern) {
     try {
       if (!this.isConnected) return 0;
-      
+
       const keys = await this.client.keys(pattern);
       if (keys.length > 0) {
         await this.client.del(keys);

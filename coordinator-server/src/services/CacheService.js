@@ -5,7 +5,7 @@ class CacheService {
     this.redis = redisConfig;
     this.defaultTTL = 3600; // 1 hour
     this.enabled = true;
-    
+
     // Cache key prefixes for different data types
     this.prefixes = {
       session: 'session:',
@@ -59,12 +59,12 @@ class CacheService {
       this.key('auth', userId, '*'),
       this.key('api', 'user', userId, '*')
     ];
-    
+
     let invalidated = 0;
     for (const pattern of patterns) {
       invalidated += await this.redis.invalidatePattern(pattern);
     }
-    
+
     logger.info('Invalidated user cache', { userId, count: invalidated });
     return invalidated;
   }
@@ -97,12 +97,12 @@ class CacheService {
       this.key('metrics', 'node', nodeId, '*'),
       this.key('api', 'node', '*')
     ];
-    
+
     let invalidated = 0;
     for (const pattern of patterns) {
       invalidated += await this.redis.invalidatePattern(pattern);
     }
-    
+
     logger.info('Invalidated node cache', { nodeId, count: invalidated });
     return invalidated;
   }
@@ -133,16 +133,16 @@ class CacheService {
       this.key('task', taskId),
       this.key('api', 'task', '*')
     ];
-    
+
     if (userId) {
       patterns.push(this.key('task', 'list', userId, '*'));
     }
-    
+
     let invalidated = 0;
     for (const pattern of patterns) {
       invalidated += await this.redis.invalidatePattern(pattern);
     }
-    
+
     logger.info('Invalidated task cache', { taskId, userId, count: invalidated });
     return invalidated;
   }
@@ -161,7 +161,7 @@ class CacheService {
   async invalidateMetrics(type, identifier = '*') {
     const pattern = this.key('metrics', type, identifier, '*');
     const invalidated = await this.redis.invalidatePattern(pattern);
-    
+
     logger.info('Invalidated metrics cache', { type, identifier, count: invalidated });
     return invalidated;
   }
@@ -193,7 +193,7 @@ class CacheService {
   async invalidateDbQuery(tablePattern) {
     const pattern = this.key('db_query', `*${tablePattern}*`);
     const invalidated = await this.redis.invalidatePattern(pattern);
-    
+
     logger.info('Invalidated DB query cache', { pattern: tablePattern, count: invalidated });
     return invalidated;
   }
@@ -206,21 +206,21 @@ class CacheService {
 
   async incrementRateLimit(identifier, window, ttl) {
     const key = this.key('rate_limit', identifier, window);
-    
+
     try {
       if (!this.redis.isConnected) {
         // Fallback for when Redis is not available
         return { count: 1, ttl: ttl };
       }
-      
+
       const client = this.redis.getClient();
       const multi = client.multi();
       multi.incr(key);
       multi.expire(key, ttl);
-      
+
       const results = await multi.exec();
       const count = results[0];
-      
+
       return { count, ttl };
     } catch (error) {
       logger.error('Rate limit increment error', { identifier, error: error.message });
@@ -268,7 +268,7 @@ class CacheService {
   // Generic cache operations with tags
   async setWithTags(key, value, ttl, tags = []) {
     const result = await this.redis.set(key, value, ttl);
-    
+
     if (result && tags.length > 0) {
       // Store reverse mapping from tags to keys
       for (const tag of tags) {
@@ -276,17 +276,17 @@ class CacheService {
         await this.redis.set(tagKey, 1, ttl);
       }
     }
-    
+
     return result;
   }
 
   async invalidateByTags(tags) {
     let totalInvalidated = 0;
-    
+
     for (const tag of tags) {
       const pattern = this.key('tag', tag, '*');
       const tagKeys = await this.redis.getClient().keys(pattern);
-      
+
       for (const tagKey of tagKeys) {
         // Extract original key from tag key
         const originalKey = tagKey.split(':').slice(2).join(':');
@@ -295,7 +295,7 @@ class CacheService {
         totalInvalidated++;
       }
     }
-    
+
     logger.info('Invalidated cache by tags', { tags, count: totalInvalidated });
     return totalInvalidated;
   }
@@ -303,15 +303,15 @@ class CacheService {
   // Cache warming
   async warmCache(type, fetcher, keys, ttl = 3600) {
     logger.info('Starting cache warming', { type, count: keys.length });
-    
+
     const warmed = [];
     const failed = [];
-    
+
     for (const keyData of keys) {
       try {
         const { key, ...params } = keyData;
         const data = await fetcher(params);
-        
+
         if (data !== null && data !== undefined) {
           await this.redis.set(key, data, ttl);
           warmed.push(key);
@@ -321,13 +321,13 @@ class CacheService {
         failed.push(keyData.key);
       }
     }
-    
-    logger.info('Cache warming completed', { 
-      type, 
-      warmed: warmed.length, 
-      failed: failed.length 
+
+    logger.info('Cache warming completed', {
+      type,
+      warmed: warmed.length,
+      failed: failed.length
     });
-    
+
     return { warmed, failed };
   }
 
@@ -340,25 +340,25 @@ class CacheService {
           keys: 0
         };
       }
-      
+
       const client = this.redis.getClient();
       const info = await client.info('memory');
       const keyspace = await client.info('keyspace');
-      
+
       // Parse info strings
       const memoryInfo = {};
       const keyspaceInfo = {};
-      
+
       info.split('\r\n').forEach(line => {
         const [key, value] = line.split(':');
         if (key && value) memoryInfo[key] = value;
       });
-      
+
       keyspace.split('\r\n').forEach(line => {
         const [key, value] = line.split(':');
         if (key && value) keyspaceInfo[key] = value;
       });
-      
+
       return {
         status: 'connected',
         memory_used: memoryInfo.used_memory_human,

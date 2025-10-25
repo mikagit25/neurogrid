@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 
 /**
  * Advanced Stripe Payment Service for NeuroGrid
- * 
+ *
  * Handles:
  * - Subscription management and lifecycle
  * - Usage-based billing for compute resources
@@ -18,22 +18,22 @@ const logger = require('../utils/logger');
 class StripeService extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     this.stripeSecretKey = options.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
     this.webhookSecret = options.webhookSecret || process.env.STRIPE_WEBHOOK_SECRET;
     this.environment = options.environment || process.env.NODE_ENV || 'development';
-    
+
     if (!this.stripeSecretKey) {
       throw new Error('Stripe secret key is required');
     }
-    
+
     // Initialize Stripe client
     this.stripe = stripe(this.stripeSecretKey, {
       apiVersion: '2023-10-16',
       typescript: false,
       telemetry: false
     });
-    
+
     // Product configuration
     this.products = {
       GPU_COMPUTE: 'gpu_compute_hours',
@@ -41,7 +41,7 @@ class StripeService extends EventEmitter {
       BANDWIDTH: 'bandwidth_gb',
       PREMIUM_SUPPORT: 'premium_support'
     };
-    
+
     // Subscription plans
     this.plans = {
       STARTER: {
@@ -84,7 +84,7 @@ class StripeService extends EventEmitter {
         }
       }
     };
-    
+
     // Usage pricing (per unit after included amounts)
     this.usagePricing = {
       gpu_compute_hour: 150, // $1.50 per hour
@@ -92,7 +92,7 @@ class StripeService extends EventEmitter {
       bandwidth_gb: 5,        // $0.05 per GB
       priority_support_hour: 5000 // $50.00 per hour
     };
-    
+
     // Statistics
     this.stats = {
       paymentsProcessed: 0,
@@ -102,7 +102,7 @@ class StripeService extends EventEmitter {
       errors: 0,
       startTime: new Date()
     };
-    
+
     logger.info('Stripe service initialized', {
       environment: this.environment,
       apiVersion: '2023-10-16'
@@ -115,18 +115,18 @@ class StripeService extends EventEmitter {
   async initialize() {
     try {
       logger.info('Initializing Stripe products and prices...');
-      
+
       // Create products if they don't exist
       await this.ensureProducts();
-      
+
       // Create subscription plans
       await this.ensurePlans();
-      
+
       // Create usage-based pricing
       await this.ensureUsagePricing();
-      
+
       logger.info('Stripe initialization completed');
-      
+
     } catch (error) {
       logger.error('Failed to initialize Stripe service', { error: error.message });
       throw error;
@@ -205,9 +205,9 @@ class StripeService extends EventEmitter {
             },
             billing_scheme: 'per_unit'
           });
-          logger.info('Created subscription plan', { 
-            planKey, 
-            priceId: price.id 
+          logger.info('Created subscription plan', {
+            planKey,
+            priceId: price.id
           });
         } else {
           throw error;
@@ -222,7 +222,7 @@ class StripeService extends EventEmitter {
   async ensureUsagePricing() {
     for (const [usageType, pricePerUnit] of Object.entries(this.usagePricing)) {
       const priceId = `usage_${usageType}`;
-      
+
       try {
         await this.stripe.prices.retrieve(priceId);
         logger.debug('Usage price already exists', { priceId });
@@ -241,9 +241,9 @@ class StripeService extends EventEmitter {
             currency: 'usd',
             billing_scheme: 'per_unit'
           });
-          logger.info('Created usage pricing', { 
-            usageType, 
-            priceId: price.id 
+          logger.info('Created usage pricing', {
+            usageType,
+            priceId: price.id
           });
         } else {
           throw error;
@@ -258,22 +258,22 @@ class StripeService extends EventEmitter {
   async getOrCreateCustomer(userData) {
     try {
       const { email, name, userId, metadata = {} } = userData;
-      
+
       // Try to find existing customer by email
       const customers = await this.stripe.customers.list({
         email: email,
         limit: 1
       });
-      
+
       if (customers.data.length > 0) {
         const customer = customers.data[0];
-        logger.debug('Found existing customer', { 
-          customerId: customer.id, 
-          email 
+        logger.debug('Found existing customer', {
+          customerId: customer.id,
+          email
         });
         return customer;
       }
-      
+
       // Create new customer
       const customer = await this.stripe.customers.create({
         email,
@@ -283,18 +283,18 @@ class StripeService extends EventEmitter {
           ...metadata
         }
       });
-      
-      logger.info('Created new customer', { 
-        customerId: customer.id, 
-        email 
+
+      logger.info('Created new customer', {
+        customerId: customer.id,
+        email
       });
-      
+
       return customer;
-      
+
     } catch (error) {
-      logger.error('Error getting/creating customer', { 
+      logger.error('Error getting/creating customer', {
         email: userData.email,
-        error: error.message 
+        error: error.message
       });
       throw error;
     }
@@ -311,7 +311,7 @@ class StripeService extends EventEmitter {
         prorationBehavior = 'create_prorations',
         metadata = {}
       } = options;
-      
+
       const subscriptionData = {
         customer: customerId,
         items: [{ price: planId }],
@@ -323,37 +323,37 @@ class StripeService extends EventEmitter {
           ...metadata
         }
       };
-      
+
       // Add payment method if provided
       if (paymentMethodId) {
         subscriptionData.default_payment_method = paymentMethodId;
         subscriptionData.payment_behavior = 'default_incomplete';
       }
-      
+
       // Add trial period
       if (trialDays > 0) {
         subscriptionData.trial_period_days = trialDays;
       }
-      
+
       const subscription = await this.stripe.subscriptions.create(subscriptionData);
-      
+
       this.stats.subscriptionsCreated++;
-      
+
       logger.info('Created subscription', {
         subscriptionId: subscription.id,
         customerId,
         planId,
         status: subscription.status
       });
-      
+
       this.emit('subscription_created', {
         subscription,
         customerId,
         planId
       });
-      
+
       return subscription;
-      
+
     } catch (error) {
       logger.error('Error creating subscription', {
         customerId,
@@ -374,19 +374,19 @@ class StripeService extends EventEmitter {
         subscriptionId,
         updates
       );
-      
+
       logger.info('Updated subscription', {
         subscriptionId,
         updates: Object.keys(updates)
       });
-      
+
       this.emit('subscription_updated', {
         subscription,
         updates
       });
-      
+
       return subscription;
-      
+
     } catch (error) {
       logger.error('Error updating subscription', {
         subscriptionId,
@@ -401,14 +401,14 @@ class StripeService extends EventEmitter {
    */
   async cancelSubscription(subscriptionId, options = {}) {
     try {
-      const { 
+      const {
         immediate = false,
         prorationBehavior = 'create_prorations',
         cancellationDetails = {}
       } = options;
-      
+
       let subscription;
-      
+
       if (immediate) {
         subscription = await this.stripe.subscriptions.cancel(subscriptionId, {
           proration_behavior: prorationBehavior
@@ -419,20 +419,20 @@ class StripeService extends EventEmitter {
           cancellation_details: cancellationDetails
         });
       }
-      
+
       logger.info('Cancelled subscription', {
         subscriptionId,
         immediate,
         status: subscription.status
       });
-      
+
       this.emit('subscription_cancelled', {
         subscription,
         immediate
       });
-      
+
       return subscription;
-      
+
     } catch (error) {
       logger.error('Error cancelling subscription', {
         subscriptionId,
@@ -455,21 +455,21 @@ class StripeService extends EventEmitter {
           action
         }
       );
-      
+
       logger.debug('Recorded usage', {
         subscriptionItemId,
         quantity,
         action
       });
-      
+
       this.emit('usage_recorded', {
         usageRecord,
         subscriptionItemId,
         quantity
       });
-      
+
       return usageRecord;
-      
+
     } catch (error) {
       logger.error('Error recording usage', {
         subscriptionItemId,
@@ -492,7 +492,7 @@ class StripeService extends EventEmitter {
         metadata = {},
         confirmationMethod = 'automatic'
       } = options;
-      
+
       const paymentIntentData = {
         amount,
         currency,
@@ -503,37 +503,37 @@ class StripeService extends EventEmitter {
           ...metadata
         }
       };
-      
+
       if (customerId) {
         paymentIntentData.customer = customerId;
       }
-      
+
       if (paymentMethodId) {
         paymentIntentData.payment_method = paymentMethodId;
         if (confirmationMethod === 'automatic') {
           paymentIntentData.confirm = true;
         }
       }
-      
+
       const paymentIntent = await this.stripe.paymentIntents.create(paymentIntentData);
-      
+
       this.stats.paymentsProcessed++;
-      
+
       logger.info('Created payment intent', {
         paymentIntentId: paymentIntent.id,
         amount,
         currency,
         status: paymentIntent.status
       });
-      
+
       this.emit('payment_intent_created', {
         paymentIntent,
         amount,
         currency
       });
-      
+
       return paymentIntent;
-      
+
     } catch (error) {
       logger.error('Error creating payment intent', {
         amount,
@@ -553,67 +553,67 @@ class StripeService extends EventEmitter {
       if (!this.webhookSecret) {
         throw new Error('Webhook secret not configured');
       }
-      
+
       const event = this.stripe.webhooks.constructEvent(
         rawBody,
         signature,
         this.webhookSecret
       );
-      
+
       this.stats.webhooksProcessed++;
-      
+
       logger.info('Processing webhook', {
         eventType: event.type,
         eventId: event.id
       });
-      
+
       // Handle different event types
       switch (event.type) {
-        case 'customer.subscription.created':
-          await this.handleSubscriptionCreated(event.data.object);
-          break;
-          
-        case 'customer.subscription.updated':
-          await this.handleSubscriptionUpdated(event.data.object);
-          break;
-          
-        case 'customer.subscription.deleted':
-          await this.handleSubscriptionDeleted(event.data.object);
-          break;
-          
-        case 'invoice.payment_succeeded':
-          await this.handleInvoicePaymentSucceeded(event.data.object);
-          break;
-          
-        case 'invoice.payment_failed':
-          await this.handleInvoicePaymentFailed(event.data.object);
-          break;
-          
-        case 'payment_intent.succeeded':
-          await this.handlePaymentIntentSucceeded(event.data.object);
-          break;
-          
-        case 'payment_intent.payment_failed':
-          await this.handlePaymentIntentFailed(event.data.object);
-          break;
-          
-        case 'customer.created':
-          await this.handleCustomerCreated(event.data.object);
-          break;
-          
-        default:
-          logger.debug('Unhandled webhook event type', { 
-            eventType: event.type 
-          });
+      case 'customer.subscription.created':
+        await this.handleSubscriptionCreated(event.data.object);
+        break;
+
+      case 'customer.subscription.updated':
+        await this.handleSubscriptionUpdated(event.data.object);
+        break;
+
+      case 'customer.subscription.deleted':
+        await this.handleSubscriptionDeleted(event.data.object);
+        break;
+
+      case 'invoice.payment_succeeded':
+        await this.handleInvoicePaymentSucceeded(event.data.object);
+        break;
+
+      case 'invoice.payment_failed':
+        await this.handleInvoicePaymentFailed(event.data.object);
+        break;
+
+      case 'payment_intent.succeeded':
+        await this.handlePaymentIntentSucceeded(event.data.object);
+        break;
+
+      case 'payment_intent.payment_failed':
+        await this.handlePaymentIntentFailed(event.data.object);
+        break;
+
+      case 'customer.created':
+        await this.handleCustomerCreated(event.data.object);
+        break;
+
+      default:
+        logger.debug('Unhandled webhook event type', {
+          eventType: event.type
+        });
       }
-      
+
       this.emit('webhook_processed', {
         event,
         type: event.type
       });
-      
+
       return { received: true, eventId: event.id };
-      
+
     } catch (error) {
       logger.error('Error processing webhook', {
         error: error.message,
@@ -633,7 +633,7 @@ class StripeService extends EventEmitter {
       customerId: subscription.customer,
       status: subscription.status
     });
-    
+
     this.emit('subscription_webhook_created', subscription);
   }
 
@@ -646,7 +646,7 @@ class StripeService extends EventEmitter {
       customerId: subscription.customer,
       status: subscription.status
     });
-    
+
     this.emit('subscription_webhook_updated', subscription);
   }
 
@@ -658,7 +658,7 @@ class StripeService extends EventEmitter {
       subscriptionId: subscription.id,
       customerId: subscription.customer
     });
-    
+
     this.emit('subscription_webhook_deleted', subscription);
   }
 
@@ -668,14 +668,14 @@ class StripeService extends EventEmitter {
   async handleInvoicePaymentSucceeded(invoice) {
     const amount = invoice.amount_paid;
     this.stats.totalRevenue += amount;
-    
+
     logger.info('Invoice payment succeeded', {
       invoiceId: invoice.id,
       customerId: invoice.customer,
       amount,
       currency: invoice.currency
     });
-    
+
     this.emit('invoice_payment_succeeded', invoice);
   }
 
@@ -689,7 +689,7 @@ class StripeService extends EventEmitter {
       amount: invoice.amount_due,
       attempt: invoice.attempt_count
     });
-    
+
     this.emit('invoice_payment_failed', invoice);
   }
 
@@ -699,14 +699,14 @@ class StripeService extends EventEmitter {
   async handlePaymentIntentSucceeded(paymentIntent) {
     const amount = paymentIntent.amount;
     this.stats.totalRevenue += amount;
-    
+
     logger.info('Payment intent succeeded', {
       paymentIntentId: paymentIntent.id,
       customerId: paymentIntent.customer,
       amount,
       currency: paymentIntent.currency
     });
-    
+
     this.emit('payment_intent_succeeded', paymentIntent);
   }
 
@@ -720,7 +720,7 @@ class StripeService extends EventEmitter {
       amount: paymentIntent.amount,
       lastPaymentError: paymentIntent.last_payment_error
     });
-    
+
     this.emit('payment_intent_failed', paymentIntent);
   }
 
@@ -732,7 +732,7 @@ class StripeService extends EventEmitter {
       customerId: customer.id,
       email: customer.email
     });
-    
+
     this.emit('customer_created', customer);
   }
 
@@ -773,13 +773,13 @@ class StripeService extends EventEmitter {
    */
   calculateUsageCost(usage) {
     let totalCost = 0;
-    
+
     for (const [usageType, quantity] of Object.entries(usage)) {
       if (this.usagePricing[usageType]) {
         totalCost += quantity * this.usagePricing[usageType];
       }
     }
-    
+
     return totalCost;
   }
 }

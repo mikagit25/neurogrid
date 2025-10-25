@@ -1,6 +1,5 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
-const { authenticate } = require('../../middleware/security');
 const rateLimit = require('express-rate-limit');
 
 // Service instances (injected from main app)
@@ -66,7 +65,7 @@ router.post('/', taskSubmissionLimit, validateTaskSubmission, async (req, res) =
         error: 'Task service not available'
       });
     }
-    
+
     const task = await taskDispatcher.addTask({
       model,
       input,

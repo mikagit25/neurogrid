@@ -73,7 +73,7 @@ class TokenEngine {
     const baseCost = this.taskCosts[model] || 0.1;
     const priorityMultiplier = this.rewardRates[priority] || 1.0;
     const durationMultiplier = Math.max(0.5, estimatedDuration / 60); // per minute
-    
+
     return +(baseCost * priorityMultiplier * durationMultiplier).toFixed(4);
   }
 
@@ -83,21 +83,21 @@ class TokenEngine {
   calculateNodeReward(taskCost, nodeRating, completionTime, priority = 'standard') {
     // Base reward is 80% of task cost (20% goes to platform)
     const baseReward = taskCost * 0.8;
-    
+
     // Rating bonus (0.5-1.5x multiplier based on rating)
     const ratingMultiplier = 0.5 + (nodeRating * 1.0);
-    
+
     // Time bonus (faster completion gets bonus, up to 20%)
     const expectedTime = 300; // 5 minutes expected
-    const timeBonus = completionTime < expectedTime 
+    const timeBonus = completionTime < expectedTime
       ? Math.min(0.2, (expectedTime - completionTime) / expectedTime * 0.2)
       : 0;
-    
+
     // Priority multiplier
     const priorityMultiplier = this.rewardRates[priority] || 1.0;
-    
+
     const totalReward = baseReward * ratingMultiplier * priorityMultiplier * (1 + timeBonus);
-    
+
     return +Math.max(0.01, totalReward).toFixed(4);
   }
 
@@ -219,24 +219,24 @@ class TokenEngine {
     try {
       const { model, priority, startTime, endTime } = taskData;
       const completionTime = (endTime - startTime) / 1000; // seconds
-      
+
       // Calculate cost and reward
       const taskCost = this.calculateTaskCost(model, priority, completionTime / 60);
       const nodeReward = this.calculateNodeReward(
-        taskCost, 
-        taskData.nodeRating || 0.5, 
-        completionTime, 
+        taskCost,
+        taskData.nodeRating || 0.5,
+        completionTime,
         priority
       );
-      
+
       // Platform fee
       const platformFee = taskCost - nodeReward;
 
       // Credit node
       await this.creditTokens(
-        nodeId, 
-        nodeReward, 
-        taskId, 
+        nodeId,
+        nodeReward,
+        taskId,
         `Reward for completing task (${model})`
       );
 
@@ -280,9 +280,9 @@ class TokenEngine {
     try {
       // Find the original debit transaction
       const transactions = Array.from(this.transactions.values());
-      const originalTransaction = transactions.find(t => 
-        t.taskId === taskId && 
-        t.userId === userId && 
+      const originalTransaction = transactions.find(t =>
+        t.taskId === taskId &&
+        t.userId === userId &&
         t.type === 'debit'
       );
 
@@ -369,14 +369,14 @@ class TokenEngine {
   getPlatformStats() {
     const allAccounts = Array.from(this.tokenBalances.values());
     const allTransactions = Array.from(this.transactions.values());
-    
+
     const totalSupply = allAccounts.reduce((sum, acc) => sum + acc.balance, 0);
     const totalEarned = allAccounts.reduce((sum, acc) => sum + acc.totalEarned, 0);
     const totalSpent = allAccounts.reduce((sum, acc) => sum + acc.totalSpent, 0);
-    
+
     const platformAccount = this.tokenBalances.get('platform');
     const platformBalance = platformAccount ? platformAccount.balance : 0;
-    
+
     const recentTransactions = allTransactions
       .filter(t => Date.now() - t.timestamp.getTime() < 24 * 60 * 60 * 1000)
       .length;
@@ -407,7 +407,7 @@ class TokenEngine {
     const transactions = Array.from(this.transactions.values())
       .filter(t => t.userId === userId)
       .sort((a, b) => b.timestamp - a.timestamp);
-    
+
     return transactions.length > 0 ? transactions[0].id : null;
   }
 
@@ -445,7 +445,7 @@ class TokenEngine {
     }
 
     this.taskCosts[model] = price;
-    
+
     logger.info(`Updated pricing for ${model}`, {
       model,
       newPrice: price
@@ -459,10 +459,10 @@ class TokenEngine {
    */
   async initialize() {
     logger.info('Token engine initialized');
-    
+
     // Create platform account
     await this.createAccount('platform', 0);
-    
+
     return true;
   }
 }

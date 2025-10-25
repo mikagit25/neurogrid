@@ -19,7 +19,7 @@ const initializeServices = (services) => {
 router.get('/balance/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     if (!tokenEngine) {
       return res.status(503).json({
         success: false,
@@ -28,7 +28,7 @@ router.get('/balance/:userId', async (req, res) => {
     }
 
     const account = tokenEngine.getAccount(userId);
-    
+
     if (!account) {
       return res.json({
         success: true,

@@ -8,12 +8,12 @@ describe('WebSocket Manager', () => {
   let wsManager;
   let port;
   let wsUrl;
-  let jwtSecret = 'test-secret';
+  const jwtSecret = 'test-secret';
 
   beforeAll(async () => {
     // Create HTTP server
     server = http.createServer();
-    
+
     // Get available port
     await new Promise((resolve) => {
       server.listen(0, () => {
@@ -29,7 +29,7 @@ describe('WebSocket Manager', () => {
       pingInterval: 1000, // 1 second for testing
       maxConnections: 10
     });
-    
+
     wsManager.initialize(server);
   });
 
@@ -45,12 +45,12 @@ describe('WebSocket Manager', () => {
   describe('Connection Management', () => {
     test('should accept new connections', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         expect(ws.readyState).toBe(WebSocket.OPEN);
         ws.close();
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
         if (message.type === 'welcome') {
@@ -59,13 +59,13 @@ describe('WebSocket Manager', () => {
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
 
     test('should track connection statistics', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         const stats = wsManager.getStats();
         expect(stats.activeConnections).toBeGreaterThan(0);
@@ -74,13 +74,13 @@ describe('WebSocket Manager', () => {
         ws.close();
         done();
       });
-      
+
       ws.on('error', done);
     });
 
     test('should handle connection limits', async () => {
       const connections = [];
-      
+
       // Create maximum connections
       for (let i = 0; i < 10; i++) {
         const ws = new WebSocket(wsUrl);
@@ -90,23 +90,23 @@ describe('WebSocket Manager', () => {
           ws.on('error', resolve);
         });
       }
-      
+
       // Try to create one more (should be rejected)
       const extraWs = new WebSocket(wsUrl);
-      
+
       await new Promise((resolve) => {
         extraWs.on('error', (error) => {
           expect(error.code).toBe('ECONNRESET');
           resolve();
         });
-        
+
         extraWs.on('open', () => {
           // If it opens, close it and fail the test
           extraWs.close();
           throw new Error('Connection should have been rejected');
         });
       });
-      
+
       // Cleanup
       connections.forEach(ws => ws.close());
     });
@@ -116,19 +116,19 @@ describe('WebSocket Manager', () => {
     test('should authenticate users with valid JWT', (done) => {
       const userId = 'user123';
       const token = jwt.sign({ userId, role: 'user' }, jwtSecret);
-      
+
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'auth',
           data: { token, type: 'user' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'auth_success') {
           expect(message.data.userId).toBe(userId);
           expect(message.data.role).toBe('user');
@@ -137,82 +137,82 @@ describe('WebSocket Manager', () => {
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
 
     test('should reject invalid JWT tokens', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'auth',
           data: { token: 'invalid-token', type: 'user' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'error') {
           expect(message.error.code).toBe('INVALID_TOKEN');
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
 
     test('should authenticate nodes', (done) => {
       const nodeId = 'node001';
       const token = jwt.sign({ nodeId, role: 'node' }, jwtSecret);
-      
+
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'auth',
           data: { token, type: 'node' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'auth_success') {
           expect(message.data.type).toBe('node');
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
 
     test('should require admin role for admin authentication', (done) => {
       const userId = 'user123';
       const token = jwt.sign({ userId, role: 'user' }, jwtSecret); // Not admin role
-      
+
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'auth',
           data: { token, type: 'admin' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'error') {
           expect(message.error.code).toBe('INSUFFICIENT_PERMISSIONS');
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
   });
@@ -221,27 +221,27 @@ describe('WebSocket Manager', () => {
     test('should allow users to subscribe to allowed topics', (done) => {
       const userId = 'user123';
       const token = jwt.sign({ userId, role: 'user' }, jwtSecret);
-      
+
       const ws = new WebSocket(wsUrl);
       let authenticated = false;
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'auth',
           data: { token, type: 'user' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'auth_success' && !authenticated) {
           authenticated = true;
-          
+
           // Try to subscribe to allowed topics
           ws.send(JSON.stringify({
             type: 'subscribe',
-            data: { 
+            data: {
               topics: [
                 'system.status',
                 'system.announcements',
@@ -251,7 +251,7 @@ describe('WebSocket Manager', () => {
             }
           }));
         }
-        
+
         if (message.type === 'subscribed') {
           expect(message.data.topics).toHaveLength(4);
           expect(message.data.topics).toContain('system.status');
@@ -260,34 +260,34 @@ describe('WebSocket Manager', () => {
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
 
     test('should deny unauthorized topic subscriptions', (done) => {
       const userId = 'user123';
       const token = jwt.sign({ userId, role: 'user' }, jwtSecret);
-      
+
       const ws = new WebSocket(wsUrl);
       let authenticated = false;
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'auth',
           data: { token, type: 'user' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'auth_success' && !authenticated) {
           authenticated = true;
-          
+
           // Try to subscribe to unauthorized topics
           ws.send(JSON.stringify({
             type: 'subscribe',
-            data: { 
+            data: {
               topics: [
                 'system.status', // Allowed
                 'admin.alerts',  // Not allowed for users
@@ -296,7 +296,7 @@ describe('WebSocket Manager', () => {
             }
           }));
         }
-        
+
         if (message.type === 'subscribed') {
           // Should only get the allowed topic
           expect(message.data.topics).toHaveLength(1);
@@ -305,7 +305,7 @@ describe('WebSocket Manager', () => {
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
   });
@@ -313,47 +313,47 @@ describe('WebSocket Manager', () => {
   describe('Room Management', () => {
     test('should allow joining public rooms', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'join_room',
           data: { room: 'public.general' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'room_joined') {
           expect(message.data.room).toBe('public.general');
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
 
     test('should deny access to private rooms for unauthenticated users', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({
           type: 'join_room',
           data: { room: 'user.123.private' }
         }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'error') {
           expect(message.error.code).toBe('ROOM_ACCESS_DENIED');
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
   });
@@ -362,10 +362,10 @@ describe('WebSocket Manager', () => {
     test('should broadcast to topic subscribers', async () => {
       const userId = 'user123';
       const token = jwt.sign({ userId, role: 'user' }, jwtSecret);
-      
+
       const ws = new WebSocket(wsUrl);
       let subscribed = false;
-      
+
       await new Promise((resolve) => {
         ws.on('open', () => {
           ws.send(JSON.stringify({
@@ -373,10 +373,10 @@ describe('WebSocket Manager', () => {
             data: { token, type: 'user' }
           }));
         });
-        
+
         ws.on('message', (data) => {
           const message = JSON.parse(data);
-          
+
           if (message.type === 'auth_success' && !subscribed) {
             subscribed = true;
             ws.send(JSON.stringify({
@@ -384,24 +384,24 @@ describe('WebSocket Manager', () => {
               data: { topics: ['system.status'] }
             }));
           }
-          
+
           if (message.type === 'subscribed') {
             resolve();
           }
         });
       });
-      
+
       // Broadcast message to topic
       const broadcastMessage = { alert: 'System maintenance in 5 minutes' };
       const sent = wsManager.broadcastToTopic('system.status', broadcastMessage);
-      
+
       expect(sent).toBe(1);
-      
+
       // Wait for message
       await new Promise((resolve) => {
         ws.on('message', (data) => {
           const message = JSON.parse(data);
-          
+
           if (message.type === 'topic_message') {
             expect(message.topic).toBe('system.status');
             expect(message.data).toEqual(broadcastMessage);
@@ -409,7 +409,7 @@ describe('WebSocket Manager', () => {
           }
         });
       });
-      
+
       ws.close();
     });
   });
@@ -417,21 +417,21 @@ describe('WebSocket Manager', () => {
   describe('Ping/Pong Mechanism', () => {
     test('should respond to ping messages', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({ type: 'ping' }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'pong') {
           expect(message.timestamp).toBeDefined();
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
   });
@@ -439,41 +439,41 @@ describe('WebSocket Manager', () => {
   describe('Error Handling', () => {
     test('should handle invalid JSON messages', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send('invalid json');
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'error') {
           expect(message.error.code).toBe('INVALID_JSON');
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
 
     test('should handle unknown message types', (done) => {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.on('open', () => {
         ws.send(JSON.stringify({ type: 'unknown_type' }));
       });
-      
+
       ws.on('message', (data) => {
         const message = JSON.parse(data);
-        
+
         if (message.type === 'error') {
           expect(message.error.code).toBe('UNKNOWN_MESSAGE_TYPE');
           ws.close();
           done();
         }
       });
-      
+
       ws.on('error', done);
     });
   });

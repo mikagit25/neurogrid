@@ -10,7 +10,7 @@ describe('Redis Components Unit Tests', () => {
   beforeAll(async () => {
     // Initialize Redis for testing
     redisConfig = new RedisConfig();
-    
+
     try {
       await redisConfig.initialize();
       cacheService = new CacheService(redisConfig);
@@ -119,7 +119,7 @@ describe('Redis Components Unit Tests', () => {
   describe('CacheService', () => {
     test('should handle fallback when Redis unavailable', async () => {
       const fallbackService = new CacheService(null);
-      
+
       // Should not throw errors
       await expect(fallbackService.set('test', { data: 'test' }, 60)).resolves.toBe(false);
       await expect(fallbackService.get('test')).resolves.toBeNull();
@@ -209,7 +209,7 @@ describe('Redis Components Unit Tests', () => {
       }
 
       const health = await cacheService.healthCheck();
-      
+
       expect(health).toHaveProperty('status');
       expect(health).toHaveProperty('latency');
       expect(health).toHaveProperty('memory');
@@ -229,7 +229,7 @@ describe('Redis Components Unit Tests', () => {
       await cacheService.get('stats:nonexistent'); // Miss
 
       const stats = await cacheService.getStats();
-      
+
       expect(stats).toHaveProperty('hits');
       expect(stats).toHaveProperty('misses');
       expect(stats).toHaveProperty('keys');
@@ -241,7 +241,7 @@ describe('Redis Components Unit Tests', () => {
   describe('CacheMiddleware', () => {
     test('should handle missing cache service gracefully', () => {
       const middleware = new CacheMiddleware(null);
-      
+
       expect(middleware.cacheService).toBeNull();
       expect(typeof middleware.cacheResponse).toBe('function');
       expect(typeof middleware.rateLimiter).toBe('function');
@@ -268,7 +268,7 @@ describe('Redis Components Unit Tests', () => {
         windowMs: 60000,
         max: 100
       });
-      
+
       expect(typeof rateLimiter).toBe('function');
       expect(rateLimiter.length).toBe(3); // req, res, next
     });
@@ -310,7 +310,7 @@ describe('Redis Components Unit Tests', () => {
 
       // Cache user data
       await cacheService.setUser(userId, userData, 1800);
-      
+
       // Retrieve user data
       const cachedUser = await cacheService.getUser(userId);
       expect(cachedUser).toEqual(userData);

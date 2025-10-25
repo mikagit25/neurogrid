@@ -69,8 +69,8 @@ describe('AuthenticationService', () => {
       // Mock database responses
       db.query
         .mockResolvedValueOnce({ rows: [] }) // Check if user exists
-        .mockResolvedValueOnce({ 
-          rows: [{ id: 'user-123', ...userData, password: 'hashed_password' }] 
+        .mockResolvedValueOnce({
+          rows: [{ id: 'user-123', ...userData, password: 'hashed_password' }]
         }); // Insert user
 
       const result = await authService.registerUser(userData);
@@ -90,8 +90,8 @@ describe('AuthenticationService', () => {
       };
 
       // Mock user already exists
-      db.query.mockResolvedValueOnce({ 
-        rows: [{ id: 'user-456', username: 'existinguser' }] 
+      db.query.mockResolvedValueOnce({
+        rows: [{ id: 'user-456', username: 'existinguser' }]
       });
 
       const result = await authService.registerUser(userData);

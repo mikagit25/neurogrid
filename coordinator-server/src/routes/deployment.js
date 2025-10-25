@@ -39,7 +39,7 @@ const deploymentManager = new ProductionDeploymentManager({
  *           type: object
  *         metrics:
  *           type: object
- * 
+ *
  *     DeploymentRequest:
  *       type: object
  *       properties:
@@ -78,7 +78,7 @@ const deploymentManager = new ProductionDeploymentManager({
 router.get('/status', auth, async (req, res) => {
   try {
     const status = deploymentManager.getDeploymentStatus();
-    
+
     res.json({
       success: true,
       data: status,
@@ -121,7 +121,7 @@ router.get('/status', auth, async (req, res) => {
 router.post('/deploy', auth, async (req, res) => {
   try {
     const { regions, scalingPolicy, enableMonitoring = true, enableBackups = true } = req.body;
-    
+
     // Validate deployment request
     if (!regions || !Array.isArray(regions) || regions.length === 0) {
       return res.status(400).json({
@@ -135,19 +135,19 @@ router.post('/deploy', auth, async (req, res) => {
     if (scalingPolicy) {
       deploymentManager.config.scalingPolicy = { ...deploymentManager.config.scalingPolicy, ...scalingPolicy };
     }
-    
+
     if (regions) {
       deploymentManager.config.regions = regions;
     }
 
     logger.info('Starting MainNet infrastructure deployment...');
-    
+
     // Start deployment (this is an async operation)
     const deploymentPromise = deploymentManager.deployMainNetInfrastructure();
-    
+
     // Return immediately with deployment ID
     const deploymentId = `deployment_${Date.now()}`;
-    
+
     res.json({
       success: true,
       deploymentId,
@@ -164,7 +164,7 @@ router.post('/deploy', auth, async (req, res) => {
     } catch (deploymentError) {
       logger.error('MainNet deployment failed:', deploymentError);
     }
-    
+
   } catch (error) {
     logger.error('Failed to initiate deployment:', error);
     res.status(500).json({
@@ -201,7 +201,7 @@ router.post('/deploy', auth, async (req, res) => {
 router.get('/regions/:region/status', auth, async (req, res) => {
   try {
     const { region } = req.params;
-    
+
     if (!deploymentManager.config.regions.includes(region)) {
       return res.status(404).json({
         success: false,
@@ -227,7 +227,7 @@ router.get('/regions/:region/status', auth, async (req, res) => {
       success: true,
       data: regionStatus
     });
-    
+
   } catch (error) {
     logger.error(`Failed to get region status for ${req.params.region}:`, error);
     res.status(500).json({
@@ -279,7 +279,7 @@ router.post('/regions/:region/scale', auth, async (req, res) => {
   try {
     const { region } = req.params;
     const { desiredCapacity, maxCapacity, minCapacity } = req.body;
-    
+
     if (!deploymentManager.config.regions.includes(region)) {
       return res.status(404).json({
         success: false,
@@ -324,14 +324,14 @@ router.post('/regions/:region/scale', auth, async (req, res) => {
 
     // Mock scaling operation (would call actual AWS Auto Scaling API)
     logger.info(`Scaling region ${region}:`, scalingRequest);
-    
+
     res.json({
       success: true,
       message: `Scaling operation initiated for ${region}`,
       request: scalingRequest,
       estimatedTime: '5-10 minutes'
     });
-    
+
   } catch (error) {
     logger.error(`Failed to scale region ${req.params.region}:`, error);
     res.status(500).json({
@@ -371,7 +371,7 @@ router.get('/health', auth, async (req, res) => {
     };
 
     let healthyRegions = 0;
-    
+
     for (const region of deploymentManager.config.regions) {
       try {
         const regionHealth = await deploymentManager.performHealthCheck(region);
@@ -402,7 +402,7 @@ router.get('/health', auth, async (req, res) => {
       success: true,
       data: healthStatus
     });
-    
+
   } catch (error) {
     logger.error('Failed to get health status:', error);
     res.status(500).json({
@@ -446,9 +446,9 @@ router.get('/alerts', auth, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 50, 100);
     const severity = req.query.severity;
-    
+
     let alerts = deploymentManager.alertHistory.slice(-limit);
-    
+
     if (severity) {
       alerts = alerts.filter(alert => alert.severity === severity);
     }
@@ -467,10 +467,10 @@ router.get('/alerts', auth, async (req, res) => {
     alerts.forEach(alert => {
       // Count by type
       alertsSummary.byType[alert.type] = (alertsSummary.byType[alert.type] || 0) + 1;
-      
+
       // Count by severity
       alertsSummary.bySeverity[alert.severity] = (alertsSummary.bySeverity[alert.severity] || 0) + 1;
-      
+
       // Count by region
       if (alert.region) {
         alertsSummary.byRegion[alert.region] = (alertsSummary.byRegion[alert.region] || 0) + 1;
@@ -485,7 +485,7 @@ router.get('/alerts', auth, async (req, res) => {
         timestamp: Date.now()
       }
     });
-    
+
   } catch (error) {
     logger.error('Failed to get alerts:', error);
     res.status(500).json({
@@ -531,7 +531,7 @@ router.get('/alerts', auth, async (req, res) => {
 router.post('/backup', auth, async (req, res) => {
   try {
     const { type = 'full', regions, description } = req.body;
-    
+
     const validTypes = ['full', 'incremental', 'configuration'];
     if (!validTypes.includes(type)) {
       return res.status(400).json({
@@ -542,7 +542,7 @@ router.post('/backup', auth, async (req, res) => {
     }
 
     const targetRegions = regions || deploymentManager.config.regions;
-    
+
     const backupRequest = {
       id: `backup_${Date.now()}`,
       type,
@@ -564,7 +564,7 @@ router.post('/backup', auth, async (req, res) => {
       backup: backupRequest,
       estimatedTime: type === 'full' ? '30-60 minutes' : '10-20 minutes'
     });
-    
+
   } catch (error) {
     logger.error('Failed to initiate backup:', error);
     res.status(500).json({
@@ -609,7 +609,7 @@ router.post('/backup', auth, async (req, res) => {
 router.post('/failover', auth, async (req, res) => {
   try {
     const { fromRegion, toRegion, reason, force = false } = req.body;
-    
+
     if (!fromRegion || !toRegion) {
       return res.status(400).json({
         success: false,
@@ -617,7 +617,7 @@ router.post('/failover', auth, async (req, res) => {
       });
     }
 
-    if (!deploymentManager.config.regions.includes(fromRegion) || 
+    if (!deploymentManager.config.regions.includes(fromRegion) ||
         !deploymentManager.config.regions.includes(toRegion)) {
       return res.status(400).json({
         success: false,
@@ -656,7 +656,7 @@ router.post('/failover', auth, async (req, res) => {
       estimatedTime: '5-15 minutes',
       warning: 'Failover operations may cause temporary service interruption'
     });
-    
+
   } catch (error) {
     logger.error('Failed to initiate failover:', error);
     res.status(500).json({

@@ -111,7 +111,7 @@ router.get('/metrics', (req, res) => {
 router.post('/shutdown', (req, res) => {
   try {
     logger.info('Shutdown requested via API');
-    
+
     res.json({
       success: true,
       message: 'Shutdown initiated'

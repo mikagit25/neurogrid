@@ -7,13 +7,13 @@
 const express = require('express');
 const router = express.Router();
 const authService = require('../services/AuthService');
-const { 
-  authenticateToken, 
-  requireAdmin, 
-  requireOwnership, 
+const {
+  authenticateToken,
+  requireAdmin,
+  requireOwnership,
   requireActiveAccount,
   createUserRateLimit,
-  logUserAction 
+  logUserAction
 } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
@@ -393,7 +393,7 @@ router.post('/verify-token', async (req, res) => {
 
     if (verification.valid) {
       const user = await authService.getUserById(verification.decoded.id);
-      
+
       res.json({
         success: true,
         valid: true,

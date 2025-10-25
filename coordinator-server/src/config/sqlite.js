@@ -22,19 +22,19 @@ class SQLiteManager {
       await fs.mkdir(dbDir, { recursive: true });
 
       this.db = new sqlite3.Database(this.dbPath);
-      
+
       // Включаем поддержку foreign keys
       await this.query('PRAGMA foreign_keys = ON');
-      
+
       // Создаем таблицы
       await this.createTables();
-      
+
       this.isConnected = true;
-      
+
       logger.info('SQLite database initialized successfully', {
         path: this.dbPath
       });
-      
+
       return true;
     } catch (error) {
       logger.error('Failed to initialize SQLite database', { error: error.message });
@@ -57,10 +57,10 @@ class SQLiteManager {
           if (err) {
             reject(err);
           } else {
-            resolve({ 
-              rows: [{ id: this.lastID }], 
+            resolve({
+              rows: [{ id: this.lastID }],
               rowCount: this.changes,
-              lastID: this.lastID 
+              lastID: this.lastID
             });
           }
         });
@@ -71,13 +71,13 @@ class SQLiteManager {
   async transaction(queries) {
     try {
       await this.query('BEGIN TRANSACTION');
-      
+
       const results = [];
       for (const query of queries) {
         const result = await this.query(query.text, query.params);
         results.push(result);
       }
-      
+
       await this.query('COMMIT');
       return results;
     } catch (error) {
@@ -240,7 +240,7 @@ class SQLiteManager {
   async healthCheck() {
     try {
       const result = await this.query('SELECT 1 as health_check, datetime("now") as timestamp');
-      
+
       return {
         status: 'healthy',
         timestamp: new Date().toISOString(),

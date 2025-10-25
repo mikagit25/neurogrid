@@ -27,7 +27,7 @@ class AdvancedAnalyticsEngine {
     this.consensusData = [];
     this.crossChainData = [];
     this.defiMetrics = [];
-    
+
     // ML Models
     this.models = {
       nodePerformancePredictor: null,
@@ -41,7 +41,7 @@ class AdvancedAnalyticsEngine {
     this.isAnalyzing = false;
     this.lastAnalysis = Date.now();
     this.analyticsResults = {};
-    
+
     this.initializeModels();
     logger.info('Advanced Analytics Engine initialized');
   }
@@ -401,7 +401,7 @@ class AdvancedAnalyticsEngine {
           const error = Math.pow(features[i][j] - reconstructionData[i * features[i].length + j], 2);
           totalError += error;
         }
-        
+
         const avgError = totalError / features[i].length;
         if (avgError > threshold) {
           anomalies.push({
@@ -417,8 +417,8 @@ class AdvancedAnalyticsEngine {
       return {
         anomalies,
         totalAnomalies: anomalies.length,
-        averageAnomalyScore: anomalies.length > 0 
-          ? anomalies.reduce((sum, a) => sum + a.errorScore, 0) / anomalies.length 
+        averageAnomalyScore: anomalies.length > 0
+          ? anomalies.reduce((sum, a) => sum + a.errorScore, 0) / anomalies.length
           : 0,
         lastChecked: Date.now()
       };
@@ -441,7 +441,7 @@ class AdvancedAnalyticsEngine {
       // Prepare time series features
       const recentMetrics = protocolMetrics.slice(-30);
       const sequences = [];
-      
+
       for (let i = 0; i < recentMetrics.length; i++) {
         sequences.push([
           recentMetrics[i].tvl / 1000000,
@@ -515,13 +515,13 @@ class AdvancedAnalyticsEngine {
    */
   async analyzeAllNodes() {
     const nodeAnalytics = {};
-    
+
     for (const [nodeId] of this.nodeMetrics) {
       try {
         const prediction = await this.predictNodePerformance(nodeId);
         const metrics = this.nodeMetrics.get(nodeId);
         const latest = metrics[metrics.length - 1];
-        
+
         nodeAnalytics[nodeId] = {
           currentPerformance: latest.computeScore / 100,
           predictedPerformance: prediction.prediction,
@@ -537,7 +537,7 @@ class AdvancedAnalyticsEngine {
         logger.error(`Failed to analyze node ${nodeId}:`, error);
       }
     }
-    
+
     return nodeAnalytics;
   }
 
@@ -547,13 +547,13 @@ class AdvancedAnalyticsEngine {
   async analyzeDeFiPerformance() {
     const protocols = [...new Set(this.defiMetrics.map(m => m.protocol))];
     const defiAnalytics = {};
-    
+
     for (const protocol of protocols) {
       try {
         const yieldPrediction = await this.predictDeFiYield(protocol);
         const protocolMetrics = this.defiMetrics.filter(m => m.protocol === protocol);
         const latest = protocolMetrics[protocolMetrics.length - 1];
-        
+
         defiAnalytics[protocol] = {
           currentAPY: latest?.apy || 0,
           predictedAPY: yieldPrediction.prediction,
@@ -568,14 +568,14 @@ class AdvancedAnalyticsEngine {
         logger.error(`Failed to analyze DeFi protocol ${protocol}:`, error);
       }
     }
-    
+
     return defiAnalytics;
   }
 
   /**
    * Helper methods
    */
-  generateNodeRecommendation(performanceScore, metrics) {
+  generateNodeRecommendation(performanceScore, _metrics) {
     if (performanceScore < 0.3) {
       return 'Critical: Node requires immediate attention. Check hardware and network connectivity.';
     } else if (performanceScore < 0.6) {
@@ -589,10 +589,10 @@ class AdvancedAnalyticsEngine {
 
   analyzeNetworkTrends() {
     if (this.networkMetrics.length < 10) return {};
-    
+
     const recent = this.networkMetrics.slice(-10);
     const older = this.networkMetrics.slice(-20, -10);
-    
+
     return {
       nodeCountTrend: this.calculateTrend(recent, older, 'activeNodes'),
       healthTrend: this.calculateTrend(recent, older, 'networkHealth'),
@@ -604,14 +604,14 @@ class AdvancedAnalyticsEngine {
   calculateTrend(recent, older, metric) {
     const recentAvg = recent.reduce((sum, m) => sum + m[metric], 0) / recent.length;
     const olderAvg = older.reduce((sum, m) => sum + m[metric], 0) / older.length;
-    
+
     if (olderAvg === 0) return 0;
     return ((recentAvg - olderAvg) / olderAvg) * 100;
   }
 
   generateNetworkAlerts(healthScore) {
     const alerts = [];
-    
+
     if (healthScore < this.config.alertThresholds.networkHealth) {
       alerts.push({
         type: 'warning',
@@ -619,11 +619,11 @@ class AdvancedAnalyticsEngine {
         severity: healthScore < 0.7 ? 'high' : 'medium'
       });
     }
-    
+
     return alerts;
   }
 
-  describeAnomaly(metrics, errorScore) {
+  describeAnomaly(metrics, _errorScore) {
     if (metrics.consensusRate < 80) {
       return 'Consensus rate significantly below normal';
     } else if (metrics.transactionThroughput < 100) {
@@ -637,12 +637,12 @@ class AdvancedAnalyticsEngine {
 
   assessDeFiRisk(metrics) {
     let riskScore = 0;
-    
+
     if (metrics.impermanentLoss > 5) riskScore += 30;
     if (metrics.slippageAverage > 2) riskScore += 20;
     if (metrics.healthFactor < 1.5) riskScore += 25;
     if (metrics.apy > 100) riskScore += 25; // Too good to be true
-    
+
     if (riskScore < 30) return 'low';
     if (riskScore < 60) return 'medium';
     return 'high';
@@ -650,11 +650,11 @@ class AdvancedAnalyticsEngine {
 
   analyzeCrossChainActivity() {
     const crossChainTxs = this.transactionData.filter(tx => tx.isCrossChain);
-    
+
     return {
       totalCrossChainTxs: crossChainTxs.length,
-      successRate: crossChainTxs.length > 0 
-        ? (crossChainTxs.filter(tx => tx.success).length / crossChainTxs.length) * 100 
+      successRate: crossChainTxs.length > 0
+        ? (crossChainTxs.filter(tx => tx.success).length / crossChainTxs.length) * 100
         : 0,
       averageConfirmationTime: crossChainTxs.length > 0
         ? crossChainTxs.reduce((sum, tx) => sum + tx.confirmationTime, 0) / crossChainTxs.length
@@ -668,7 +668,7 @@ class AdvancedAnalyticsEngine {
     crossChainTxs.forEach(tx => {
       chainCounts[tx.targetChain] = (chainCounts[tx.targetChain] || 0) + 1;
     });
-    
+
     return Object.entries(chainCounts)
       .sort(([,a], [,b]) => b - a)
       .slice(0, 5)
@@ -677,7 +677,7 @@ class AdvancedAnalyticsEngine {
 
   generateRecommendations() {
     const recommendations = [];
-    
+
     // Add various recommendations based on analysis
     if (this.getLatestNetworkHealth() < 85) {
       recommendations.push({
@@ -686,14 +686,14 @@ class AdvancedAnalyticsEngine {
         message: 'Consider adding more validator nodes to improve network health'
       });
     }
-    
+
     return recommendations;
   }
 
   generateSystemAlerts() {
     const alerts = [];
     const latestNetwork = this.networkMetrics[this.networkMetrics.length - 1];
-    
+
     if (latestNetwork?.networkHealth < 80) {
       alerts.push({
         type: 'critical',
@@ -701,7 +701,7 @@ class AdvancedAnalyticsEngine {
         timestamp: Date.now()
       });
     }
-    
+
     return alerts;
   }
 

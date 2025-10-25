@@ -18,7 +18,7 @@ class NotificationService {
       failed: 0,
       read: 0
     };
-    
+
     this.initializeTemplates();
     this.initializeChannels();
   }
@@ -127,19 +127,19 @@ class NotificationService {
       enabled: true,
       handler: this.sendWebNotification.bind(this)
     });
-    
+
     this.channels.set('email', {
       name: 'Email',
       enabled: true,
       handler: this.sendEmailNotification.bind(this)
     });
-    
+
     this.channels.set('sms', {
       name: 'SMS',
       enabled: false, // Requires SMS service setup
       handler: this.sendSMSNotification.bind(this)
     });
-    
+
     this.channels.set('push', {
       name: 'Push Notifications',
       enabled: false, // Requires push service setup
@@ -179,7 +179,7 @@ class NotificationService {
         if (!template) {
           throw new Error(`Template ${templateId} not found`);
         }
-        
+
         finalTitle = this.renderTemplate(template.title, variables);
         finalBody = this.renderTemplate(template.body, variables);
       }
@@ -246,7 +246,7 @@ class NotificationService {
 
       // Check user preferences
       const userPrefs = this.getUserPreferences(notification.userId);
-      const allowedChannels = notification.channels.filter(channel => 
+      const allowedChannels = notification.channels.filter(channel =>
         userPrefs.channels[channel]?.enabled !== false
       );
 
@@ -287,9 +287,9 @@ class NotificationService {
       // Update final status
       const hasSuccess = Object.values(notification.deliveryStatus)
         .some(status => status.status === 'delivered');
-      
+
       notification.status = hasSuccess ? 'sent' : 'failed';
-      
+
       if (hasSuccess) {
         this.statistics.sent++;
         this.statistics.delivered++;
@@ -322,7 +322,7 @@ class NotificationService {
       userId: notification.userId,
       title: notification.title
     });
-    
+
     // Simulate delay
     await new Promise(resolve => setTimeout(resolve, 100));
   }
@@ -338,7 +338,7 @@ class NotificationService {
       to: userPrefs.email || 'user@example.com',
       subject: notification.title
     });
-    
+
     // Simulate delay
     await new Promise(resolve => setTimeout(resolve, 200));
   }
@@ -354,7 +354,7 @@ class NotificationService {
       to: userPrefs.phone || '+1234567890',
       message: notification.body
     });
-    
+
     // Simulate delay
     await new Promise(resolve => setTimeout(resolve, 300));
   }
@@ -369,7 +369,7 @@ class NotificationService {
       userId: notification.userId,
       title: notification.title
     });
-    
+
     // Simulate delay
     await new Promise(resolve => setTimeout(resolve, 150));
   }
@@ -520,7 +520,7 @@ class NotificationService {
     const currentPrefs = this.getUserPreferences(userId);
     const updatedPrefs = { ...currentPrefs, ...preferences };
     this.userPreferences.set(userId, updatedPrefs);
-    
+
     logger.info('User notification preferences updated', { userId });
     return updatedPrefs;
   }

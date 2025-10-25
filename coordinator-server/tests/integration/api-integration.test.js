@@ -10,12 +10,12 @@ describe('API Integration Tests', () => {
     // Initialize test server
     process.env.NODE_ENV = 'test';
     process.env.PORT = '0'; // Use random available port
-    
+
     try {
       const config = await ConfigManager.create();
       const testServer = new CoordinatorServer(config);
       await testServer.initialize();
-      
+
       app = testServer.app;
       server = testServer.server;
     } catch (error) {
@@ -121,7 +121,7 @@ describe('API Integration Tests', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('token');
       expect(response.body).toHaveProperty('user');
-      
+
       authToken = response.body.token;
     });
 
@@ -174,7 +174,7 @@ describe('API Integration Tests', () => {
       );
 
       const responses = await Promise.all(requests);
-      
+
       // Some requests should be rate limited
       const rateLimitedResponses = responses.filter(res => res.status === 429);
       expect(rateLimitedResponses.length).toBeGreaterThan(0);

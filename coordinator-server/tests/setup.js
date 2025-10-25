@@ -5,6 +5,7 @@ jest.mock('../src/config/database', () => require('./__mocks__/database'));
 jest.mock('../src/utils/logger', () => require('./__mocks__/logger'));
 
 const logger = require('../src/utils/logger');
+const { db } = require('../src/config/database');
 
 // Test database configuration
 const testDbConfig = {
@@ -67,15 +68,15 @@ async function cleanTestData() {
     'api_keys',
     'users'
   ];
-  
+
   // Disable foreign key checks temporarily
   await db.query('SET session_replication_role = replica;');
-  
+
   // Truncate tables in reverse dependency order
   for (const table of tables) {
     await db.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE;`);
   }
-  
+
   // Re-enable foreign key checks
   await db.query('SET session_replication_role = DEFAULT;');
 }
@@ -95,14 +96,14 @@ global.testUtils = {
       is_active: true,
       email_verified: true
     };
-    
+
     const user = { ...defaultUser, ...userData };
     const result = await db.query(`
       INSERT INTO users (username, email, password_hash, role, is_active, email_verified)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `, [user.username, user.email, user.password_hash, user.role, user.is_active, user.email_verified]);
-    
+
     return result.rows[0];
   },
 
@@ -119,14 +120,14 @@ global.testUtils = {
       hardware_info: JSON.stringify({ ram: '16GB', gpu: 'RTX 3080' }),
       is_verified: true
     };
-    
+
     const node = { ...defaultNode, ...nodeData };
     const result = await db.query(`
       INSERT INTO nodes (user_id, name, description, status, node_type, capabilities, hardware_info, is_verified)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `, [userId, node.name, node.description, node.status, node.node_type, node.capabilities, node.hardware_info, node.is_verified]);
-    
+
     return result.rows[0];
   },
 
@@ -143,14 +144,14 @@ global.testUtils = {
       requirements: JSON.stringify({ gpu_memory: '8GB' }),
       parameters: JSON.stringify({ epochs: 10 })
     };
-    
+
     const job = { ...defaultJob, ...jobData };
     const result = await db.query(`
       INSERT INTO jobs (user_id, title, description, job_type, status, priority, requirements, parameters)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `, [userId, job.title, job.description, job.job_type, job.status, job.priority, job.requirements, job.parameters]);
-    
+
     return result.rows[0];
   },
 
@@ -161,20 +162,20 @@ global.testUtils = {
     const crypto = require('crypto');
     const key = crypto.randomBytes(32).toString('hex');
     const keyHash = crypto.createHash('sha256').update(key).digest('hex');
-    
+
     const defaultApiKey = {
       name: 'Test API Key',
       permissions: JSON.stringify(['jobs:read', 'jobs:create']),
       is_active: true
     };
-    
+
     const apiKey = { ...defaultApiKey, ...keyData };
     const result = await db.query(`
       INSERT INTO api_keys (user_id, name, key_hash, permissions, is_active)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `, [userId, apiKey.name, keyHash, apiKey.permissions, apiKey.is_active]);
-    
+
     return { ...result.rows[0], key };
   },
 

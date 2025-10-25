@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 
 /**
  * Prometheus Metrics Exporter for NeuroGrid
- * 
+ *
  * Provides Prometheus-compatible metrics endpoint and
  * integrates with the existing monitoring service.
  */
@@ -14,20 +14,20 @@ class PrometheusExporter {
     this.port = options.port || 9090;
     this.path = options.path || '/metrics';
     this.collectInterval = options.collectInterval || 15000; // 15 seconds
-    
+
     // Create separate registry for Prometheus metrics
     this.register = new prometheus.Registry();
-    
+
     // Collect default Node.js metrics
     prometheus.collectDefaultMetrics({
       register: this.register,
       prefix: 'neurogrid_',
       gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5]
     });
-    
+
     this.initializeCustomMetrics();
     this.setupMetricsCollection();
-    
+
     logger.info('Prometheus exporter initialized', {
       port: this.port,
       path: this.path,
@@ -256,9 +256,9 @@ class PrometheusExporter {
       res.end = (...args) => {
         const duration = Date.now() - startTime;
         const route = req.route?.path || req.path || 'unknown';
-        
+
         this.recordHttpRequest(req.method, route, res.statusCode, duration);
-        
+
         originalEnd.apply(res, args);
       };
 

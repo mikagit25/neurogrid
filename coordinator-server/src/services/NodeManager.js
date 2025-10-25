@@ -11,7 +11,7 @@ class NodeManager {
     this.heartbeatInterval = 30000; // 30 seconds
     this.nodeTimeout = 90000; // 90 seconds
     this.cleanupInterval = null;
-    
+
     this.startCleanupTimer();
   }
 
@@ -81,7 +81,7 @@ class NodeManager {
 
       // Determine new status
       const newStatus = heartbeatData.status === 'busy' ? 'busy' : 'online';
-      
+
       // Update hardware info with current availability
       const updatedHardwareInfo = { ...node.hardware_info };
       if (heartbeatData.resources) {
@@ -92,7 +92,7 @@ class NodeManager {
 
       // Update node status and last seen
       await Node.updateStatus(nodeId, newStatus);
-      
+
       // Update hardware info
       await db.query(
         'UPDATE nodes SET hardware_info = $1, updated_at = $2 WHERE id = $3',
@@ -125,7 +125,7 @@ class NodeManager {
     try {
       // Build requirements for database query
       const dbRequirements = {};
-      
+
       if (requirements.minVram) {
         dbRequirements.minVramGB = requirements.minVram;
       }
@@ -141,7 +141,7 @@ class NodeManager {
 
       // Get available nodes from database
       let availableNodes = await Node.getAvailableNodes(dbRequirements);
-      
+
       // Additional filtering for model requirements
       if (requirements.models && requirements.models.length > 0) {
         availableNodes = availableNodes.filter(node => {
@@ -149,7 +149,7 @@ class NodeManager {
           return requirements.models.some(model => supportedModels.includes(model));
         });
       }
-      
+
       // Filter out nodes that haven't sent heartbeat recently
       const now = Date.now();
       availableNodes = availableNodes.filter(node => {
@@ -236,7 +236,7 @@ class NodeManager {
           SUM(total_jobs_completed) as network_jobs_completed
         FROM nodes
       `);
-      
+
       const allNodes = await this.getAllNodes();
       const activeNodes = allNodes.filter(n => n.status === 'online');
 
@@ -248,14 +248,14 @@ class NodeManager {
         busy_nodes: parseInt(result.rows[0].busy_nodes),
         avg_reputation: parseFloat(result.rows[0].avg_reputation) || 0,
         network_jobs_completed: parseInt(result.rows[0].network_jobs_completed) || 0,
-        
+
         total_tasks: allNodes.reduce((sum, n) => sum + (n.tasks_completed || 0), 0),
         current_tasks: activeNodes.reduce((sum, n) => sum + (n.current_tasks || 0), 0),
-        
-        avg_node_rating: activeNodes.length > 0 
-          ? activeNodes.reduce((sum, n) => sum + (n.rating || 0), 0) / activeNodes.length 
+
+        avg_node_rating: activeNodes.length > 0
+          ? activeNodes.reduce((sum, n) => sum + (n.rating || 0), 0) / activeNodes.length
           : 0,
-        
+
         regions: [...new Set(allNodes.map(n => n.region).filter(Boolean))],
         supported_models: [...new Set(allNodes.flatMap(n => n.supported_models || []))]
       };
@@ -301,18 +301,18 @@ class NodeManager {
     if (!metrics) return;
 
     const now = new Date();
-    
+
     // Store historical metrics (keep last 100 data points)
     if (metricsData.cpuUsage !== undefined) {
       metrics.cpuUsage.push({ value: metricsData.cpuUsage, timestamp: now });
       if (metrics.cpuUsage.length > 100) metrics.cpuUsage.shift();
     }
-    
+
     if (metricsData.memoryUsage !== undefined) {
       metrics.memoryUsage.push({ value: metricsData.memoryUsage, timestamp: now });
       if (metrics.memoryUsage.length > 100) metrics.memoryUsage.shift();
     }
-    
+
     if (metricsData.vramUsage !== undefined) {
       metrics.vramUsage.push({ value: metricsData.vramUsage, timestamp: now });
       if (metrics.vramUsage.length > 100) metrics.vramUsage.shift();
@@ -339,12 +339,12 @@ class NodeManager {
 
     this.nodes.forEach((node, nodeId) => {
       const timeSinceHeartbeat = now - node.lastHeartbeat.getTime();
-      
+
       if (timeSinceHeartbeat > this.nodeTimeout && node.status !== 'offline') {
         node.status = 'offline';
         inactiveNodes.push(nodeId);
       }
-      
+
       // Remove completely dead nodes after 24 hours
       if (timeSinceHeartbeat > 24 * 60 * 60 * 1000) {
         this.removeNode(nodeId, 'timeout');
@@ -388,20 +388,20 @@ class NodeManager {
       if (filter.status) {
         conditions.status = filter.status;
       }
-      
+
       // Get nodes from database
       let nodes = await db.query(
         'SELECT * FROM nodes WHERE ($1::text IS NULL OR status = $1) ORDER BY created_at DESC',
         [filter.status || null]
       );
-      
+
       nodes = nodes.rows;
-      
+
       // Additional filtering
       if (filter.region) {
         nodes = nodes.filter(n => n.location?.region === filter.region);
       }
-      
+
       if (filter.minRating) {
         nodes = nodes.filter(n => (n.reputation_score || 0) >= filter.minRating);
       }
