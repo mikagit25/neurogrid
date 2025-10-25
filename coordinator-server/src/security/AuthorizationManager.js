@@ -235,7 +235,7 @@ class AuthorizationManager extends EventEmitter {
             
             // Check dynamic permissions
             if (this.config.enableDynamicPermissions) {
-                const dynamicPermission = await this.checkDynamicPermission(userRoles, requiredPermission, resource, context);
+                const dynamicPermission = this.checkDynamicPermission(userRoles, requiredPermission, resource, context);
                 if (dynamicPermission) {
                     this.stats.grantedRequests++;
                     return true;

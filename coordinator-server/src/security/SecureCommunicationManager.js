@@ -550,7 +550,6 @@ class SecureCommunicationManager extends EventEmitter {
         valid: errors.length === 0,
         errors
       };
-
     } catch (error) {
       return {
         valid: false,
@@ -563,6 +562,10 @@ class SecureCommunicationManager extends EventEmitter {
     // OCSP (Online Certificate Status Protocol) validation
     // This is a placeholder - real implementation would check certificate revocation status
     try {
+      if (!certificate) {
+        throw new Error('Certificate is required for OCSP validation');
+      }
+      
       // In production, this would make an OCSP request to the CA
       return {
         valid: true,

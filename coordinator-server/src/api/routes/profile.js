@@ -312,7 +312,7 @@ router.get('/stats', authenticate, async (req, res) => {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         current: tokenStats,
-        period: periodStats,
+        periodStats: periodStats,
         daily: dailyData
       }
     });

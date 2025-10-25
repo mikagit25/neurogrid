@@ -365,4 +365,255 @@ router.get('/alerts',
     requirePermission('monitoring:read'),
     async (req, res) => {
         try {
-            const { status, limit } = req.query;\n            const alerts = alertingSystem.getAlerts(status, parseInt(limit) || 50);\n            \n            res.json({\n                success: true,\n                data: alerts\n            });\n            \n        } catch (error) {\n            console.error('Alerts retrieval error:', error);\n            res.status(500).json({\n                success: false,\n                error: 'Failed to retrieve alerts'\n            });\n        }\n    }\n);\n\n/**\n * GET /api/monitoring/alerts/history\n * Get alert history\n */\nrouter.get('/alerts/history',\n    apiRateLimit,\n    authenticate,\n    requirePermission('monitoring:read'),\n    async (req, res) => {\n        try {\n            const limit = parseInt(req.query.limit) || 100;\n            const history = alertingSystem.getAlertHistory(limit);\n            \n            res.json({\n                success: true,\n                data: history\n            });\n            \n        } catch (error) {\n            console.error('Alert history retrieval error:', error);\n            res.status(500).json({\n                success: false,\n                error: 'Failed to retrieve alert history'\n            });\n        }\n    }\n);\n\n/**\n * POST /api/monitoring/alerts/:id/acknowledge\n * Acknowledge an alert\n */\nrouter.post('/alerts/:id/acknowledge',\n    apiRateLimit,\n    authenticate,\n    requirePermission('monitoring:admin'),\n    async (req, res) => {\n        try {\n            const { id } = req.params;\n            const result = alertingSystem.acknowledgeAlert(id, req.user.id);\n            \n            if (result.success) {\n                res.json({\n                    success: true,\n                    message: 'Alert acknowledged successfully',\n                    data: result.alert\n                });\n            } else {\n                res.status(404).json({\n                    success: false,\n                    error: result.error\n                });\n            }\n            \n        } catch (error) {\n            console.error('Alert acknowledgment error:', error);\n            res.status(500).json({\n                success: false,\n                error: 'Failed to acknowledge alert'\n            });\n        }\n    }\n);\n\n/**\n * POST /api/monitoring/alerts/:id/resolve\n * Resolve an alert\n */\nrouter.post('/alerts/:id/resolve',\n    apiRateLimit,\n    authenticate,\n    requirePermission('monitoring:admin'),\n    validateInput(alertActionSchema),\n    async (req, res) => {\n        try {\n            const { id } = req.params;\n            const { resolution } = req.body;\n            \n            const result = alertingSystem.resolveAlert(id, req.user.id, resolution);\n            \n            if (result.success) {\n                res.json({\n                    success: true,\n                    message: 'Alert resolved successfully',\n                    data: result.alert\n                });\n            } else {\n                res.status(404).json({\n                    success: false,\n                    error: result.error\n                });\n            }\n            \n        } catch (error) {\n            console.error('Alert resolution error:', error);\n            res.status(500).json({\n                success: false,\n                error: 'Failed to resolve alert'\n            });\n        }\n    }\n);\n\n/**\n * GET /api/monitoring/dashboard\n * Get dashboard data (combined overview)\n */\nrouter.get('/dashboard',\n    apiRateLimit,\n    authenticate,\n    requirePermission('monitoring:read'),\n    async (req, res) => {\n        try {\n            const performanceStats = performanceMonitor.getPerformanceStats();\n            const metricsStats = metricsCollector.getStats();\n            const alertStats = alertingSystem.getAlertStats();\n            const analytics = systemAnalytics.getAnalyticsData();\n            \n            const dashboard = {\n                timestamp: new Date(),\n                health: {\n                    status: performanceStats.health.errorRate > 10 ? 'critical' :\n                           performanceStats.health.errorRate > 5 ? 'warning' : 'healthy',\n                    responseTime: performanceStats.health.responseTime,\n                    errorRate: performanceStats.health.errorRate,\n                    throughput: performanceStats.health.throughput,\n                    memoryUsage: performanceStats.health.memoryUsage,\n                    cpuUsage: performanceStats.health.cpuUsage\n                },\n                metrics: {\n                    totalDataPoints: metricsStats.totalDataPoints,\n                    collectionsCount: metricsStats.collectionsCount,\n                    uptime: metricsStats.uptime\n                },\n                alerts: {\n                    active: alertStats.activeAlerts,\n                    total: alertStats.totalAlerts,\n                    escalated: alertStats.escalatedAlerts,\n                    suppressed: alertStats.suppressedAlerts\n                },\n                analytics: {\n                    trends: Object.keys(analytics.trends || {}).length,\n                    anomalies: (analytics.anomalies || []).length,\n                    recommendations: (analytics.recommendations || []).length,\n                    insights: (analytics.insights || []).length\n                },\n                recentData: {\n                    performanceHistory: performanceMonitor.getPerformanceHistory('1h'),\n                    recentAlerts: alertingSystem.getAlerts('active', 5),\n                    topRecommendations: analytics.recommendations?.slice(0, 3) || []\n                }\n            };\n            \n            res.json({\n                success: true,\n                data: dashboard\n            });\n            \n        } catch (error) {\n            console.error('Dashboard data error:', error);\n            res.status(500).json({\n                success: false,\n                error: 'Failed to retrieve dashboard data'\n            });\n        }\n    }\n);\n\n/**\n * GET /api/monitoring/stats\n * Get comprehensive monitoring statistics\n */\nrouter.get('/stats',\n    apiRateLimit,\n    authenticate,\n    requirePermission('monitoring:read'),\n    async (req, res) => {\n        try {\n            const stats = {\n                metrics: metricsCollector.getStats(),\n                performance: performanceMonitor.getPerformanceStats(),\n                alerts: alertingSystem.getAlertStats(),\n                system: {\n                    uptime: process.uptime(),\n                    memory: process.memoryUsage(),\n                    pid: process.pid,\n                    version: process.version,\n                    platform: process.platform\n                }\n            };\n            \n            res.json({\n                success: true,\n                data: stats\n            });\n            \n        } catch (error) {\n            console.error('Stats retrieval error:', error);\n            res.status(500).json({\n                success: false,\n                error: 'Failed to retrieve statistics'\n            });\n        }\n    }\n);\n\n/**\n * POST /api/monitoring/reset\n * Reset monitoring statistics (Admin only)\n */\nrouter.post('/reset',\n    apiRateLimit,\n    authenticate,\n    requirePermission('monitoring:admin'),\n    async (req, res) => {\n        try {\n            performanceMonitor.resetStats();\n            \n            res.json({\n                success: true,\n                message: 'Monitoring statistics reset successfully'\n            });\n            \n        } catch (error) {\n            console.error('Stats reset error:', error);\n            res.status(500).json({\n                success: false,\n                error: 'Failed to reset statistics'\n            });\n        }\n    }\n);\n\nmodule.exports = router;
+            const { status, limit } = req.query;
+            const alerts = alertingSystem.getAlerts(status, parseInt(limit) || 50);
+            
+            res.json({
+                success: true,
+                data: alerts
+            });
+            
+        } catch (error) {
+            console.error('Alerts retrieval error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to retrieve alerts'
+            });
+        }
+    }
+);
+
+/**
+ * GET /api/monitoring/alerts/history
+ * Get alert history
+ */
+router.get('/alerts/history',
+    apiRateLimit,
+    authenticate,
+    requirePermission('monitoring:read'),
+    async (req, res) => {
+        try {
+            const limit = parseInt(req.query.limit) || 100;
+            const history = alertingSystem.getAlertHistory(limit);
+            
+            res.json({
+                success: true,
+                data: history
+            });
+            
+        } catch (error) {
+            console.error('Alert history retrieval error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to retrieve alert history'
+            });
+        }
+    }
+);
+
+/**
+ * POST /api/monitoring/alerts/:id/acknowledge
+ * Acknowledge an alert
+ */
+router.post('/alerts/:id/acknowledge',
+    apiRateLimit,
+    authenticate,
+    requirePermission('monitoring:admin'),
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const result = alertingSystem.acknowledgeAlert(id, req.user.id);
+            
+            if (result.success) {
+                res.json({
+                    success: true,
+                    message: 'Alert acknowledged successfully',
+                    data: result.alert
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+            
+        } catch (error) {
+            console.error('Alert acknowledgment error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to acknowledge alert'
+            });
+        }
+    }
+);
+
+/**
+ * POST /api/monitoring/alerts/:id/resolve
+ * Resolve an alert
+ */
+router.post('/alerts/:id/resolve',
+    apiRateLimit,
+    authenticate,
+    requirePermission('monitoring:admin'),
+    validateInput(alertActionSchema),
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { resolution } = req.body;
+            
+            const result = alertingSystem.resolveAlert(id, req.user.id, resolution);
+            
+            if (result.success) {
+                res.json({
+                    success: true,
+                    message: 'Alert resolved successfully',
+                    data: result.alert
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+            
+        } catch (error) {
+            console.error('Alert resolution error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to resolve alert'
+            });
+        }
+    }
+);
+
+/**
+ * GET /api/monitoring/dashboard
+ * Get dashboard data (combined overview)
+ */
+router.get('/dashboard',
+    apiRateLimit,
+    authenticate,
+    requirePermission('monitoring:read'),
+    async (req, res) => {
+        try {
+            const performanceStats = performanceMonitor.getPerformanceStats();
+            const metricsStats = metricsCollector.getStats();
+            const alertStats = alertingSystem.getAlertStats();
+            const analytics = systemAnalytics.getAnalyticsData();
+            
+            const dashboard = {
+                timestamp: new Date(),
+                health: {
+                    status: performanceStats.health.errorRate > 10 ? 'critical' :
+                           performanceStats.health.errorRate > 5 ? 'warning' : 'healthy',
+                    responseTime: performanceStats.health.responseTime,
+                    errorRate: performanceStats.health.errorRate,
+                    throughput: performanceStats.health.throughput,
+                    memoryUsage: performanceStats.health.memoryUsage,
+                    cpuUsage: performanceStats.health.cpuUsage
+                },
+                metrics: {
+                    totalDataPoints: metricsStats.totalDataPoints,
+                    collectionsCount: metricsStats.collectionsCount,
+                    uptime: metricsStats.uptime
+                },
+                alerts: {
+                    active: alertStats.activeAlerts,
+                    total: alertStats.totalAlerts,
+                    escalated: alertStats.escalatedAlerts,
+                    suppressed: alertStats.suppressedAlerts
+                },
+                analytics: {
+                    trends: Object.keys(analytics.trends || {}).length,
+                    anomalies: (analytics.anomalies || []).length,
+                    recommendations: (analytics.recommendations || []).length,
+                    insights: (analytics.insights || []).length
+                },
+                recentData: {
+                    performanceHistory: performanceMonitor.getPerformanceHistory('1h'),
+                    recentAlerts: alertingSystem.getAlerts('active', 5),
+                    topRecommendations: analytics.recommendations?.slice(0, 3) || []
+                }
+            };
+            
+            res.json({
+                success: true,
+                data: dashboard
+            });
+            
+        } catch (error) {
+            console.error('Dashboard data error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to retrieve dashboard data'
+            });
+        }
+    }
+);
+
+/**
+ * GET /api/monitoring/stats
+ * Get comprehensive monitoring statistics
+ */
+router.get('/stats',
+    apiRateLimit,
+    authenticate,
+    requirePermission('monitoring:read'),
+    async (req, res) => {
+        try {
+            const stats = {
+                metrics: metricsCollector.getStats(),
+                performance: performanceMonitor.getPerformanceStats(),
+                alerts: alertingSystem.getAlertStats(),
+                system: {
+                    uptime: process.uptime(),
+                    memory: process.memoryUsage(),
+                    pid: process.pid,
+                    version: process.version,
+                    platform: process.platform
+                }
+            };
+            
+            res.json({
+                success: true,
+                data: stats
+            });
+            
+        } catch (error) {
+            console.error('Stats retrieval error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to retrieve statistics'
+            });
+        }
+    }
+);
+
+/**
+ * POST /api/monitoring/reset
+ * Reset monitoring statistics (Admin only)
+ */
+router.post('/reset',
+    apiRateLimit,
+    authenticate,
+    requirePermission('monitoring:admin'),
+    async (req, res) => {
+        try {
+            performanceMonitor.resetStats();
+            
+            res.json({
+                success: true,
+                message: 'Monitoring statistics reset successfully'
+            });
+            
+        } catch (error) {
+            console.error('Stats reset error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to reset statistics'
+            });
+        }
+    }
+);
+
+module.exports = router;

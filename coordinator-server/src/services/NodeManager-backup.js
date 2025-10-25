@@ -257,19 +257,6 @@ class NodeManager {
         network_jobs_completed: 0
       };
     }
-      
-      total_tasks: allNodes.reduce((sum, n) => sum + n.tasks_completed, 0),
-      current_tasks: activeNodes.reduce((sum, n) => sum + n.current_tasks, 0),
-      
-      avg_node_rating: activeNodes.length > 0 
-        ? activeNodes.reduce((sum, n) => sum + n.rating, 0) / activeNodes.length 
-        : 0,
-      
-      regions: [...new Set(allNodes.map(n => n.region))],
-      supported_models: [...new Set(allNodes.flatMap(n => n.supported_models))]
-    };
-
-    return stats;
   }
 
   /**
