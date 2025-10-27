@@ -15,6 +15,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
+// Hoster.by compatibility
+const HOST = process.env.HOST || '0.0.0.0';
+
 // Production configuration
 const CONFIG = {
   production: NODE_ENV === 'production',
@@ -692,10 +695,10 @@ function generateAIResponse(prompt) {
 }
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`🚀 NeuroGrid Server started successfully!`);
   console.log(`📍 Environment: ${NODE_ENV}`);
-  console.log(`🌐 Server running on port: ${PORT}`);
+  console.log(`🌐 Server running on ${HOST}:${PORT}`);
   console.log(`🔗 Local access: http://localhost:${PORT}`);
   if (CONFIG.domain !== 'localhost') {
     console.log(`🌍 Public access: https://${CONFIG.domain}`);

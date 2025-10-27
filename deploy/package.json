@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "echo \"MVP deployment test\" && exit 0"
+    "test": "echo \"MVP deployment test\" && exit 0",
+    "install": "npm install --production"
   },
   "keywords": ["ai", "gpu", "decentralized", "inference", "blockchain"],
   "author": "NeuroGrid Team",

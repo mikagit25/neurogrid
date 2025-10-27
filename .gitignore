@@ -108,6 +108,19 @@ web_modules/
 .env.test.local
 .env.production.local
 
+# Security sensitive files
+config/secrets.json
+config/production.json
+ssl/
+certificates/
+keys/
+*.pem
+*.key
+*.crt
+*.csr
+jwt-secret*
+auth-key*
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

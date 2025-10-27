@@ -1,0 +1,89 @@
+# NeuroGrid Python Constraints
+# This file pins compatible versions for stable deployments
+
+# ==================================
+# PYTHON VERSION COMPATIBILITY
+# ==================================
+# Minimum Python version: 3.10
+# Recommended: Python 3.11
+# Tested versions: 3.10, 3.11, 3.12
+
+# ==================================
+# CUDA/TORCH COMPATIBILITY MATRIX
+# ==================================
+# CUDA 11.8: torch>=2.0.0,<2.2.0
+# CUDA 12.1: torch>=2.1.0,<2.3.0
+
+# For CUDA 11.8 (most compatible)
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+# ==================================
+# CORE ML CONSTRAINTS
+# ==================================
+transformers==4.36.2
+tokenizers==0.15.1
+accelerate==0.25.0
+diffusers==0.24.0
+huggingface-hub==0.19.4
+
+# ==================================
+# SYSTEM DEPENDENCIES
+# ==================================
+# Audio processing
+openai-whisper==20231117
+librosa==0.10.1
+soundfile==0.12.1
+
+# Image processing
+Pillow==10.1.0
+opencv-python==4.8.1.78
+numpy==1.24.4
+
+# System monitoring
+psutil==5.9.6
+GPUtil==1.4.0
+pynvml==11.525.150
+
+# ==================================
+# NETWORKING & HTTP
+# ==================================
+aiohttp==3.9.1
+websockets==12.0
+requests==2.31.0
+urllib3==2.1.0
+
+# ==================================
+# DEVELOPMENT CONSTRAINTS
+# ==================================
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Code quality
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# ==================================
+# SECURITY CONSTRAINTS
+# ==================================
+cryptography>=41.0.7
+pyjwt>=2.8.0
+bcrypt>=4.1.2
+
+# ==================================
+# PLATFORM SPECIFIC
+# ==================================
+# Windows only
+pywin32==306; sys_platform == "win32"
+
+# Linux only  
+python-systemd==234; sys_platform == "linux"
+
+# macOS only
+py-applescript==1.0.3; sys_platform == "darwin"
