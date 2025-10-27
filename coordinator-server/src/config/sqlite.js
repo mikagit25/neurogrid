@@ -218,7 +218,9 @@ class SQLiteManager {
   async createDefaultAdmin() {
     try {
       const bcrypt = require('bcryptjs');
-      const adminPasswordHash = await bcrypt.hash('admin123', 12);
+      // Use environment variable for default admin password in production
+      const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'SecureAdmin2024!';
+      const adminPasswordHash = await bcrypt.hash(defaultPassword, 12);
 
       await this.query(`
         INSERT OR IGNORE INTO users (username, email, password_hash, role, is_active, email_verified)

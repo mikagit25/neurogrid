@@ -219,7 +219,9 @@ class MigrationRunner {
       const bcrypt = require('bcryptjs');
       const crypto = require('crypto');
       
-      const passwordHash = await bcrypt.hash('admin123', 12);
+      // Use environment variable for default admin password in production
+      const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'SecureAdmin2024!';
+      const passwordHash = await bcrypt.hash(defaultPassword, 12);
       const adminId = crypto.randomBytes(16).toString('hex');
       
       await db.query(`

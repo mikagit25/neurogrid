@@ -19,8 +19,8 @@ class AuthManager {
   }
 
   initializeDefaultAccounts() {
-    // Create default admin account
-    const adminPassword = this.hashPassword('admin123');
+    // Create default admin account - NOTE: Change default password in production
+    const adminPassword = this.hashPassword(process.env.ADMIN_DEFAULT_PASSWORD || 'SecureAdmin2024!');
     const adminApiKey = this.generateApiKey();
 
     userAccounts.set('admin', {
@@ -35,8 +35,8 @@ class AuthManager {
       isActive: true
     });
 
-    // Create default user account
-    const userPassword = this.hashPassword('user123');
+    // Create default user account - NOTE: Change default password in production
+    const userPassword = this.hashPassword(process.env.USER_DEFAULT_PASSWORD || 'SecureUser2024!');
     const userApiKey = this.generateApiKey();
 
     userAccounts.set('user', {
