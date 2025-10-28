@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1270" height="760" viewBox="0 0 1270 760" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f1e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Grid pattern -->
+    <pattern id="heroGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#16213e" stroke-width="1"/>
+    </pattern>
+  </defs>
+  
+  <rect width="1270" height="760" fill="url(#bgGradient)"/>
+  <rect width="1270" height="760" fill="url(#heroGrid)" opacity="0.5"/>
+  
+  <!-- Left side: Dashboard mockup -->
+  <g id="dashboard">
+    <!-- Dashboard container -->
+    <rect x="50" y="120" width="550" height="520" rx="8" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="2"/>
+    
+    <!-- Dashboard header -->
+    <rect x="50" y="120" width="550" height="50" rx="8" fill="#252535"/>
+    <text x="70" y="152" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#fff">NeuroGrid Dashboard</text>
+    
+    <!-- Stats cards -->
+    <rect x="70" y="190" width="160" height="100" rx="6" fill="#252535" stroke="#00d4ff" stroke-width="1"/>
+    <text x="90" y="220" font-family="Arial, sans-serif" font-size="14" fill="#888">Active Nodes</text>
+    <text x="90" y="260" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#00d4ff">247</text>
+    
+    <rect x="250" y="190" width="160" height="100" rx="6" fill="#252535" stroke="#7e57ff" stroke-width="1"/>
+    <text x="270" y="220" font-family="Arial, sans-serif" font-size="14" fill="#888">Compute Hours</text>
+    <text x="270" y="260" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#7e57ff">12.5K</text>
+    
+    <rect x="430" y="190" width="160" height="100" rx="6" fill="#252535" stroke="#00ff88" stroke-width="1"/>
+    <text x="450" y="220" font-family="Arial, sans-serif" font-size="14" fill="#888">Network Hash</text>
+    <text x="450" y="260" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#00ff88">98.7%</text>
+    
+    <!-- Activity chart placeholder -->
+    <rect x="70" y="310" width="520" height="180" rx="6" fill="#252535"/>
+    <text x="90" y="335" font-family="Arial, sans-serif" font-size="16" fill="#fff">Network Activity</text>
+    
+    <!-- Simple line chart -->
+    <polyline points="90,450 150,420 210,440 270,400 330,430 390,410 450,390 510,420 570,400" 
+              fill="none" stroke="#00d4ff" stroke-width="3" opacity="0.8"/>
+    <polyline points="90,460 150,445 210,455 270,435 330,450 390,440 450,425 510,445 570,430" 
+              fill="none" stroke="#7e57ff" stroke-width="3" opacity="0.6"/>
+    
+    <!-- Recent tasks -->
+    <rect x="70" y="510" width="520" height="110" rx="6" fill="#252535"/>
+    <text x="90" y="535" font-family="Arial, sans-serif" font-size="16" fill="#fff">Recent Tasks</text>
+    <circle cx="100" cy="560" r="4" fill="#00ff88"/>
+    <text x="120" y="565" font-family="Arial, sans-serif" font-size="12" fill="#ccc">ML Training Job #4521 - Completed</text>
+    <circle cx="100" cy="585" r="4" fill="#00d4ff"/>
+    <text x="120" y="590" font-family="Arial, sans-serif" font-size="12" fill="#ccc">Inference Pipeline #8834 - Running</text>
+    <circle cx="100" cy="610" r="4" fill="#ffaa00"/>
+    <text x="120" y="615" font-family="Arial, sans-serif" font-size="12" fill="#ccc">Data Processing #2267 - Pending</text>
+  </g>
+  
+  <!-- Right side: Network visualization -->
+  <g id="network">
+    <!-- Network nodes (representing distributed compute) -->
+    <circle cx="750" cy="200" r="15" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="850" cy="180" r="12" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="950" cy="220" r="14" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="1050" cy="200" r="11" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="1150" cy="190" r="13" fill="#00d4ff" opacity="0.8"/>
+    
+    <circle cx="720" cy="320" r="13" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="820" cy="340" r="16" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="920" cy="320" r="12" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="1020" cy="350" r="15" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="1120" cy="330" r="11" fill="#7e57ff" opacity="0.7"/>
+    
+    <circle cx="740" cy="460" r="14" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="840" cy="480" r="11" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="940" cy="460" r="13" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="1040" cy="490" r="12" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="1140" cy="470" r="15" fill="#00d4ff" opacity="0.8"/>
+    
+    <circle cx="760" cy="600" r="12" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="860" cy="580" r="14" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="960" cy="610" r="11" fill="#7e57ff" opacity="0.7"/>
+    <circle cx="1060" cy="590" r="13" fill="#00d4ff" opacity="0.8"/>
+    <circle cx="1160" cy="600" r="12" fill="#7e57ff" opacity="0.7"/>
+    
+    <!-- Connections between nodes -->
+    <line x1="750" y1="200" x2="850" y2="180" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    <line x1="850" y1="180" x2="950" y2="220" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    <line x1="950" y1="220" x2="1050" y2="200" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    <line x1="1050" y1="200" x2="1150" y2="190" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    
+    <line x1="720" y1="320" x2="820" y2="340" stroke="#7e57ff" stroke-width="1" opacity="0.3"/>
+    <line x1="820" y1="340" x2="920" y2="320" stroke="#7e57ff" stroke-width="1" opacity="0.3"/>
+    <line x1="920" y1="320" x2="1020" y2="350" stroke="#7e57ff" stroke-width="1" opacity="0.3"/>
+    <line x1="1020" y1="350" x2="1120" y2="330" stroke="#7e57ff" stroke-width="1" opacity="0.3"/>
+    
+    <line x1="740" y1="460" x2="840" y2="480" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    <line x1="840" y1="480" x2="940" y2="460" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    <line x1="940" y1="460" x2="1040" y2="490" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    <line x1="1040" y1="490" x2="1140" y2="470" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+    
+    <!-- Vertical connections -->
+    <line x1="750" y1="200" x2="720" y2="320" stroke="#00d4ff" stroke-width="1" opacity="0.2"/>
+    <line x1="850" y1="180" x2="820" y2="340" stroke="#7e57ff" stroke-width="1" opacity="0.2"/>
+    <line x1="950" y1="220" x2="920" y2="320" stroke="#00d4ff" stroke-width="1" opacity="0.2"/>
+    <line x1="820" y1="340" x2="840" y2="480" stroke="#7e57ff" stroke-width="1" opacity="0.2"/>
+    <line x1="920" y1="320" x2="940" y2="460" stroke="#00d4ff" stroke-width="1" opacity="0.2"/>
+    <line x1="1020" y1="350" x2="1040" y2="490" stroke="#7e57ff" stroke-width="1" opacity="0.2"/>
+    
+    <!-- Title and subtitle -->
+    <text x="950" y="80" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#fff" text-anchor="middle">NeuroGrid</text>
+    <text x="950" y="120" font-family="Arial, sans-serif" font-size="20" fill="#00d4ff" text-anchor="middle">Decentralized AI Compute Network</text>
+    
+    <!-- Feature highlights -->
+    <g id="features">
+      <circle cx="680" cy="680" r="3" fill="#00d4ff"/>
+      <text x="695" y="685" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Blockchain Consensus</text>
+      
+      <circle cx="880" cy="680" r="3" fill="#7e57ff"/>
+      <text x="895" y="685" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Distributed Computing</text>
+      
+      <circle cx="1080" cy="680" r="3" fill="#00ff88"/>
+      <text x="1095" y="685" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Real-time Analytics</text>
+    </g>
+  </g>
+</svg>

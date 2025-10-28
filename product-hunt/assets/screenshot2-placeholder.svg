@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1270" height="760" viewBox="0 0 1270 760" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f1e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1270" height="760" fill="url(#bg2)"/>
+  
+  <!-- Header -->
+  <rect x="0" y="0" width="1270" height="80" fill="#1e1e2e"/>
+  <text x="40" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#fff">Analytics & Monitoring</text>
+  
+  <!-- Main container -->
+  <rect x="40" y="100" width="1190" height="640" rx="10" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="2"/>
+  
+  <!-- Time range selector -->
+  <g id="timeRange">
+    <rect x="950" y="115" width="260" height="35" rx="4" fill="#252535"/>
+    <text x="970" y="137" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Last 7 Days ▼</text>
+  </g>
+  
+  <!-- Main chart area -->
+  <g id="mainChart">
+    <rect x="60" y="120" width="870" height="340" rx="8" fill="#252535"/>
+    <text x="80" y="150" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#fff">Network Usage Over Time</text>
+    
+    <!-- Y-axis labels -->
+    <text x="80" y="200" font-family="Arial, sans-serif" font-size="12" fill="#888">100%</text>
+    <text x="80" y="260" font-family="Arial, sans-serif" font-size="12" fill="#888">75%</text>
+    <text x="80" y="320" font-family="Arial, sans-serif" font-size="12" fill="#888">50%</text>
+    <text x="80" y="380" font-family="Arial, sans-serif" font-size="12" fill="#888">25%</text>
+    <text x="80" y="440" font-family="Arial, sans-serif" font-size="12" fill="#888">0%</text>
+    
+    <!-- Grid lines -->
+    <line x1="120" y1="200" x2="900" y2="200" stroke="#2a2a3e" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="120" y1="260" x2="900" y2="260" stroke="#2a2a3e" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="120" y1="320" x2="900" y2="320" stroke="#2a2a3e" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="120" y1="380" x2="900" y2="380" stroke="#2a2a3e" stroke-width="1" stroke-dasharray="5,5"/>
+    
+    <!-- Chart data - CPU usage -->
+    <polyline points="120,320 180,300 240,340 300,280 360,310 420,260 480,300 540,270 600,240 660,280 720,250 780,230 840,260 900,220" 
+              fill="none" stroke="#00d4ff" stroke-width="3"/>
+    
+    <!-- Chart data - Memory usage -->
+    <polyline points="120,350 180,340 240,370 300,330 360,350 420,310 480,340 540,320 600,300 660,330 720,310 780,290 840,310 900,280" 
+              fill="none" stroke="#7e57ff" stroke-width="3" opacity="0.8"/>
+    
+    <!-- Chart data - Network traffic -->
+    <polyline points="120,380 180,370 240,390 300,360 360,380 420,350 480,370 540,360 600,340 660,370 720,350 780,330 840,350 900,320" 
+              fill="none" stroke="#00ff88" stroke-width="3" opacity="0.7"/>
+    
+    <!-- X-axis labels -->
+    <text x="140" y="455" font-family="Arial, sans-serif" font-size="11" fill="#888">Mon</text>
+    <text x="260" y="455" font-family="Arial, sans-serif" font-size="11" fill="#888">Tue</text>
+    <text x="380" y="455" font-family="Arial, sans-serif" font-size="11" fill="#888">Wed</text>
+    <text x="500" y="455" font-family="Arial, sans-serif" font-size="11" fill="#888">Thu</text>
+    <text x="620" y="455" font-family="Arial, sans-serif" font-size="11" fill="#888">Fri</text>
+    <text x="740" y="455" font-family="Arial, sans-serif" font-size="11" fill="#888">Sat</text>
+    <text x="860" y="455" font-family="Arial, sans-serif" font-size="11" fill="#888">Sun</text>
+  </g>
+  
+  <!-- Legend -->
+  <g id="legend">
+    <rect x="120" y="170" width="15" height="3" fill="#00d4ff"/>
+    <text x="140" y="175" font-family="Arial, sans-serif" font-size="12" fill="#ccc">CPU Usage</text>
+    
+    <rect x="230" y="170" width="15" height="3" fill="#7e57ff"/>
+    <text x="250" y="175" font-family="Arial, sans-serif" font-size="12" fill="#ccc">Memory Usage</text>
+    
+    <rect x="360" y="170" width="15" height="3" fill="#00ff88"/>
+    <text x="380" y="175" font-family="Arial, sans-serif" font-size="12" fill="#ccc">Network Traffic</text>
+  </g>
+  
+  <!-- Real-time metrics panel -->
+  <g id="realtimeMetrics">
+    <rect x="950" y="170" width="260" height="290" rx="8" fill="#252535"/>
+    <text x="970" y="200" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#fff">Real-time Metrics</text>
+    
+    <!-- Metric 1 -->
+    <rect x="970" y="220" width="220" height="50" rx="4" fill="#1e1e2e"/>
+    <text x="985" y="240" font-family="Arial, sans-serif" font-size="12" fill="#888">Current CPU</text>
+    <text x="985" y="260" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#00d4ff">84.2%</text>
+    
+    <!-- Metric 2 -->
+    <rect x="970" y="280" width="220" height="50" rx="4" fill="#1e1e2e"/>
+    <text x="985" y="300" font-family="Arial, sans-serif" font-size="12" fill="#888">Current Memory</text>
+    <text x="985" y="320" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#7e57ff">67.8%</text>
+    
+    <!-- Metric 3 -->
+    <rect x="970" y="340" width="220" height="50" rx="4" fill="#1e1e2e"/>
+    <text x="985" y="360" font-family="Arial, sans-serif" font-size="12" fill="#888">Network I/O</text>
+    <text x="985" y="380" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#00ff88">2.4 GB/s</text>
+    
+    <!-- Metric 4 -->
+    <rect x="970" y="400" width="220" height="50" rx="4" fill="#1e1e2e"/>
+    <text x="985" y="420" font-family="Arial, sans-serif" font-size="12" fill="#888">Active Connections</text>
+    <text x="985" y="440" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffaa00">147</text>
+  </g>
+  
+  <!-- Bottom section: Performance distribution -->
+  <g id="distribution">
+    <rect x="60" y="480" width="560" height="240" rx="8" fill="#252535"/>
+    <text x="80" y="510" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#fff">Task Distribution by Type</text>
+    
+    <!-- Bar chart -->
+    <rect x="80" y="540" width="100" height="140" fill="#00d4ff" opacity="0.8"/>
+    <text x="115" y="695" font-family="Arial, sans-serif" font-size="12" fill="#ccc" text-anchor="middle">Training</text>
+    <text x="130" y="530" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#00d4ff">42%</text>
+    
+    <rect x="200" y="580" width="100" height="100" fill="#7e57ff" opacity="0.8"/>
+    <text x="235" y="695" font-family="Arial, sans-serif" font-size="12" fill="#ccc" text-anchor="middle">Inference</text>
+    <text x="250" y="570" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#7e57ff">28%</text>
+    
+    <rect x="320" y="600" width="100" height="80" fill="#00ff88" opacity="0.8"/>
+    <text x="355" y="695" font-family="Arial, sans-serif" font-size="12" fill="#ccc" text-anchor="middle">Processing</text>
+    <text x="370" y="590" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#00ff88">21%</text>
+    
+    <rect x="440" y="640" width="100" height="40" fill="#ffaa00" opacity="0.8"/>
+    <text x="475" y="695" font-family="Arial, sans-serif" font-size="12" fill="#ccc" text-anchor="middle">Other</text>
+    <text x="490" y="630" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ffaa00">9%</text>
+  </g>
+  
+  <!-- Bottom section: Alert log -->
+  <g id="alerts">
+    <rect x="640" y="480" width="570" height="240" rx="8" fill="#252535"/>
+    <text x="660" y="510" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#fff">Recent Alerts</text>
+    
+    <!-- Alert 1 -->
+    <rect x="660" y="530" width="530" height="35" rx="4" fill="#1e1e2e"/>
+    <circle cx="680" cy="547" r="5" fill="#00ff88"/>
+    <text x="700" y="552" font-family="Arial, sans-serif" font-size="13" fill="#ccc">Node NODE-A7B3 performance optimal</text>
+    <text x="1110" y="552" font-family="Arial, sans-serif" font-size="11" fill="#888">2m ago</text>
+    
+    <!-- Alert 2 -->
+    <rect x="660" y="575" width="530" height="35" rx="4" fill="#1e1e2e"/>
+    <circle cx="680" cy="592" r="5" fill="#ffaa00"/>
+    <text x="700" y="597" font-family="Arial, sans-serif" font-size="13" fill="#ccc">High memory usage on NODE-C2F9</text>
+    <text x="1110" y="597" font-family="Arial, sans-serif" font-size="11" fill="#888">15m ago</text>
+    
+    <!-- Alert 3 -->
+    <rect x="660" y="620" width="530" height="35" rx="4" fill="#1e1e2e"/>
+    <circle cx="680" cy="637" r="5" fill="#00d4ff"/>
+    <text x="700" y="642" font-family="Arial, sans-serif" font-size="13" fill="#ccc">Task batch #2847 completed successfully</text>
+    <text x="1110" y="642" font-family="Arial, sans-serif" font-size="11" fill="#888">32m ago</text>
+    
+    <!-- Alert 4 -->
+    <rect x="660" y="665" width="530" height="35" rx="4" fill="#1e1e2e"/>
+    <circle cx="680" cy="682" r="5" fill="#00ff88"/>
+    <text x="700" y="687" font-family="Arial, sans-serif" font-size="13" fill="#ccc">New node NODE-H8M4 joined network</text>
+    <text x="1110" y="687" font-family="Arial, sans-serif" font-size="11" fill="#888">1h ago</text>
+  </g>
+</svg>
