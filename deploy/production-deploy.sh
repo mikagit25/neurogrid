@@ -211,11 +211,11 @@ cd $DEPLOY_PATH/coordinator-server
 NODE_ENV=production npm run migrate
 
 # Setup SSL certificates
-log_info "Setting up SSL certificates..."
+log_info "Setting up SSL certificates for subdomains only..."
 if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
-    log_info "Obtaining SSL certificates..."
-    sudo certbot certonly --nginx -d $DOMAIN -d www.$DOMAIN -d $APP_SUBDOMAIN -d $API_SUBDOMAIN --non-interactive --agree-tos --email admin@$DOMAIN
-    log_success "SSL certificates obtained"
+    log_info "Obtaining SSL certificates for app and api subdomains..."
+    sudo certbot certonly --nginx -d $APP_SUBDOMAIN -d $API_SUBDOMAIN --non-interactive --agree-tos --email admin@$DOMAIN
+    log_success "SSL certificates obtained for subdomains"
 else
     log_success "SSL certificates already exist"
 fi
