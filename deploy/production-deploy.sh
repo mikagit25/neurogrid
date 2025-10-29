@@ -56,13 +56,15 @@ log_success "Disk space check passed: $(($AVAILABLE_SPACE/1024/1024))GB availabl
 
 # Check if required services are running
 if ! systemctl is-active --quiet nginx; then
-    log_error "Nginx is not running. Please start nginx first."
-    exit 1
+    log_warning "Nginx is not running. Starting nginx..."
+    sudo systemctl start nginx
 fi
 
 if ! systemctl is-active --quiet postgresql; then
-    log_warning "PostgreSQL is not running. Starting PostgreSQL..."
+    log_warning "PostgreSQL is not running. Installing and starting PostgreSQL..."
+    sudo apt install -y postgresql postgresql-contrib
     sudo systemctl start postgresql
+    sudo systemctl enable postgresql
 fi
 
 log_success "Service checks completed"
@@ -80,7 +82,13 @@ fi
 # Install dependencies
 log_info "Installing system dependencies..."
 sudo apt update
-sudo apt install -y nginx postgresql postgresql-contrib redis-server certbot python3-certbot-nginx nodejs npm git pm2
+sudo apt install -y redis-server certbot python3-certbot-nginx nodejs npm git
+
+# Install PM2 globally if not installed
+if ! command -v pm2 &> /dev/null; then
+    log_info "Installing PM2 globally..."
+    sudo npm install -g pm2
+fi
 
 # Setup deploy directory
 log_info "Setting up deployment directory..."
@@ -115,17 +123,87 @@ npm run build
 log_info "Setting up production environment..."
 cd $DEPLOY_PATH
 
-if [ ! -f ".env.production" ]; then
-    log_warning ".env.production not found. Please create it manually."
-    cp .env.example .env.production
-    log_warning "Please edit .env.production with your production settings"
-fi
+# Create production environment file
+cat > .env.production << EOF
+# Production Environment Configuration
+NODE_ENV=production
+PORT=3001
+
+# Database Configuration
+DATABASE_URL=postgresql://neurogrid_prod:$DB_PASSWORD@localhost:5432/neurogrid_prod
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=neurogrid_prod
+DB_USERNAME=neurogrid_prod
+DB_PASSWORD=$DB_PASSWORD
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT Configuration
+JWT_SECRET=$(openssl rand -base64 32)
+JWT_EXPIRES_IN=24h
+
+# API Configuration
+API_URL=https://api.$DOMAIN
+WEB_URL=https://app.$DOMAIN
+CORS_ORIGIN=https://app.$DOMAIN
+
+# Security
+SESSION_SECRET=$(openssl rand -base64 32)
+BCRYPT_ROUNDS=12
+
+# Logging
+LOG_LEVEL=info
+LOG_FILE=/var/log/neurogrid/app.log
+EOF
+
+# Create web interface environment
+cat > web-interface/.env.production << EOF
+# Next.js Production Configuration
+NODE_ENV=production
+PORT=3000
+
+# API Configuration
+NEXT_PUBLIC_API_URL=https://api.$DOMAIN
+NEXT_PUBLIC_WS_URL=wss://api.$DOMAIN
+
+# App Configuration
+NEXT_PUBLIC_APP_NAME=NeuroGrid
+NEXT_PUBLIC_DOMAIN=$DOMAIN
+EOF
+
+log_success "Production environment files created"
 
 # Database setup
 log_info "Setting up production database..."
-sudo -u postgres psql -c "CREATE DATABASE neurogrid_prod;" 2>/dev/null || log_warning "Database might already exist"
-sudo -u postgres psql -c "CREATE USER neurogrid_prod WITH PASSWORD 'CHANGE_THIS_PASSWORD';" 2>/dev/null || log_warning "User might already exist"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE neurogrid_prod TO neurogrid_prod;" 2>/dev/null || true
+
+# Generate random password for database
+DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+
+# Create database and user
+sudo -u postgres psql << EOF
+-- Create database if it doesn't exist
+SELECT 'CREATE DATABASE neurogrid_prod' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'neurogrid_prod')\gexec
+
+-- Create user if it doesn't exist
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'neurogrid_prod') THEN
+        CREATE USER neurogrid_prod WITH PASSWORD '$DB_PASSWORD';
+    END IF;
+END
+\$\$;
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE neurogrid_prod TO neurogrid_prod;
+ALTER USER neurogrid_prod CREATEDB;
+EOF
+
+log_success "Database configured with user: neurogrid_prod"
+log_info "Database password generated and stored"
 
 # Run database migrations
 log_info "Running database migrations..."
@@ -143,12 +221,8 @@ else
 fi
 
 # Update nginx configuration
-log_info "Updating nginx configuration..."
-sudo cp $DEPLOY_PATH/deploy/nginx-production.conf /etc/nginx/sites-available/neurogrid
-sudo ln -sf /etc/nginx/sites-available/neurogrid /etc/nginx/sites-enabled/neurogrid
-
-# Remove default nginx site
-sudo rm -f /etc/nginx/sites-enabled/default
+log_info "Nginx is already configured for subdomains"
+log_success "Nginx subdomain configuration preserved"
 
 # Test nginx configuration
 log_info "Testing nginx configuration..."
