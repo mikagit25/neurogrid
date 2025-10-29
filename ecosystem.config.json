@@ -1,0 +1,51 @@
+{
+  "apps": [
+    {
+      "name": "neurogrid-coordinator",
+      "script": "./coordinator-server/dist/index.js",
+      "cwd": "/var/www/neurogrid",
+      "instances": 1,
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 3001
+      },
+      "env_file": "/var/www/neurogrid/.env.production",
+      "log_file": "/var/log/neurogrid/coordinator.log",
+      "out_file": "/var/log/neurogrid/coordinator-out.log",
+      "error_file": "/var/log/neurogrid/coordinator-error.log",
+      "merge_logs": true,
+      "time": true,
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "5s",
+      "kill_timeout": 5000,
+      "wait_ready": true,
+      "listen_timeout": 10000
+    },
+    {
+      "name": "neurogrid-web",
+      "script": "npm",
+      "args": "start",
+      "cwd": "/var/www/neurogrid/web-interface",
+      "instances": 1,
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 3000
+      },
+      "env_file": "/var/www/neurogrid/web-interface/.env.production",
+      "log_file": "/var/log/neurogrid/web.log",
+      "out_file": "/var/log/neurogrid/web-out.log",
+      "error_file": "/var/log/neurogrid/web-error.log",
+      "merge_logs": true,
+      "time": true,
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "5s",
+      "kill_timeout": 5000,
+      "wait_ready": true,
+      "listen_timeout": 10000
+    }
+  ]
+}
