@@ -52,12 +52,19 @@ print_status "Установка зависимостей..."
 
 print_status "  → Coordinator Server dependencies..."
 cd coordinator-server
-npm ci --production=false
+# Skip problematic packages temporarily
+npm ci --production=false --ignore-scripts || {
+    print_warning "Полная установка не удалась, пытаемся без скриптов..."
+    npm install --production=false --ignore-scripts
+}
 cd ..
 
 print_status "  → Web Interface dependencies..."
 cd web-interface
-npm ci --production=false
+npm ci --production=false --ignore-scripts || {
+    print_warning "Полная установка не удалась, пытаемся без скриптов..."
+    npm install --production=false --ignore-scripts
+}
 cd ..
 
 # Build Coordinator Server

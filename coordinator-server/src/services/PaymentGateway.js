@@ -1,4 +1,4 @@
-const logger = require('../utils/logger');
+ в Саconst logger = require('../utils/logger');
 const crypto = require('crypto');
 
 /**
