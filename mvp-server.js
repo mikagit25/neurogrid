@@ -39,8 +39,33 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve landing page
+// Serve static files
 app.use(express.static(path.join(__dirname)));
+
+// Serve static pages
+app.get('/investors', (req, res) => {
+  res.sendFile(path.join(__dirname, 'investors.html'));
+});
+
+app.get('/about-project', (req, res) => {
+  res.sendFile(path.join(__dirname, 'about-project.html'));
+});
+
+app.get('/demo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'demo.html'));
+});
+
+app.get('/demo-setup', (req, res) => {
+  res.sendFile(path.join(__dirname, 'demo-setup.html'));
+});
+
+app.get('/api-docs', (req, res) => {
+  res.sendFile(path.join(__dirname, 'api-docs.html'));
+});
+
+app.get('/technical-docs', (req, res) => {
+  res.sendFile(path.join(__dirname, 'technical-docs.html'));
+});
 
 // MVP API Routes
 

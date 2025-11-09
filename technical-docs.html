@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid - Technical Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%); }
+        .code-block { background: #2d3748; border-radius: 8px; }
+        .tech-card { background: linear-gradient(145deg, #ffffff, #f8fafc); border: 2px solid #e2e8f0; }
+        .sticky-nav { position: sticky; top: 0; z-index: 50; }
+        .architecture-diagram { background: linear-gradient(45deg, #f0f9ff, #e0f2fe); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="sticky-nav bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold text-gray-900">NeuroGrid</h1>
+                    </div>
+                    <div class="ml-10 flex space-x-8">
+                        <a href="/" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="/about-project" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">About</a>
+                        <a href="/demo" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Demo</a>
+                        <a href="/api/docs" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">API Docs</a>
+                        <a href="#" class="bg-blue-100 text-blue-700 px-3 py-2 rounded-md text-sm font-medium">Technical</a>
+                        <a href="/investors" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Investors</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <a href="https://github.com/mikagit25/neurogrid" class="text-blue-600 hover:text-blue-800 font-medium">
+                        <i class="fab fa-github mr-2"></i>GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-4">Technical Documentation</h1>
+                <p class="text-xl opacity-90 mb-6">Complete architecture guide and deployment instructions</p>
+                <div class="flex justify-center space-x-6 text-sm">
+                    <div class="flex items-center">
+                        <i class="fas fa-server mr-2"></i>
+                        <span>Microservices Architecture</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fab fa-docker mr-2"></i>
+                        <span>Docker + Kubernetes</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-database mr-2"></i>
+                        <span>PostgreSQL + Redis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Sidebar Navigation -->
+            <div class="lg:col-span-1">
+                <div class="sticky top-20 bg-white rounded-lg shadow p-6">
+                    <h3 class="font-bold text-gray-900 mb-4">Navigation</h3>
+                    <nav class="space-y-2">
+                        <a href="#architecture" class="block text-sm text-gray-600 hover:text-blue-600">System Architecture</a>
+                        <a href="#components" class="block text-sm text-gray-600 hover:text-blue-600">Core Components</a>
+                        <a href="#deployment" class="block text-sm text-gray-600 hover:text-blue-600">Deployment Guide</a>
+                        <a href="#requirements" class="block text-sm text-gray-600 hover:text-blue-600">System Requirements</a>
+                        <a href="#database" class="block text-sm text-gray-600 hover:text-blue-600">Database Schema</a>
+                        <a href="#security" class="block text-sm text-gray-600 hover:text-blue-600">Security</a>
+                        <a href="#monitoring" class="block text-sm text-gray-600 hover:text-blue-600">Monitoring</a>
+                        <a href="#scaling" class="block text-sm text-gray-600 hover:text-blue-600">Scaling</a>
+                        <a href="#troubleshooting" class="block text-sm text-gray-600 hover:text-blue-600">Troubleshooting</a>
+                    </nav>
+                    
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h4 class="font-medium text-blue-800 mb-2">Current Version</h4>
+                        <div class="text-sm text-blue-700">
+                            <div>Phase 1: ✅ Complete</div>
+                            <div>Phase 2: 🚀 Next</div>
+                            <div>Production Ready</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-3 space-y-8">
+                <!-- System Architecture -->
+                <section id="architecture" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">🏗️ System Architecture</h2>
+                    
+                    <div class="architecture-diagram p-6 rounded-lg mb-8">
+                        <h3 class="text-lg font-semibold mb-4 text-center">NeuroGrid Microservices Architecture</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Client Layer -->
+                            <div class="text-center">
+                                <div class="tech-card rounded-lg p-4 mb-3">
+                                    <i class="fas fa-desktop text-blue-600 text-2xl mb-2"></i>
+                                    <h4 class="font-bold">Client Layer</h4>
+                                    <div class="text-xs text-gray-600 mt-2">
+                                        Web Interface<br>
+                                        API Clients<br>
+                                        Mobile Apps
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-500">React/Next.js</div>
+                            </div>
+                            
+                            <!-- Service Layer -->
+                            <div class="text-center">
+                                <div class="tech-card rounded-lg p-4 mb-3">
+                                    <i class="fas fa-server text-green-600 text-2xl mb-2"></i>
+                                    <h4 class="font-bold">Service Layer</h4>
+                                    <div class="text-xs text-gray-600 mt-2">
+                                        Coordinator Server<br>
+                                        Token Engine<br>
+                                        Task Dispatcher
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-500">Node.js/Express</div>
+                            </div>
+                            
+                            <!-- Node Layer -->
+                            <div class="text-center">
+                                <div class="tech-card rounded-lg p-4 mb-3">
+                                    <i class="fas fa-microchip text-purple-600 text-2xl mb-2"></i>
+                                    <h4 class="font-bold">Compute Layer</h4>
+                                    <div class="text-xs text-gray-600 mt-2">
+                                        Node Clients<br>
+                                        AI Models<br>
+                                        GPU Resources
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-500">Python/Docker</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-center mt-6">
+                            <div class="text-center">
+                                <div class="tech-card rounded-lg p-4">
+                                    <i class="fas fa-database text-orange-600 text-2xl mb-2"></i>
+                                    <h4 class="font-bold">Data Layer</h4>
+                                    <div class="text-xs text-gray-600 mt-2">PostgreSQL + Redis</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3">Design Principles</h3>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    Microservices architecture for scalability
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    Event-driven design for real-time processing
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    Container-first deployment strategy
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    Database-per-service pattern
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    API-first development approach
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3">Key Features</h3>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center">
+                                    <i class="fas fa-shield-alt text-blue-500 mr-2"></i>
+                                    Enterprise-grade security
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-chart-line text-green-500 mr-2"></i>
+                                    Horizontal auto-scaling
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-heartbeat text-red-500 mr-2"></i>
+                                    Comprehensive health monitoring
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-sync text-purple-500 mr-2"></i>
+                                    Real-time WebSocket communication
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-plug text-orange-500 mr-2"></i>
+                                    Extensible plugin architecture
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Core Components -->
+                <section id="components" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">⚙️ Core Components</h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Coordinator Server -->
+                        <div class="border rounded-lg p-6">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-server text-green-600 mr-2"></i>
+                                Coordinator Server
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold mb-2">Responsibilities</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• Central orchestration of AI tasks</li>
+                                        <li>• Node registration and management</li>
+                                        <li>• Token economy and payments</li>
+                                        <li>• Load balancing and routing</li>
+                                        <li>• Real-time status monitoring</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold mb-2">Technology Stack</h4>
+                                    <div class="text-sm text-gray-600">
+                                        <div class="mb-1"><strong>Runtime:</strong> Node.js 18+</div>
+                                        <div class="mb-1"><strong>Framework:</strong> Express.js</div>
+                                        <div class="mb-1"><strong>Database:</strong> PostgreSQL + Redis</div>
+                                        <div class="mb-1"><strong>WebSocket:</strong> Socket.io</div>
+                                        <div><strong>Authentication:</strong> JWT + bcrypt</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h4 class="font-semibold mb-2">Key Services</h4>
+                                <div class="grid md:grid-cols-3 gap-3">
+                                    <div class="bg-gray-50 p-3 rounded text-sm">
+                                        <div class="font-medium">TaskDispatcher</div>
+                                        <div class="text-gray-600">Routes tasks to optimal nodes</div>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded text-sm">
+                                        <div class="font-medium">TokenEngine</div>
+                                        <div class="text-gray-600">Manages NEURO payments</div>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded text-sm">
+                                        <div class="font-medium">NodeManager</div>
+                                        <div class="text-gray-600">Tracks node health & capacity</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node Client -->
+                        <div class="border rounded-lg p-6">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-microchip text-purple-600 mr-2"></i>
+                                Node Client
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold mb-2">Core Functions</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• AI model loading and execution</li>
+                                        <li>• Resource monitoring (GPU/CPU/Memory)</li>
+                                        <li>• Secure task isolation in containers</li>
+                                        <li>• Performance optimization</li>
+                                        <li>• Result caching and delivery</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold mb-2">Technology Stack</h4>
+                                    <div class="text-sm text-gray-600">
+                                        <div class="mb-1"><strong>Runtime:</strong> Python 3.9+</div>
+                                        <div class="mb-1"><strong>Containers:</strong> Docker</div>
+                                        <div class="mb-1"><strong>GPU:</strong> CUDA/PyTorch</div>
+                                        <div class="mb-1"><strong>Models:</strong> HuggingFace/ONNX</div>
+                                        <div><strong>Monitoring:</strong> Prometheus</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Web Interface -->
+                        <div class="border rounded-lg p-6">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-desktop text-blue-600 mr-2"></i>
+                                Web Interface
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold mb-2">User Dashboards</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• Client dashboard for task management</li>
+                                        <li>• Provider dashboard for node monitoring</li>
+                                        <li>• Admin panel for system oversight</li>
+                                        <li>• Real-time analytics and charts</li>
+                                        <li>• Wallet and transaction history</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold mb-2">Technology Stack</h4>
+                                    <div class="text-sm text-gray-600">
+                                        <div class="mb-1"><strong>Framework:</strong> React + Next.js</div>
+                                        <div class="mb-1"><strong>Styling:</strong> Tailwind CSS</div>
+                                        <div class="mb-1"><strong>Charts:</strong> Chart.js</div>
+                                        <div class="mb-1"><strong>State:</strong> React Context</div>
+                                        <div><strong>Deployment:</strong> Vercel/Nginx</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Deployment Guide -->
+                <section id="deployment" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">🚀 Deployment Guide</h2>
+                    
+                    <!-- Quick Start -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold mb-4">Quick Start with Docker</h3>
+                        <pre class="code-block p-4 rounded mb-4"><code class="language-bash"># Clone repository
+git clone https://github.com/mikagit25/neurogrid.git
+cd neurogrid
+
+# Start full stack
+docker-compose up -d
+
+# Health check
+curl http://localhost:3001/health
+
+# Access dashboards
+# Coordinator API: http://localhost:3001
+# Web Interface: http://localhost:3000</code></pre>
+                    </div>
+
+                    <!-- Production Deployment -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold mb-4">Production Deployment</h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold mb-3">Environment Setup</h4>
+                                <pre class="code-block text-xs p-3 rounded"><code class="language-bash"># Required Environment Variables
+NODE_ENV=production
+PORT=3001
+DATABASE_URL=postgresql://user:pass@db:5432/neurogrid
+REDIS_URL=redis://redis:6379
+JWT_SECRET=your-super-secret-key
+
+# Optional Configuration
+LOG_LEVEL=info
+RATE_LIMIT_ENABLED=true
+CACHE_ENABLED=true
+WEB_CONCURRENCY=4</code></pre>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold mb-3">Docker Compose Production</h4>
+                                <pre class="code-block text-xs p-3 rounded"><code class="language-yaml">version: '3.8'
+services:
+  coordinator:
+    image: neurogrid/coordinator:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      - db
+      - redis
+  
+  web-interface:
+    image: neurogrid/web:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - coordinator</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kubernetes Deployment -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold mb-4">Kubernetes Deployment</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <h4 class="font-semibold mb-2">Helm Chart Available</h4>
+                            <pre class="code-block p-3 rounded"><code class="language-bash"># Add NeuroGrid Helm repository
+helm repo add neurogrid https://charts.neurogrid.network
+helm repo update
+
+# Install with custom values
+helm install neurogrid neurogrid/neurogrid \
+  --set coordinator.replicaCount=3 \
+  --set database.enabled=true \
+  --set monitoring.enabled=true</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Cloud Providers -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Cloud Provider Support</h3>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div class="tech-card rounded-lg p-4">
+                                <h4 class="font-semibold text-blue-600 mb-2">
+                                    <i class="fab fa-aws mr-2"></i>AWS
+                                </h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• EKS for orchestration</li>
+                                    <li>• RDS for PostgreSQL</li>
+                                    <li>• ElastiCache for Redis</li>
+                                    <li>• ALB for load balancing</li>
+                                </ul>
+                            </div>
+                            <div class="tech-card rounded-lg p-4">
+                                <h4 class="font-semibold text-blue-600 mb-2">
+                                    <i class="fab fa-google mr-2"></i>GCP
+                                </h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• GKE for orchestration</li>
+                                    <li>• Cloud SQL for PostgreSQL</li>
+                                    <li>• Memorystore for Redis</li>
+                                    <li>• Cloud Load Balancing</li>
+                                </ul>
+                            </div>
+                            <div class="tech-card rounded-lg p-4">
+                                <h4 class="font-semibold text-blue-600 mb-2">
+                                    <i class="fab fa-microsoft mr-2"></i>Azure
+                                </h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• AKS for orchestration</li>
+                                    <li>• Azure Database</li>
+                                    <li>• Azure Cache for Redis</li>
+                                    <li>• Application Gateway</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- System Requirements -->
+                <section id="requirements" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">💻 System Requirements</h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Coordinator Server</h3>
+                            <div class="space-y-4">
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">Minimum Requirements</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• <strong>CPU:</strong> 2 cores (2.4 GHz+)</li>
+                                        <li>• <strong>RAM:</strong> 4GB</li>
+                                        <li>• <strong>Storage:</strong> 20GB SSD</li>
+                                        <li>• <strong>Network:</strong> 1 Gbps</li>
+                                        <li>• <strong>OS:</strong> Linux/Windows/macOS</li>
+                                    </ul>
+                                </div>
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">Recommended (Production)</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• <strong>CPU:</strong> 8 cores (3.0 GHz+)</li>
+                                        <li>• <strong>RAM:</strong> 16GB</li>
+                                        <li>• <strong>Storage:</strong> 100GB NVMe SSD</li>
+                                        <li>• <strong>Network:</strong> 10 Gbps</li>
+                                        <li>• <strong>OS:</strong> Ubuntu 20.04 LTS+</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Node Client (GPU)</h3>
+                            <div class="space-y-4">
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">Minimum Requirements</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• <strong>GPU:</strong> NVIDIA GTX 1060 (6GB VRAM)</li>
+                                        <li>• <strong>CPU:</strong> 4 cores</li>
+                                        <li>• <strong>RAM:</strong> 8GB</li>
+                                        <li>• <strong>Storage:</strong> 50GB SSD</li>
+                                        <li>• <strong>CUDA:</strong> 11.0+</li>
+                                    </ul>
+                                </div>
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">Recommended (High Performance)</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• <strong>GPU:</strong> RTX 4090 (24GB VRAM)</li>
+                                        <li>• <strong>CPU:</strong> 16 cores</li>
+                                        <li>• <strong>RAM:</strong> 32GB</li>
+                                        <li>• <strong>Storage:</strong> 500GB NVMe SSD</li>
+                                        <li>• <strong>CUDA:</strong> 12.0+</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Software Dependencies -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold mb-4">Software Dependencies</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-gray-50 rounded-lg">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Component</th>
+                                        <th class="px-4 py-2 text-left">Software</th>
+                                        <th class="px-4 py-2 text-left">Version</th>
+                                        <th class="px-4 py-2 text-left">Purpose</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="px-4 py-2">Coordinator</td>
+                                        <td class="px-4 py-2">Node.js</td>
+                                        <td class="px-4 py-2">18.0+</td>
+                                        <td class="px-4 py-2">JavaScript runtime</td>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <td class="px-4 py-2">Database</td>
+                                        <td class="px-4 py-2">PostgreSQL</td>
+                                        <td class="px-4 py-2">14.0+</td>
+                                        <td class="px-4 py-2">Primary database</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2">Cache</td>
+                                        <td class="px-4 py-2">Redis</td>
+                                        <td class="px-4 py-2">7.0+</td>
+                                        <td class="px-4 py-2">Caching & sessions</td>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <td class="px-4 py-2">Node Client</td>
+                                        <td class="px-4 py-2">Python</td>
+                                        <td class="px-4 py-2">3.9+</td>
+                                        <td class="px-4 py-2">AI model execution</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2">Containers</td>
+                                        <td class="px-4 py-2">Docker</td>
+                                        <td class="px-4 py-2">20.0+</td>
+                                        <td class="px-4 py-2">Task isolation</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Database Schema -->
+                <section id="database" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">🗄️ Database Schema</h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Core Tables</h3>
+                            <div class="space-y-4">
+                                <div class="border rounded-lg p-4">
+                                    <h4 class="font-semibold text-blue-600 mb-2">users</h4>
+                                    <pre class="text-xs"><code>id              UUID PRIMARY KEY
+email           VARCHAR(255) UNIQUE NOT NULL
+password_hash   VARCHAR(255) NOT NULL
+role            ENUM('client', 'provider', 'admin')
+balance         DECIMAL(18,8) DEFAULT 0
+created_at      TIMESTAMP DEFAULT NOW()</code></pre>
+                                </div>
+                                
+                                <div class="border rounded-lg p-4">
+                                    <h4 class="font-semibold text-green-600 mb-2">nodes</h4>
+                                    <pre class="text-xs"><code>id              UUID PRIMARY KEY
+user_id         UUID REFERENCES users(id)
+name            VARCHAR(255) NOT NULL
+gpu_model       VARCHAR(255)
+vram_gb         INTEGER
+status          ENUM('online', 'offline', 'busy')
+performance     DECIMAL(3,2) DEFAULT 1.0
+last_seen       TIMESTAMP</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Transaction Tables</h3>
+                            <div class="space-y-4">
+                                <div class="border rounded-lg p-4">
+                                    <h4 class="font-semibold text-purple-600 mb-2">tasks</h4>
+                                    <pre class="text-xs"><code>id              UUID PRIMARY KEY
+user_id         UUID REFERENCES users(id)
+node_id         UUID REFERENCES nodes(id)
+model           VARCHAR(255) NOT NULL
+prompt          TEXT NOT NULL
+status          ENUM('queued', 'processing', 'completed')
+cost            DECIMAL(18,8)
+created_at      TIMESTAMP DEFAULT NOW()
+completed_at    TIMESTAMP</code></pre>
+                                </div>
+                                
+                                <div class="border rounded-lg p-4">
+                                    <h4 class="font-semibold text-orange-600 mb-2">transactions</h4>
+                                    <pre class="text-xs"><code>id              UUID PRIMARY KEY
+user_id         UUID REFERENCES users(id)
+task_id         UUID REFERENCES tasks(id)
+type            ENUM('debit', 'credit')
+amount          DECIMAL(18,8) NOT NULL
+description     VARCHAR(255)
+created_at      TIMESTAMP DEFAULT NOW()</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Optimization -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold mb-4">Performance Optimization</h3>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div class="tech-card rounded-lg p-4">
+                                <h4 class="font-semibold mb-2">Indexing Strategy</h4>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    <li>• users(email) - unique</li>
+                                    <li>• tasks(user_id, status)</li>
+                                    <li>• transactions(user_id, created_at)</li>
+                                    <li>• nodes(status, performance)</li>
+                                </ul>
+                            </div>
+                            <div class="tech-card rounded-lg p-4">
+                                <h4 class="font-semibold mb-2">Partitioning</h4>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    <li>• tasks by month</li>
+                                    <li>• transactions by month</li>
+                                    <li>• logs by day</li>
+                                </ul>
+                            </div>
+                            <div class="tech-card rounded-lg p-4">
+                                <h4 class="font-semibold mb-2">Caching</h4>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    <li>• User sessions in Redis</li>
+                                    <li>• Node status cache</li>
+                                    <li>• API response caching</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Security -->
+                <section id="security" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">🔒 Security</h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Authentication & Authorization</h3>
+                            <div class="space-y-4">
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">JWT Implementation</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• HS256 algorithm for signing</li>
+                                        <li>• 1-hour access token expiry</li>
+                                        <li>• 7-day refresh token expiry</li>
+                                        <li>• Automatic token rotation</li>
+                                        <li>• Blacklist for revoked tokens</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">Role-Based Access Control</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• <strong>Client:</strong> Submit tasks, view history</li>
+                                        <li>• <strong>Provider:</strong> Manage nodes, view earnings</li>
+                                        <li>• <strong>Admin:</strong> Full system access</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Data Protection</h3>
+                            <div class="space-y-4">
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">Encryption</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• TLS 1.3 for all communications</li>
+                                        <li>• bcrypt for password hashing</li>
+                                        <li>• AES-256 for sensitive data at rest</li>
+                                        <li>• End-to-end encryption for tasks</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="tech-card rounded-lg p-4">
+                                    <h4 class="font-semibold mb-2">Container Security</h4>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• Non-root container execution</li>
+                                        <li>• Resource limits and quotas</li>
+                                        <li>• Network isolation</li>
+                                        <li>• Regular security scanning</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Best Practices -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold mb-4">Security Best Practices</h3>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-yellow-800 mb-2">Production Security Checklist</h4>
+                            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                                <ul class="text-yellow-700 space-y-1">
+                                    <li>✅ Change default passwords</li>
+                                    <li>✅ Enable firewall rules</li>
+                                    <li>✅ Configure SSL certificates</li>
+                                    <li>✅ Set up monitoring alerts</li>
+                                    <li>✅ Regular security updates</li>
+                                </ul>
+                                <ul class="text-yellow-700 space-y-1">
+                                    <li>✅ Database connection encryption</li>
+                                    <li>✅ API rate limiting enabled</li>
+                                    <li>✅ Log suspicious activities</li>
+                                    <li>✅ Backup encryption</li>
+                                    <li>✅ Penetration testing</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Monitoring -->
+                <section id="monitoring" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">📊 Monitoring & Observability</h2>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="tech-card rounded-lg p-6">
+                            <h3 class="text-lg font-semibold mb-4">
+                                <i class="fas fa-chart-line text-blue-600 mr-2"></i>
+                                Metrics
+                            </h3>
+                            <ul class="text-sm text-gray-600 space-y-2">
+                                <li>• CPU/Memory/Disk usage</li>
+                                <li>• API response times</li>
+                                <li>• Task processing rates</li>
+                                <li>• Error rates and types</li>
+                                <li>• Database query performance</li>
+                                <li>• Node health status</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="tech-card rounded-lg p-6">
+                            <h3 class="text-lg font-semibold mb-4">
+                                <i class="fas fa-file-alt text-green-600 mr-2"></i>
+                                Logging
+                            </h3>
+                            <ul class="text-sm text-gray-600 space-y-2">
+                                <li>• Structured JSON logging</li>
+                                <li>• Log levels (debug, info, warn, error)</li>
+                                <li>• Request/response logging</li>
+                                <li>• Security event logging</li>
+                                <li>• Performance logging</li>
+                                <li>• Centralized log aggregation</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="tech-card rounded-lg p-6">
+                            <h3 class="text-lg font-semibold mb-4">
+                                <i class="fas fa-bell text-red-600 mr-2"></i>
+                                Alerting
+                            </h3>
+                            <ul class="text-sm text-gray-600 space-y-2">
+                                <li>• High error rate alerts</li>
+                                <li>• Resource utilization alerts</li>
+                                <li>• Service health alerts</li>
+                                <li>• Security incident alerts</li>
+                                <li>• Custom business metrics</li>
+                                <li>• PagerDuty/Slack integration</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Monitoring Stack -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold mb-4">Technology Stack</h3>
+                        <pre class="code-block p-4 rounded"><code class="language-yaml"># Monitoring Stack
+prometheus:
+  - metrics collection
+  - alerting rules
+  - service discovery
+
+grafana:
+  - dashboards
+  - visualization
+  - alerting
+
+elk-stack:
+  - elasticsearch: log storage
+  - logstash: log processing
+  - kibana: log visualization
+
+jaeger:
+  - distributed tracing
+  - performance analysis</code></pre>
+                    </div>
+                </section>
+
+                <!-- Troubleshooting -->
+                <section id="troubleshooting" class="bg-white rounded-lg shadow p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">🔧 Troubleshooting</h2>
+                    
+                    <div class="space-y-6">
+                        <div class="border rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-red-600 mb-4">Common Issues</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="font-semibold">Service Won't Start</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Port conflicts, missing dependencies, or configuration issues</p>
+                                    <pre class="code-block text-xs p-2 rounded"><code># Check logs
+docker-compose logs coordinator
+
+# Check port usage
+netstat -tulpn | grep :3001
+
+# Verify environment variables
+env | grep NEUROGRID</code></pre>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="font-semibold">Database Connection Failed</h4>
+                                    <p class="text-sm text-gray-600 mb-2">PostgreSQL connectivity or authentication issues</p>
+                                    <pre class="code-block text-xs p-2 rounded"><code># Test database connection
+psql -h localhost -U neurogrid -d neurogrid
+
+# Check database status
+docker-compose exec db pg_isready
+
+# Verify connection string
+echo $DATABASE_URL</code></pre>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="font-semibold">High Memory Usage</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Memory leaks or inefficient processing</p>
+                                    <pre class="code-block text-xs p-2 rounded"><code># Monitor memory usage
+docker stats
+
+# Check Node.js memory
+curl http://localhost:3001/health
+
+# Restart if needed
+docker-compose restart coordinator</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-green-600 mb-4">Health Checks</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="font-semibold mb-2">System Health</h4>
+                                    <pre class="code-block text-xs p-3 rounded"><code># Overall health
+curl http://localhost:3001/health
+
+# API status
+curl http://localhost:3001/api/info
+
+# Database health
+curl http://localhost:3001/api/health/db</code></pre>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold mb-2">Network Status</h4>
+                                    <pre class="code-block text-xs p-3 rounded"><code># Network status
+curl http://localhost:3001/api/network/status
+
+# Node connectivity
+curl http://localhost:3001/api/nodes/health
+
+# Performance metrics
+curl http://localhost:3001/metrics</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Copy code blocks on click
+        document.querySelectorAll('.code-block').forEach(block => {
+            block.addEventListener('click', function() {
+                const code = this.textContent;
+                navigator.clipboard.writeText(code).then(() => {
+                    // Visual feedback
+                    const original = this.style.backgroundColor;
+                    this.style.backgroundColor = '#10b981';
+                    setTimeout(() => {
+                        this.style.backgroundColor = original;
+                    }, 200);
+                });
+            });
+        });
+
+        // Active section highlighting
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    document.querySelectorAll('nav a').forEach(link => {
+                        link.classList.remove('text-blue-600', 'font-semibold');
+                        link.classList.add('text-gray-600');
+                    });
+                    const activeLink = document.querySelector(`a[href="#${id}"]`);
+                    if (activeLink) {
+                        activeLink.classList.remove('text-gray-600');
+                        activeLink.classList.add('text-blue-600', 'font-semibold');
+                    }
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section[id]').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>
