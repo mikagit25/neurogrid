@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const { auth, adminAuth } = require('../middleware/auth');
+const logger = require('../../utils/logger');
 
 // Service instances (injected from main app)
 let nodeManager = null;
@@ -86,7 +87,7 @@ router.post('/register', [
     }
 
   } catch (error) {
-    console.error('Node registration error:', error);
+    logger.error('Node registration error:', error);
     res.status(500).json({
       error: 'Failed to register node',
       message: error.message
@@ -155,7 +156,7 @@ router.post('/:id/heartbeat', [
     }
 
   } catch (error) {
-    console.error('Heartbeat processing error:', error);
+    logger.error('Heartbeat processing error:', error);
     res.status(500).json({
       error: 'Failed to process heartbeat',
       message: error.message
@@ -234,7 +235,7 @@ router.get('/', [
     });
 
   } catch (error) {
-    console.error('List nodes error:', error);
+    logger.error('List nodes error:', error);
     res.status(500).json({
       error: 'Failed to list nodes',
       message: error.message
@@ -299,7 +300,7 @@ router.get('/:id', [
     });
 
   } catch (error) {
-    console.error('Get node error:', error);
+    logger.error('Get node error:', error);
     res.status(500).json({
       error: 'Failed to get node information',
       message: error.message
@@ -351,7 +352,7 @@ router.get('/:id/metrics', [
     });
 
   } catch (error) {
-    console.error('Get node metrics error:', error);
+    logger.error('Get node metrics error:', error);
     res.status(500).json({
       error: 'Failed to get node metrics',
       message: error.message
@@ -402,7 +403,7 @@ router.post('/:id/command', adminAuth, [
     }
 
   } catch (error) {
-    console.error('Send command error:', error);
+    logger.error('Send command error:', error);
     res.status(500).json({
       error: 'Failed to send command',
       message: error.message
@@ -415,7 +416,7 @@ router.post('/:id/command', adminAuth, [
  * @desc Deregister a node
  * @access Private (Admin or Node itself)
  */
-router.delete('/:id', [
+router.delete('/:id', auth, [
   param('id').isString().notEmpty().withMessage('Node ID is required')
 ], async (req, res) => {
   try {
@@ -429,7 +430,16 @@ router.delete('/:id', [
 
     const nodeId = req.params.id;
 
-    // TODO: Add authentication check - only admin or the node itself can deregister
+    // Authorization check: Only admin or the node itself can deregister
+    const isAdmin = req.user && req.user.role === 'admin';
+    const isNodeItself = req.user && req.user.node_id === nodeId;
+    
+    if (!isAdmin && !isNodeItself) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden: You can only deregister your own node or must be an admin'
+      });
+    }
 
     if (!nodeManager) {
       return res.status(503).json({
@@ -451,7 +461,7 @@ router.delete('/:id', [
     }
 
   } catch (error) {
-    console.error('Deregister node error:', error);
+    logger.error('Deregister node error:', error);
     res.status(500).json({
       error: 'Failed to deregister node',
       message: error.message
@@ -493,7 +503,7 @@ router.get('/stats', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get network stats error:', error);
+    logger.error('Get network stats error:', error);
     res.status(500).json({
       error: 'Failed to get network statistics',
       message: error.message

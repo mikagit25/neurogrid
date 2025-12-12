@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
+const logger = require('../../utils/logger');
 
 // Service instances (injected from main app)
 let taskDispatcher = null;
@@ -89,7 +90,7 @@ router.post('/', taskSubmissionLimit, validateTaskSubmission, async (req, res) =
     });
 
   } catch (error) {
-    console.error('Task submission error:', error);
+    logger.error('Task submission error:', error);
     res.status(500).json({
       error: 'Failed to submit task',
       message: error.message
@@ -147,7 +148,7 @@ router.get('/:id', [
     });
 
   } catch (error) {
-    console.error('Get task error:', error);
+    logger.error('Get task error:', error);
     res.status(500).json({
       error: 'Failed to get task status',
       message: error.message
@@ -209,7 +210,7 @@ router.get('/:id/result', [
     });
 
   } catch (error) {
-    console.error('Get task result error:', error);
+    logger.error('Get task result error:', error);
     res.status(500).json({
       error: 'Failed to get task result',
       message: error.message
@@ -255,7 +256,7 @@ router.delete('/:id', [
     });
 
   } catch (error) {
-    console.error('Cancel task error:', error);
+    logger.error('Cancel task error:', error);
     res.status(500).json({
       error: 'Failed to cancel task',
       message: error.message
@@ -333,7 +334,7 @@ router.get('/', [
     });
 
   } catch (error) {
-    console.error('List tasks error:', error);
+    logger.error('List tasks error:', error);
     res.status(500).json({
       error: 'Failed to list tasks',
       message: error.message
@@ -384,7 +385,7 @@ router.post('/:id/retry', [
     });
 
   } catch (error) {
-    console.error('Retry task error:', error);
+    logger.error('Retry task error:', error);
     res.status(500).json({
       error: 'Failed to retry task',
       message: error.message
@@ -423,7 +424,7 @@ router.get('/stats', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get stats error:', error);
+    logger.error('Get stats error:', error);
     res.status(500).json({
       error: 'Failed to get statistics',
       message: error.message

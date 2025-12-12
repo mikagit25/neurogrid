@@ -366,6 +366,7 @@ class NodeAgent:
     async def _execute_task(self, task_data: Dict[str, Any]):
         """Execute the assigned task."""
         task_id = task_data['id']
+        start_time = datetime.now()
         
         try:
             self.logger.info(f"🚀 Executing task: {task_id}")
@@ -387,15 +388,18 @@ class NodeAgent:
                 # Direct execution (less secure)
                 result = await self._execute_direct(model, task_data['input'])
             
+            # Calculate execution time
+            execution_time = (datetime.now() - start_time).total_seconds()
+            
             # Encrypt result if required
             if self.config.get('encrypt_results', True):
                 result = self.crypto_manager.encrypt_data(result)
             
-            # Send result
-            await self._send_task_result(task_id, result)
+            # Send result with execution time
+            await self._send_task_result(task_id, result, execution_time)
             
             self.tasks_completed += 1
-            self.logger.info(f"✅ Task completed: {task_id}")
+            self.logger.info(f"✅ Task completed: {task_id} (took {execution_time:.2f}s)")
             
         except Exception as e:
             self.logger.error(f"❌ Task execution failed: {e}")
@@ -452,7 +456,7 @@ class NodeAgent:
         }
         await self.websocket.send(json.dumps(message))
 
-    async def _send_task_result(self, task_id: str, result: Any):
+    async def _send_task_result(self, task_id: str, result: Any, execution_time: float = 0):
         """Send task execution result."""
         message = {
             'type': 'task_result',
@@ -461,7 +465,7 @@ class NodeAgent:
                 'node_id': self.node_id,
                 'result': result,
                 'timestamp': datetime.now().isoformat(),
-                'execution_time': 0  # TODO: Track actual execution time
+                'execution_time': execution_time
             }
         }
         await self.websocket.send(json.dumps(message))
