@@ -430,9 +430,17 @@ router.delete('/:id', auth, [
 
     const nodeId = req.params.id;
 
+    // Ensure user is authenticated
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
     // Authorization check: Only admin or the node itself can deregister
-    const isAdmin = req.user && req.user.role === 'admin';
-    const isNodeItself = req.user && req.user.node_id === nodeId;
+    const isAdmin = req.user.role === 'admin';
+    const isNodeItself = req.user.node_id === nodeId;
     
     if (!isAdmin && !isNodeItself) {
       return res.status(403).json({

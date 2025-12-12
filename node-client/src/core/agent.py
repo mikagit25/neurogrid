@@ -10,6 +10,7 @@ import asyncio
 import logging
 import json
 import uuid
+import time
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 import aiohttp
@@ -366,7 +367,7 @@ class NodeAgent:
     async def _execute_task(self, task_data: Dict[str, Any]):
         """Execute the assigned task."""
         task_id = task_data['id']
-        start_time = datetime.now()
+        start_time = time.perf_counter()
         
         try:
             self.logger.info(f"🚀 Executing task: {task_id}")
@@ -388,8 +389,8 @@ class NodeAgent:
                 # Direct execution (less secure)
                 result = await self._execute_direct(model, task_data['input'])
             
-            # Calculate execution time
-            execution_time = (datetime.now() - start_time).total_seconds()
+            # Calculate execution time using perf_counter for accuracy
+            execution_time = time.perf_counter() - start_time
             
             # Encrypt result if required
             if self.config.get('encrypt_results', True):
