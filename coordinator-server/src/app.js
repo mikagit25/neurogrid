@@ -43,6 +43,7 @@ const advancedAnalyticsRoutes = require('./routes/analytics');
 const deploymentRoutes = require('./routes/deployment');
 const reputationRoutes = require('./routes/reputation');
 const agentsRoutes = require('./routes/agents');
+const cryptoRoutes = require('../routes/crypto');
 
 // Import services
 const TaskDispatcher = require('./services/TaskDispatcher');
@@ -390,6 +391,7 @@ class CoordinatorServer {
     this.app.use('/api/advanced-analytics', advancedAnalyticsRoutes);
     this.app.use('/api/reputation', reputationRoutes);
     this.app.use('/api/agents', agentsRoutes);
+    this.app.use('/api/crypto', cryptoRoutes);
     this.app.use('/api/deployment', deploymentRoutes);
 
     // Cache demo routes (for testing and demonstration)
