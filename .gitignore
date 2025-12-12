@@ -174,13 +174,16 @@ Thumbs.db
 .local/
 local_config.json
 
-# Model files (too large for git)
+# Model files (too large for git) - but not source code
 models/
 *.bin
 *.safetensors
 *.onnx
 *.pt
 *.pth
+# Allow source code models directories
+!node-client/src/models/
+!coordinator-server/src/models/
 
 # GPU runtime files
 cuda_*
