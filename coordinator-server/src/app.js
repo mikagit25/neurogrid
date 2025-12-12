@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet'); // eslint-disable-line no-unused-vars
 const morgan = require('morgan');
 const compression = require('compression');
 const http = require('http');
