@@ -2,6 +2,8 @@ const logger = require('../utils/logger');
 const { db } = require('../config/database-universal');
 const Job = require('../models/Job');
 const Node = require('../models/Node');
+const NodeReputationSystem = require('./NodeReputationSystem');
+const EnhancedAIValidator = require('./EnhancedAIValidator');
 
 /**
  * Task Dispatcher Service
@@ -12,6 +14,10 @@ class TaskDispatcher {
     this.dispatchInterval = 5000; // 5 seconds
     this.maxRetries = 3;
     this.dispatchTimer = null;
+
+    // Initialize reputation system and AI validator
+    this.reputationSystem = new NodeReputationSystem();
+    this.aiValidator = new EnhancedAIValidator();
 
     this.startDispatchTimer();
   }

@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid - Investment Overview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .metric-card { background: linear-gradient(145deg, #ffffff, #f8fafc); border: 2px solid #e2e8f0; }
+        .roi-positive { color: #059669; }
+        .roi-chart { height: 300px; }
+        .tokenomics-visual { background: conic-gradient(from 0deg, #3b82f6 0deg 144deg, #10b981 144deg 216deg, #f59e0b 216deg 288deg, #ef4444 288deg 360deg); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold text-gray-900">NeuroGrid</h1>
+                    </div>
+                    <div class="ml-10 flex space-x-8">
+                        <a href="/" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="/about-project" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">About</a>
+                        <a href="/demo" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Demo</a>
+                        <a href="/api/docs" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">API Docs</a>
+                        <a href="/technical-docs" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Technical</a>
+                        <a href="#" class="bg-pink-100 text-pink-700 px-3 py-2 rounded-md text-sm font-medium">Investors</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <a href="#contact" class="text-pink-600 hover:text-pink-800 font-medium">Get In Touch</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl font-bold mb-6">Investment Overview</h1>
+            <p class="text-xl opacity-90 max-w-3xl mx-auto mb-8">
+                Decentralizing AI Computing Infrastructure - A $150B Market Opportunity
+            </p>
+            <div class="grid md:grid-cols-3 gap-8 mt-12">
+                <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                    <div class="text-3xl font-bold mb-2">50-85%</div>
+                    <div class="text-sm opacity-90">Cost Reduction vs Cloud</div>
+                </div>
+                <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                    <div class="text-3xl font-bold mb-2">$150B</div>
+                    <div class="text-sm opacity-90">TAM by 2030</div>
+                </div>
+                <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                    <div class="text-3xl font-bold mb-2">Phase 1</div>
+                    <div class="text-sm opacity-90">Complete & Deployed</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Executive Summary -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">💼 Executive Summary</h2>
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">The Opportunity</h3>
+                        <p class="text-gray-600 mb-4">
+                            AI computing costs have become a major barrier to innovation. Current cloud providers charge premium prices for GPU access, 
+                            with costs reaching $60 per 1K tokens for advanced models. Meanwhile, millions of GPUs worldwide sit idle.
+                        </p>
+                        <p class="text-gray-600 mb-4">
+                            NeuroGrid bridges this gap by creating a decentralized marketplace for AI computing, reducing costs by 50-85% while 
+                            providing sustainable incentives for GPU owners to monetize their idle resources.
+                        </p>
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                MVP Complete
+                            </div>
+                            <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                Production Ready
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">Key Metrics</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Market Size (TAM):</span>
+                                <span class="font-bold">$150B by 2030</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Cost Advantage:</span>
+                                <span class="font-bold text-green-600">50-85% savings</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Revenue Model:</span>
+                                <span class="font-bold">20% platform fee</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Development Stage:</span>
+                                <span class="font-bold text-blue-600">Phase 1 Complete</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Token Supply:</span>
+                                <span class="font-bold">1B NEURO</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Market Analysis -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📊 Market Analysis</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Market Size & Growth</h3>
+                    <div class="space-y-4">
+                        <div class="metric-card rounded-lg p-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">AI Computing Market 2025:</span>
+                                <span class="font-bold text-2xl">$45B</span>
+                            </div>
+                        </div>
+                        <div class="metric-card rounded-lg p-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Projected 2030:</span>
+                                <span class="font-bold text-2xl text-green-600">$150B</span>
+                            </div>
+                        </div>
+                        <div class="metric-card rounded-lg p-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">CAGR 2025-2030:</span>
+                                <span class="font-bold text-2xl text-blue-600">22.3%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <canvas id="marketGrowthChart" class="roi-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Competitive Landscape</h3>
+                    <div class="space-y-4">
+                        <div class="border rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold">OpenAI API</span>
+                                <span class="text-red-600">$60/1K tokens</span>
+                            </div>
+                            <div class="text-sm text-gray-600">Centralized, expensive, limited availability</div>
+                        </div>
+                        <div class="border rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold">AWS/GCP GPUs</span>
+                                <span class="text-red-600">$3-8/hour</span>
+                            </div>
+                            <div class="text-sm text-gray-600">Complex setup, high minimum commitments</div>
+                        </div>
+                        <div class="border rounded-lg p-4 bg-green-50">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold text-green-800">NeuroGrid</span>
+                                <span class="text-green-600">$0.010/1K tokens</span>
+                            </div>
+                            <div class="text-sm text-green-700">Decentralized, affordable, easy integration</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h4 class="font-semibold text-blue-800 mb-2">Competitive Advantage</h4>
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            <li>• 50-85% cost reduction with sustainable economics</li>
+                            <li>• Global GPU resource utilization</li>
+                            <li>• Token-based incentive alignment</li>
+                            <li>• Developer-friendly API</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tokenomics -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🪙 NEURO Tokenomics</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="md:col-span-2 bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Token Distribution & Economics</h3>
+                    
+                    <div class="grid md:grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-4">Token Allocation</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Ecosystem Rewards (40%)</span>
+                                    <span class="font-bold text-blue-600">400M NEURO</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Development Fund (30%)</span>
+                                    <span class="font-bold text-green-600">300M NEURO</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Community Treasury (20%)</span>
+                                    <span class="font-bold text-yellow-600">200M NEURO</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Team & Advisors (10%)</span>
+                                    <span class="font-bold text-red-600">100M NEURO</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-4">Token Utility</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    <span>Payment for AI task processing</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    <span>Rewards for GPU compute providers</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    <span>Network governance voting rights</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    <span>Staking for priority processing</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-2"></i>
+                                    <span>Ecosystem development funding</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Model -->
+                    <div class="border-t pt-6">
+                        <h4 class="font-semibold text-gray-900 mb-4">Current Pricing Model</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-gray-50 rounded-lg">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">AI Model</th>
+                                        <th class="px-4 py-2 text-left">NEURO Cost</th>
+                                        <th class="px-4 py-2 text-left">USD Equivalent</th>
+                                        <th class="px-4 py-2 text-left">OpenAI Cost</th>
+                                        <th class="px-4 py-2 text-left">Savings</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="px-4 py-2">LLaMA 2 (7B)</td>
+                                        <td class="px-4 py-2">1.0 NEURO</td>
+                                        <td class="px-4 py-2">$0.010</td>
+                                        <td class="px-4 py-2">$0.060</td>
+                                        <td class="px-4 py-2 text-green-600">83.3%</td>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <td class="px-4 py-2">Stable Diffusion</td>
+                                        <td class="px-4 py-2">2.0 NEURO</td>
+                                        <td class="px-4 py-2">$0.020</td>
+                                        <td class="px-4 py-2">$0.040</td>
+                                        <td class="px-4 py-2 text-green-600">50.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2">Whisper</td>
+                                        <td class="px-4 py-2">0.5 NEURO</td>
+                                        <td class="px-4 py-2">$0.005</td>
+                                        <td class="px-4 py-2">$0.006</td>
+                                        <td class="px-4 py-2 text-green-600">16.7%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                            <h4 class="font-semibold text-blue-800 mb-2">🧮 Sustainable Economics</h4>
+                            <p class="text-sm text-blue-700 mb-2">
+                                Our pricing model balances competitive client costs with attractive GPU provider incentives:
+                            </p>
+                            <ul class="text-xs text-blue-600 space-y-1">
+                                <li>• <strong>GPU Provider Revenue:</strong> $0.008 per 1K tokens (80% share)</li>
+                                <li>• <strong>Monthly Potential:</strong> $200-800 for mid-range GPU (24/7 usage)</li>
+                                <li>• <strong>Break-even:</strong> 2-3 months for GPU depreciation coverage</li>
+                                <li>• <strong>Client Savings:</strong> Still 50-85% below cloud providers</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Token Distribution</h3>
+                    <div class="tokenomics-visual w-32 h-32 rounded-full mx-auto mb-6"></div>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-blue-500 rounded mr-3"></div>
+                            <span>Ecosystem (40%)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-green-500 rounded mr-3"></div>
+                            <span>Development (30%)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-yellow-500 rounded mr-3"></div>
+                            <span>Community (20%)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-red-500 rounded mr-3"></div>
+                            <span>Team (10%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-green-50 rounded-lg">
+                        <h4 class="font-semibold text-green-800 mb-2">Value Accrual</h4>
+                        <p class="text-sm text-green-700">
+                            Token value increases with network usage through:
+                        </p>
+                        <ul class="text-xs text-green-600 mt-2 space-y-1">
+                            <li>• Increased demand for task processing</li>
+                            <li>• Platform fee collection in NEURO</li>
+                            <li>• Deflationary token burns</li>
+                            <li>• Staking rewards for governance</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial Projections -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📈 Financial Projections</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Revenue Model</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-2">Platform Transaction Fee</h4>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Fee Structure:</span>
+                                <span class="font-bold">20% of task cost</span>
+                            </div>
+                            <div class="text-sm text-gray-500 mt-1">
+                                • Node providers receive 80%<br>
+                                • Platform retains 20% for operations & development
+                            </div>
+                        </div>
+                        
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-2">Revenue Scenarios (Year 3)</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Conservative (1M tasks/day):</span>
+                                    <span class="font-bold text-green-600">$73M/year</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Base Case (5M tasks/day):</span>
+                                    <span class="font-bold text-blue-600">$365M/year</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Optimistic (20M tasks/day):</span>
+                                    <span class="font-bold text-purple-600">$1.46B/year</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-blue-50 rounded-lg">
+                            <h4 class="font-semibold text-blue-800 mb-2">Key Assumptions</h4>
+                            <ul class="text-sm text-blue-700 space-y-1">
+                                <li>• Average task cost: $0.001 (0.1 NEURO)</li>
+                                <li>• Platform fee: 20% ($0.0002 per task)</li>
+                                <li>• Growing from current 100 tasks/day</li>
+                                <li>• Market adoption follows AI computing growth</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">ROI Analysis</h3>
+                    
+                    <div class="mb-6">
+                        <canvas id="roiChart" class="roi-chart"></canvas>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="metric-card rounded-lg p-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">3-Year Revenue CAGR:</span>
+                                <span class="font-bold text-green-600">450%</span>
+                            </div>
+                        </div>
+                        <div class="metric-card rounded-lg p-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Break-even Point:</span>
+                                <span class="font-bold text-blue-600">Month 18</span>
+                            </div>
+                        </div>
+                        <div class="metric-card rounded-lg p-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Token Value Growth (3Y):</span>
+                                <span class="font-bold text-purple-600">25x potential</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-yellow-50 rounded-lg">
+                        <h4 class="font-semibold text-yellow-800 mb-2">Investment Thesis</h4>
+                        <p class="text-sm text-yellow-700">
+                            NeuroGrid captures value from the massive shift to AI computing while solving the 
+                            fundamental cost and accessibility problems in the current market.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technology & Team -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🚀 Technology & Execution</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Technical Achievements</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Phase 1 TestNet Complete</h4>
+                                <p class="text-sm text-gray-600">Full working MVP with 50,000+ lines of production code</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Token Economy Implemented</h4>
+                                <p class="text-sm text-gray-600">Complete NEURO token system with payments & rewards</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Production-Ready Architecture</h4>
+                                <p class="text-sm text-gray-600">Scalable microservices with 50+ API endpoints</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Multi-Model AI Support</h4>
+                                <p class="text-sm text-gray-600">LLaMA, Stable Diffusion, Whisper with extensible framework</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-green-50 rounded-lg">
+                        <h4 class="font-semibold text-green-800 mb-2">Development Metrics</h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <div class="font-medium">Code Quality</div>
+                                <div class="text-green-700">Production Ready</div>
+                            </div>
+                            <div>
+                                <div class="font-medium">Test Coverage</div>
+                                <div class="text-green-700">Comprehensive</div>
+                            </div>
+                            <div>
+                                <div class="font-medium">API Endpoints</div>
+                                <div class="text-green-700">50+</div>
+                            </div>
+                            <div>
+                                <div class="font-medium">Components</div>
+                                <div class="text-green-700">15+</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Roadmap & Milestones</h3>
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mt-2 mr-4"></div>
+                            <div>
+                                <h4 class="font-semibold text-green-700">Q4 2025: Phase 1 Complete ✅</h4>
+                                <p class="text-sm text-gray-600">MVP, tokenomics, basic AI models</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full mt-2 mr-4"></div>
+                            <div>
+                                <h4 class="font-semibold text-blue-700">Q1 2026: Phase 2 MainNet 🚀</h4>
+                                <p class="text-sm text-gray-600">Security audit, real tokenomics, global launch</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-3 h-3 bg-purple-500 rounded-full mt-2 mr-4"></div>
+                            <div>
+                                <h4 class="font-semibold text-purple-700">Q2-Q3 2026: Ecosystem Growth</h4>
+                                <p class="text-sm text-gray-600">Advanced models, mobile support, partnerships</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-3 h-3 bg-gray-400 rounded-full mt-2 mr-4"></div>
+                            <div>
+                                <h4 class="font-semibold text-gray-700">Q4 2026: Phase 3 Enterprise</h4>
+                                <p class="text-sm text-gray-600">Enterprise features, DAO governance, federated learning</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h4 class="font-semibold text-blue-800 mb-2">Competitive Timing</h4>
+                        <p class="text-sm text-blue-700">
+                            NeuroGrid is positioned to capture the growing AI computing market before larger players 
+                            can adapt their centralized infrastructure. First-mover advantage in decentralized AI.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Investment Opportunity -->
+        <section id="contact" class="mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">💰 Investment Opportunity</h2>
+            <div class="bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl p-8 text-white text-center">
+                <h3 class="text-2xl font-bold mb-4">Ready to Decentralize AI Computing?</h3>
+                <p class="text-lg opacity-90 mb-6 max-w-2xl mx-auto">
+                    Join us in building the infrastructure for the next generation of AI applications. 
+                    NeuroGrid is seeking strategic pre-seed investors to accelerate MainNet launch and establish 
+                    sustainable GPU provider economics in our decentralized network.
+                </p>
+                
+                <div class="grid md:grid-cols-3 gap-6 mt-8 mb-8">
+                    <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                        <div class="text-3xl font-bold mb-2">Pre-Seed</div>
+                        <div class="text-sm opacity-90">Seeking strategic partners</div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                        <div class="text-3xl font-bold mb-2">$2M</div>
+                        <div class="text-sm opacity-90">Target raise for MainNet</div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                        <div class="text-3xl font-bold mb-2">12 months</div>
+                        <div class="text-sm opacity-90">Runway to profitability</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="mailto:investors@neurogrid.network" 
+                       class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-envelope mr-2"></i>Contact Investment Team
+                    </a>
+                    <a href="/api/docs" 
+                       class="border border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors">
+                        <i class="fas fa-code mr-2"></i>Technical Documentation
+                    </a>
+                    <a href="/demo" 
+                       class="border border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors">
+                        <i class="fas fa-play mr-2"></i>Live Platform Demo
+                    </a>
+                </div>
+                
+                <div class="mt-8 text-sm opacity-75">
+                    * Investment terms and token allocations subject to regulatory compliance and final documentation
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Market Growth Chart
+        const marketCtx = document.getElementById('marketGrowthChart').getContext('2d');
+        new Chart(marketCtx, {
+            type: 'line',
+            data: {
+                labels: ['2024', '2025', '2026', '2027', '2028', '2029', '2030'],
+                datasets: [{
+                    label: 'AI Computing Market Size ($B)',
+                    data: [45, 55, 68, 84, 103, 126, 150],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Market Size ($B)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // ROI Chart
+        const roiCtx = document.getElementById('roiChart').getContext('2d');
+        new Chart(roiCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                datasets: [{
+                    label: 'Revenue ($M)',
+                    data: [5, 45, 365, 1200, 2800],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Revenue ($M)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Card hover animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.card-hover').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

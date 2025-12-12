@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { EventEmitter } = require('events');
 const logger = require('../utils/logger');
+const NodeReputationSystem = require('../services/NodeReputationSystem');
 
 /**
  * Proof-of-Compute Consensus Engine for NeuroGrid MainNet
@@ -46,6 +47,14 @@ class ProofOfComputeConsensus extends EventEmitter {
       slashingEvents: 0,
       validatorRotations: 0
     };
+
+    // Initialize reputation system
+    this.reputationSystem = new NodeReputationSystem({
+      initialReputation: 100,
+      maxReputation: 1000,
+      bonusMultiplier: 1.5,
+      penaltyMultiplier: 0.3
+    });
 
     logger.info('Proof-of-Compute Consensus Engine initialized');
   }

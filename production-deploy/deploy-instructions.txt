@@ -1,0 +1,24 @@
+🚀 NeuroGrid Production Deployment Instructions
+
+1. Copy this entire folder to your production server:
+   scp -r production-deploy/ root@your-server:/root/
+
+2. On production server, run:
+   cd /root/production-deploy
+   chmod +x deploy-production.sh
+   ./deploy-production.sh
+
+3. Or manually:
+   cd /root/neurogrid-new/coordinator-server
+   cp /root/production-deploy/coordinator-server/src/app-simple.js src/
+   cp /root/production-deploy/coordinator-server/package.json .
+   npm install --production
+   pm2 delete neurogrid-api || true
+   pm2 start src/app-simple.js --name neurogrid-api --watch
+   pm2 save
+
+4. Test:
+   curl http://localhost:3001/health
+   curl http://localhost:3001/api/info
+
+✅ All files tested and ready for production!
