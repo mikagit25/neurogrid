@@ -1,11 +1,45 @@
 {
   "name": "neurogrid",
-  "version": "0.1.0",
-  "description": "Decentralized AI inference platform - harnessing idle compute power to democratize AI",
-  "private": true,
+  "version": "1.0.0",
+  "description": "🌐 Decentralized AI Computing Platform - Transform idle GPUs into affordable AI infrastructure. Save 50-85% on AI inference costs while GPU providers earn sustainable income.",
+  "private": false,
+  "homepage": "https://github.com/mikagit25/neurogrid#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikagit25/neurogrid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mikagit25/neurogrid/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "NeuroGrid Team",
+    "email": "team@neurogrid.network",
+    "url": "https://neurogrid.network"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/mikagit25"
+  },
+  "keywords": [
+    "ai",
+    "artificial-intelligence",
+    "decentralized",
+    "gpu",
+    "compute",
+    "blockchain",
+    "inference",
+    "neural-networks",
+    "machine-learning",
+    "distributed-computing",
+    "cryptocurrency",
+    "web3",
+    "defi",
+    "neurogrid"
+  ],
   "workspaces": [
     "coordinator-server",
-    "node-client", 
+    "node-client",
     "web-interface"
   ],
   "scripts": {
@@ -20,25 +54,20 @@
     "test:web": "cd web-interface && npm test",
     "dev": "concurrently \"npm run dev:coordinator\" \"npm run dev:web\"",
     "dev:coordinator": "cd coordinator-server && npm run dev",
-    "dev:web": "cd web-interface && npm run dev"
-  },
-  "keywords": [
-    "ai",
-    "inference", 
-    "decentralized",
-    "gpu",
-    "compute",
-    "neural-networks",
-    "blockchain",
-    "distributed-computing"
-  ],
-  "author": "NeuroGrid Team",
-  "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+    "dev:web": "cd web-interface && npm run dev",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "audit": "npm audit && cd coordinator-server && npm audit && cd ../web-interface && npm audit"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

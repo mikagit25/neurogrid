@@ -1,14 +1,28 @@
-# Contributing to NeuroGrid
+# Contributing to NeuroGrid 🚀
 
 Thank you for your interest in contributing to NeuroGrid! This document provides guidelines and information for contributors.
 
-## 🚀 **Getting Started**
+## � Table of Contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Process](#development-process)
+- [Submitting Changes](#submitting-changes)
+- [Style Guidelines](#style-guidelines)
+- [Community](#community)
+
+## 🤝 Code of Conduct
+
+This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+## 🏁 Getting Started
 
 ### Prerequisites
-- Node.js >= 18.0.0
-- Python >= 3.10
-- Docker & Docker Compose
-- Git
+
+- **Node.js** >= 18.0.0
+- **npm** >= 8.0.0  
+- **Python** >= 3.8 (for node-client)
+- **Git**
 
 ### Development Setup
 ```bash

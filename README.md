@@ -5,6 +5,8 @@
 ![Status](https://img.shields.io/badge/Status-Pre--Seed-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
+**Topics:** `artificial-intelligence` `gpu-computing` `decentralized` `blockchain` `machine-learning` `inference` `neural-networks` `cryptocurrency` `web3` `defi` `distributed-computing`
+
 > **Democratizing AI Computing Through Decentralized GPU Networks**
 
 NeuroGrid transforms idle GPUs worldwide into an affordable, accessible AI computing infrastructure. Users save 50-85% on AI inference costs while GPU providers earn sustainable income from their unused hardware.
