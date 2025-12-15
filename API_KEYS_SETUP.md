@@ -1,32 +1,45 @@
 # NeuroGrid API Keys Configuration Guide
 
-## 🔑 Required API Keys for Production
+## ⚠️ ВАЖНОЕ УТОЧНЕНИЕ О GITHUB COPILOT
 
-### 1. GitHub Copilot API Key
+**GitHub Copilot НЕ имеет публичного API!** 
 
-**Опция A: GitHub Copilot Business/Enterprise**
+Copilot работает только как расширение IDE (VS Code, JetBrains) и не предоставляет REST API для веб-сервисов. Наша система использует **реальные доступные API**.
+
+## 🔑 Доступные AI API (Real Working APIs)
+
+### 1. Google Gemini API ⭐ РЕКОМЕНДУЕТСЯ
+
+**Самый дешевый и быстрый вариант!**
 ```bash
-# Получите ключ через GitHub Settings
-GITHUB_COPILOT_API_KEY=your-github-copilot-api-key-here
+# Получите на https://makersuite.google.com/app/apikey
+GOOGLE_API_KEY=AIzaSyD-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-**Опция B: GitHub Personal Access Token**
+**Получение:**
+1. Перейдите на https://makersuite.google.com/app/apikey
+2. Войдите с Google аккаунтом
+3. Нажмите "Create API Key"
+4. Скопируйте ключ и добавьте в .env
+
+**Стоимость: $0.0005/1k tokens (в 60 раз дешевле OpenAI!)**
+
+### 2. OpenAI API 🔥 НАИБОЛЕЕ СТАБИЛЬНЫЙ
+
 ```bash
-# Создайте в https://github.com/settings/tokens
-# Scope: "read:user", "read:org"
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Получите на https://platform.openai.com/api-keys
+OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-**Получение GitHub Copilot API ключа:**
-1. Перейдите на https://github.com/settings/tokens
-2. Нажмите "Generate new token" → "Generate new token (classic)"
-3. Выберите scopes:
-   - `read:user` - для чтения информации о пользователе
-   - `read:org` - для организации (если нужно)
-   - `copilot` - для доступа к Copilot API (если доступно)
-4. Скопируйте токен и добавьте в .env как `GITHUB_TOKEN=`
+**Получение:**
+1. Зарегистрируйтесь на https://platform.openai.com/
+2. Перейдите в API Keys
+3. Создайте новый secret key
+4. Скопируйте и добавьте в .env
 
-### 2. Anthropic Claude API Key (Optional)
+**Стоимость: $0.03/1k tokens (GPT-4), $0.002/1k tokens (GPT-3.5)**
+
+### 3. Anthropic Claude API 🧠 ЛУЧШИЙ ДЛЯ АНАЛИЗА
 
 ```bash
 # Получите на https://console.anthropic.com/
@@ -39,18 +52,22 @@ ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 3. Создайте новый ключ
 4. Скопируйте и добавьте в .env
 
-### 3. OpenAI API Key (Fallback)
+**Стоимость: $0.015/1k tokens**
+
+### 4. HuggingFace API 🆓 ОТКРЫТЫЕ МОДЕЛИ
 
 ```bash
-# Получите на https://platform.openai.com/api-keys
-OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Получите на https://huggingface.co/settings/tokens
+HUGGINGFACE_API_KEY=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Получение:**
-1. Зарегистрируйтесь на https://platform.openai.com/
-2. Перейдите в API Keys
-3. Создайте новый secret key
+1. Зарегистрируйтесь на https://huggingface.co/
+2. Перейдите в Settings → Access Tokens
+3. Создайте новый token с read правами
 4. Скопируйте и добавьте в .env
+
+**Стоимость: $0.001/1k tokens (CodeLlama и другие открытые модели)**
 
 ## 🚀 Production Setup
 

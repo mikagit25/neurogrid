@@ -26,31 +26,25 @@ echo "✅ .env file found"
 # Source the .env file
 source .env
 
-# Check GitHub API keys
+# Check Google Gemini API key
 echo ""
-echo "🐙 GitHub API Configuration:"
-if [ -n "$GITHUB_COPILOT_API_KEY" ]; then
-    echo "   ✅ GITHUB_COPILOT_API_KEY: Set (${#GITHUB_COPILOT_API_KEY} chars)"
-elif [ -n "$GITHUB_TOKEN" ]; then
-    echo "   ✅ GITHUB_TOKEN: Set (${#GITHUB_TOKEN} chars)"
-    
-    # Test GitHub API if token is provided
-    if command -v curl &> /dev/null; then
-        echo "   🔬 Testing GitHub API..."
-        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            https://api.github.com/user)
-        
-        if [ "$HTTP_STATUS" = "200" ]; then
-            echo "   ✅ GitHub API: Working"
-        else
-            echo "   ❌ GitHub API: Failed (HTTP $HTTP_STATUS)"
-            echo "      Check your token permissions and validity"
-        fi
-    fi
+echo "🌟 Google Gemini API Configuration:"
+if [ -n "$GOOGLE_API_KEY" ]; then
+    echo "   ✅ GOOGLE_API_KEY: Set (${#GOOGLE_API_KEY} chars)"
+    echo "   💰 Cost: $0.0005/1k tokens (CHEAPEST!)"
 else
-    echo "   ❌ No GitHub API key found"
-    echo "      Set GITHUB_COPILOT_API_KEY or GITHUB_TOKEN"
+    echo "   ⚠️  GOOGLE_API_KEY: Not set"
+    echo "      Get free key at https://makersuite.google.com/app/apikey"
+fi
+
+# Check OpenAI API key  
+echo ""
+echo "🧠 OpenAI API Configuration:"
+if [ -n "$OPENAI_API_KEY" ]; then
+    echo "   ✅ OPENAI_API_KEY: Set (${#OPENAI_API_KEY} chars)"
+    echo "   💰 Cost: $0.03/1k tokens (GPT-4), $0.002/1k tokens (GPT-3.5)"
+else
+    echo "   ⚠️  OPENAI_API_KEY: Not set"
 fi
 
 # Check Anthropic API key
@@ -58,8 +52,19 @@ echo ""
 echo "🤖 Anthropic API Configuration:"
 if [ -n "$ANTHROPIC_API_KEY" ]; then
     echo "   ✅ ANTHROPIC_API_KEY: Set (${#ANTHROPIC_API_KEY} chars)"
+    echo "   💰 Cost: $0.015/1k tokens (Best for analysis)"
 else
-    echo "   ⚠️  ANTHROPIC_API_KEY: Not set (optional)"
+    echo "   ⚠️  ANTHROPIC_API_KEY: Not set"
+fi
+
+# Check HuggingFace API key
+echo ""
+echo "🤗 HuggingFace API Configuration:"
+if [ -n "$HUGGINGFACE_API_KEY" ]; then
+    echo "   ✅ HUGGINGFACE_API_KEY: Set (${#HUGGINGFACE_API_KEY} chars)"
+    echo "   💰 Cost: $0.001/1k tokens (Open source models)"
+else
+    echo "   ⚠️  HUGGINGFACE_API_KEY: Not set"
 fi
 
 # Check OpenAI API key  
@@ -80,13 +85,16 @@ echo "   🔌 PORT: ${PORT:-8080}"
 
 # Count available APIs
 API_COUNT=0
-if [ -n "$GITHUB_COPILOT_API_KEY" ] || [ -n "$GITHUB_TOKEN" ]; then
+if [ -n "$GOOGLE_API_KEY" ]; then
+    ((API_COUNT++))
+fi
+if [ -n "$OPENAI_API_KEY" ]; then
     ((API_COUNT++))
 fi
 if [ -n "$ANTHROPIC_API_KEY" ]; then
     ((API_COUNT++))
 fi
-if [ -n "$OPENAI_API_KEY" ]; then
+if [ -n "$HUGGINGFACE_API_KEY" ]; then
     ((API_COUNT++))
 fi
 

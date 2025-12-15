@@ -1,6 +1,6 @@
 /**
  * NeuroGrid Smart Model Router
- * Интеллектуальная система выбора координатора и роутинга задач
+ * Real working implementation with available public APIs
  */
 
 const ExternalAPIManager = require('./ExternalAPIManager');
@@ -19,35 +19,56 @@ class SmartModelRouter {
     
     console.log('🔗 External API Manager initialized');
     console.log('📡 Available APIs:', this.externalAPI.getAvailableAPIs());
-    // Конфигурация доступных координаторов
+    
+    // Конфигурация РЕАЛЬНЫХ доступных координаторов
     this.coordinators = {
-      'github-copilot': {
-        name: 'GitHub Copilot',
+      'google-gemini': {
+        name: 'Google Gemini Pro',
         type: 'external',
-        endpoint: 'https://api.githubcopilot.com/chat/completions',
-        capabilities: ['text', 'code', 'analysis', 'planning', 'debugging'],
-        cost: 0.01, // $ per 1K tokens (более выгодно с лицензией)
-        latency: 1500, // ms
+        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+        capabilities: ['text', 'code', 'analysis', 'planning', 'multimodal'],
+        cost: 0.0005, // самый дешевый!
+        latency: 800,
+        reliability: 0.97,
+        available: this.externalAPI.getAvailableAPIs().gemini
+      },
+      'openai-gpt4': {
+        name: 'OpenAI GPT-4',
+        type: 'external',
+        endpoint: 'https://api.openai.com/v1/chat/completions',
+        capabilities: ['text', 'code', 'analysis', 'reasoning', 'planning'],
+        cost: 0.03, 
+        latency: 1200,
+        reliability: 0.98,
+        available: this.externalAPI.getAvailableAPIs().openai
+      },
+      'openai-gpt3.5': {
+        name: 'OpenAI GPT-3.5',
+        type: 'external',
+        endpoint: 'https://api.openai.com/v1/chat/completions',
+        capabilities: ['text', 'code', 'simple-analysis'],
+        cost: 0.002,
+        latency: 600,
         reliability: 0.99,
-        available: this.externalAPI.getAvailableAPIs()['github-copilot']
+        available: this.externalAPI.getAvailableAPIs().openai
       },
       'anthropic-claude': {
         name: 'Anthropic Claude',
         type: 'external', 
         endpoint: 'https://api.anthropic.com/v1/messages',
-        capabilities: ['text', 'analysis', 'reasoning'],
-        cost: 0.025,
-        latency: 2500,
+        capabilities: ['text', 'analysis', 'reasoning', 'long-context'],
+        cost: 0.015,
+        latency: 2000,
         reliability: 0.98,
         available: this.externalAPI.getAvailableAPIs().anthropic
       },
-      'local-llama2': {
-        name: 'Local LLaMA 2 7B',
-        type: 'local',
-        endpoint: 'internal',
-        capabilities: ['text', 'chat'],
+      'huggingface-codellama': {
+        name: 'CodeLlama (HuggingFace)',
+        type: 'external',
+        endpoint: 'https://api-inference.huggingface.co/models/codellama/CodeLlama-34b-Instruct-hf',
+        capabilities: ['code', 'code-generation', 'debugging'],
         cost: 0.001,
-        latency: 5000,
+        latency: 3000,
         reliability: 0.95,
         available: true // всегда доступен локально
       },

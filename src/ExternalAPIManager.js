@@ -1,48 +1,64 @@
 /**
  * External API Integration for NeuroGrid
- * Поддержка GitHub Copilot, Anthropic и других внешних AI API
+ * Real working implementation with available public APIs
  */
 
 class ExternalAPIManager {
   constructor() {
     this.apiKeys = {
-      'github-copilot': process.env.GITHUB_COPILOT_API_KEY || process.env.GITHUB_TOKEN || null,
+      openai: process.env.OPENAI_API_KEY || null,
       anthropic: process.env.ANTHROPIC_API_KEY || null,
-      openai: process.env.OPENAI_API_KEY || null // fallback
+      gemini: process.env.GOOGLE_API_KEY || null, // Google Gemini
+      huggingface: process.env.HUGGINGFACE_API_KEY || null
     };
 
     this.endpoints = {
-      'github-copilot': 'https://api.githubcopilot.com/chat/completions',
+      openai: 'https://api.openai.com/v1/chat/completions',
       anthropic: 'https://api.anthropic.com/v1/messages',
-      openai: 'https://api.openai.com/v1/chat/completions'
+      gemini: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+      huggingface: 'https://api-inference.huggingface.co/models'
     };
 
     this.models = {
-      'github-copilot': {
-        provider: 'github-copilot',
-        model: 'gpt-4',
-        maxTokens: 8192,
-        costPer1K: 0.01 // более выгодно с лицензией
-      },
       'openai-gpt4': {
         provider: 'openai',
         model: 'gpt-4-turbo-preview',
         maxTokens: 4096,
-        costPer1K: 0.03
+        costPer1K: 0.03,
+        strengths: ['code-generation', 'analysis', 'reasoning']
       },
       'openai-gpt3.5': {
-        provider: 'openai',
+        provider: 'openai', 
         model: 'gpt-3.5-turbo',
         maxTokens: 4096,
-        costPer1K: 0.002
+        costPer1K: 0.002,
+        strengths: ['text-generation', 'simple-code', 'translation']
       },
       'anthropic-claude': {
         provider: 'anthropic',
         model: 'claude-3-sonnet-20241001',
         maxTokens: 4096,
-        costPer1K: 0.025
+        costPer1K: 0.015,
+        strengths: ['analysis', 'reasoning', 'long-context']
+      },
+      'google-gemini': {
+        provider: 'gemini',
+        model: 'gemini-pro',
+        maxTokens: 32768,
+        costPer1K: 0.0005,
+        strengths: ['multimodal', 'large-context', 'fast']
+      },
+      'huggingface-codellama': {
+        provider: 'huggingface',
+        model: 'codellama/CodeLlama-34b-Instruct-hf',
+        maxTokens: 2048,
+        costPer1K: 0.001,
+        strengths: ['code-generation', 'open-source']
       }
     };
+
+    // Priority order: cheapest and most reliable first
+    this.providerPriority = ['gemini', 'huggingface', 'openai', 'anthropic'];
   }
 
   /**
@@ -51,7 +67,9 @@ class ExternalAPIManager {
   getAvailableAPIs() {
     return {
       openai: !!this.apiKeys.openai,
-      anthropic: !!this.apiKeys.anthropic
+      anthropic: !!this.apiKeys.anthropic,
+      gemini: !!this.apiKeys.gemini,
+      huggingface: !!this.apiKeys.huggingface
     };
   }
 
@@ -68,19 +86,52 @@ class ExternalAPIManager {
   }
 
   /**
-   * Обработка через GitHub Copilot API
+   * Выбор лучшего провайдера для задачи
    */
-  async processGitHubCopilot(prompt, modelConfig = {}) {
-    if (!this.apiKeys['github-copilot']) {
-      throw new Error('GitHub Copilot API key not configured');
+  selectBestProvider(taskType, complexity) {
+    const available = Object.entries(this.getAvailableAPIs())
+      .filter(([provider, isAvailable]) => isAvailable)
+      .map(([provider]) => provider);
+
+    if (available.length === 0) {
+      throw new Error('No AI API keys configured');
     }
 
-    const model = modelConfig.model || 'gpt-4';
-    const maxTokens = modelConfig.maxTokens || 4000;
+    // Smart selection based on task type
+    if (taskType === 'code-generation') {
+      if (available.includes('huggingface')) return 'huggingface'; // CodeLlama
+      if (available.includes('openai')) return 'openai';
+    }
+
+    if (taskType === 'analysis' || taskType === 'reasoning') {
+      if (available.includes('anthropic')) return 'anthropic';
+      if (available.includes('openai')) return 'openai';
+    }
+
+    // Default: cheapest first
+    for (const provider of this.providerPriority) {
+      if (available.includes(provider)) {
+        return provider;
+      }
+    }
+
+    return available[0];
+  }
+
+  /**
+   * Обработка через OpenAI API
+   */
+  async processOpenAI(prompt, modelConfig = {}) {
+    if (!this.apiKeys.openai) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const model = modelConfig.model || 'gpt-3.5-turbo';
+    const maxTokens = modelConfig.maxTokens || 2000;
     const temperature = modelConfig.temperature || 0.7;
 
     try {
-      const response = await fetch(this.endpoints['github-copilot'], {
+      const response = await fetch(this.endpoints.openai, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKeys['github-copilot']}`,
