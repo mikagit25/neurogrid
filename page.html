@@ -452,10 +452,10 @@
                 userSection.innerHTML = `
                     <div class="flex items-center space-x-3">
                         <button onclick="showLoginModal()" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium">
-                            Login
+                            Войти
                         </button>
                         <button onclick="showRegisterModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
-                            Register
+                            Регистрация
                         </button>
                     </div>
                 `;
@@ -519,16 +519,16 @@
                                     <input type="email" id="loginEmail" class="w-full border border-gray-300 rounded-lg px-4 py-3" required>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
                                     <input type="password" id="loginPassword" class="w-full border border-gray-300 rounded-lg px-4 py-3" required>
                                 </div>
                             </div>
                             <div class="mt-6 flex space-x-3">
                                 <button type="button" onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
-                                    Cancel
+                                    Отмена
                                 </button>
                                 <button type="submit" class="flex-1 bg-neurogrid-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
-                                    Login
+                                    Войти
                                 </button>
                             </div>
                         </form>
@@ -545,7 +545,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
                     <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-900">Register</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">Регистрация</h3>
                         <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
                             <i class="fas fa-times"></i>
                         </button>
@@ -558,20 +558,20 @@
                                     <input type="email" id="registerEmail" class="w-full border border-gray-300 rounded-lg px-4 py-3" required>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
                                     <input type="password" id="registerPassword" class="w-full border border-gray-300 rounded-lg px-4 py-3" required minlength="8">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Подтвердите пароль</label>
                                     <input type="password" id="registerConfirmPassword" class="w-full border border-gray-300 rounded-lg px-4 py-3" required minlength="8">
                                 </div>
                             </div>
                             <div class="mt-6 flex space-x-3">
                                 <button type="button" onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
-                                    Cancel
+                                    Отмена
                                 </button>
                                 <button type="submit" class="flex-1 bg-neurogrid-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
-                                    Register
+                                    Регистрация
                                 </button>
                             </div>
                         </form>
@@ -645,7 +645,7 @@
                     document.querySelector('.fixed').remove();
                     initializeUserSection();
                     
-                    showSuccessToast('Registration completed successfully!');
+                    showSuccessToast('Регистрация выполнена успешно!');
                 } else {
                     const error = await response.json();
                     showErrorToast('Ошибка регистрации', error.error || 'Неудалось создать аккаунт');
@@ -703,13 +703,7 @@
         // WebSocket connection
         function connectWebSocket() {
             try {
-                // Use adaptive WebSocket URL based on current domain
-                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                    ? 'localhost:8080' 
-                    : window.location.host;
-                
-                socket = new WebSocket(`${wsProtocol}//${wsHost}`);
+                socket = new WebSocket('ws://localhost:3001/ws');
                 
                 socket.onopen = function() {
                     console.log('WebSocket connected');

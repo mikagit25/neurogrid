@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neurogrid': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe', 
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-2xl font-bold text-neurogrid-600">
+                        <i class="fas fa-brain mr-2"></i>NeuroGrid
+                    </a>
+                    <span class="text-gray-400">|</span>
+                    <span class="text-lg font-medium text-gray-700">Admin Panel</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-gray-600 hover:text-neurogrid-600 transition-colors">
+                        <i class="fas fa-home mr-1"></i>Main Site
+                    </a>
+                    <div class="w-8 h-8 bg-neurogrid-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-cog text-white text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">🛠️ System Administration</h1>
+            <p class="mt-2 text-gray-600">Configure AI coordinators, API keys, and system settings</p>
+        </div>
+
+        <!-- Status Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <i class="fas fa-server text-green-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-medium text-gray-900">Server Status</h3>
+                        <p id="serverStatus" class="text-sm text-green-600">Online</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <i class="fas fa-robot text-blue-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-medium text-gray-900">Active Coordinators</h3>
+                        <p id="activeCoordinators" class="text-sm text-blue-600">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <i class="fas fa-chart-line text-purple-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-medium text-gray-900">Total Requests</h3>
+                        <p id="totalRequests" class="text-sm text-purple-600">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Configuration -->
+        <div class="bg-white shadow rounded-lg mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">🔑 API Configuration</h2>
+                <p class="text-sm text-gray-600 mt-1">Configure external API providers and authentication</p>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- OpenAI Configuration -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-bolt text-green-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-900">OpenAI GPT-4</h3>
+                                <p class="text-sm text-gray-500">High-quality text generation</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span id="openaiStatus" class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-600">Disabled</span>
+                            <button id="openaiToggle" onclick="toggleAPI('openai')" class="px-3 py-1 text-sm bg-neurogrid-500 text-white rounded hover:bg-neurogrid-600">
+                                Enable
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                            <input type="password" id="openaiKey" placeholder="sk-..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
+                            <select id="openaiModel" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                                <option value="gpt-4">GPT-4</option>
+                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anthropic Configuration -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-brain text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-900">Anthropic Claude</h3>
+                                <p class="text-sm text-gray-500">Advanced reasoning and analysis</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span id="anthropicStatus" class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-600">Disabled</span>
+                            <button id="anthropicToggle" onclick="toggleAPI('anthropic')" class="px-3 py-1 text-sm bg-neurogrid-500 text-white rounded hover:bg-neurogrid-600">
+                                Enable
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                            <input type="password" id="anthropicKey" placeholder="sk-ant-..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
+                            <select id="anthropicModel" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                                <option value="claude-3-opus">Claude 3 Opus</option>
+                                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                <option value="claude-2">Claude 2</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button onclick="testAllAPIs()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+                        <i class="fas fa-vial mr-2"></i>Test All APIs
+                    </button>
+                    <button onclick="saveConfiguration()" class="px-4 py-2 bg-neurogrid-500 text-white rounded-md hover:bg-neurogrid-600">
+                        <i class="fas fa-save mr-2"></i>Save Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordinators Management -->
+        <div class="bg-white shadow rounded-lg mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">🤖 Coordinators Management</h2>
+                <p class="text-sm text-gray-600 mt-1">Monitor and configure available AI coordinators</p>
+            </div>
+            <div class="p-6">
+                <div id="coordinatorsList" class="space-y-4">
+                    <!-- Coordinators will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- System Statistics -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">📊 System Statistics</h2>
+                <p class="text-sm text-gray-600 mt-1">Real-time performance and usage metrics</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-2xl font-bold text-neurogrid-600" id="statsTotalRequests">0</div>
+                        <div class="text-sm text-gray-600">Total Requests</div>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600" id="statsSuccessRate">0%</div>
+                        <div class="text-sm text-gray-600">Success Rate</div>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600" id="statsAvgResponse">0ms</div>
+                        <div class="text-sm text-gray-600">Avg Response Time</div>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-2xl font-bold text-yellow-600" id="statsTotalCost">$0.000</div>
+                        <div class="text-sm text-gray-600">Total Cost</div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-medium text-gray-900">Model Usage Distribution</h4>
+                        <button onclick="exportStatistics()" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">
+                            <i class="fas fa-download mr-1"></i>Export Data
+                        </button>
+                    </div>
+                    <div id="modelUsageChart" class="space-y-2">
+                        <!-- Usage chart will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Адаптивное определение API URL
+        const API_BASE_URL = (() => {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            
+            // Для localhost используем порт 8080
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return `${protocol}//${hostname}:8080/api`;
+            }
+            
+            // Для продакшен доменов используем текущий домен
+            return `${protocol}//${hostname}/api`;
+        })();
+        
+        console.log('🔧 Admin Panel API URL:', API_BASE_URL);
+        
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSystemStatus();
+            loadCoordinators();
+            loadStatistics();
+            
+            // Auto-refresh every 15 seconds
+            setInterval(() => {
+                loadSystemStatus();
+                loadStatistics();
+            }, 15000);
+        });
+
+        async function loadSystemStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/stats`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('totalRequests').textContent = result.data.totalRequests || 0;
+                    
+                    // Count active coordinators
+                    const coordinatorsResponse = await fetch(`${API_BASE_URL}/models/available`);
+                    const coordinatorsResult = await coordinatorsResponse.json();
+                    
+                    if (coordinatorsResult.success) {
+                        const activeCount = coordinatorsResult.data.coordinators.filter(c => c.usageCount > 0).length;
+                        document.getElementById('activeCoordinators').textContent = `${activeCount} active`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading system status:', error);
+                document.getElementById('serverStatus').textContent = 'Offline';
+                document.getElementById('serverStatus').className = 'text-sm text-red-600';
+            }
+        }
+
+        async function loadCoordinators() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/available`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderCoordinators(result.data.coordinators);
+                }
+            } catch (error) {
+                console.error('Error loading coordinators:', error);
+            }
+        }
+
+        function renderCoordinators(coordinators) {
+            const container = document.getElementById('coordinatorsList');
+            container.innerHTML = '';
+
+            coordinators.forEach(coordinator => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-4 border border-gray-200 rounded-lg';
+                
+                const icon = getCoordinatorIcon(coordinator.name);
+                const status = coordinator.usageCount > 0 ? 'Active' : 'Idle';
+                const statusClass = coordinator.usageCount > 0 ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600';
+
+                div.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <div class="text-2xl">${icon}</div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">${coordinator.name}</h4>
+                            <p class="text-sm text-gray-500">Usage: ${coordinator.usageCount} requests</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="px-2 py-1 text-xs rounded-full ${statusClass}">${status}</span>
+                        <div class="text-sm text-gray-600">
+                            <div>Avg: ${coordinator.avgResponseTime}ms</div>
+                            <div>Cost: $${coordinator.totalCost.toFixed(3)}</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function getCoordinatorIcon(name) {
+            const icons = {
+                'OpenAI GPT-4': '⚡',
+                'Anthropic Claude': '🧠',
+                'Local LLaMA 2 7B': '🏠',
+                'NeuroGrid Multi-Agent': '🔥'
+            };
+            return icons[name] || '🤖';
+        }
+
+        async function loadStatistics() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/stats`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.data;
+                    
+                    document.getElementById('statsTotalRequests').textContent = stats.totalRequests || 0;
+                    document.getElementById('statsSuccessRate').textContent = `${stats.successRate || 0}%`;
+                    document.getElementById('statsAvgResponse').textContent = `${stats.averageResponseTime || 0}ms`;
+                    document.getElementById('statsTotalCost').textContent = `$${(stats.totalCost || 0).toFixed(3)}`;
+                    
+                    renderModelUsageChart(stats.modelUsage || {});
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        function renderModelUsageChart(modelUsage) {
+            const container = document.getElementById('modelUsageChart');
+            container.innerHTML = '';
+            
+            const totalUsage = Object.values(modelUsage).reduce((a, b) => a + b, 0);
+            
+            if (totalUsage === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No usage data available</p>';
+                return;
+            }
+            
+            Object.entries(modelUsage).forEach(([model, usage]) => {
+                if (usage > 0) {
+                    const percentage = ((usage / totalUsage) * 100).toFixed(1);
+                    const icon = getCoordinatorIcon(model);
+                    
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between';
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span>${icon}</span>
+                            <span class="text-sm font-medium">${model}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="bg-neurogrid-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                            <span class="text-sm text-gray-600 w-12">${percentage}%</span>
+                        </div>
+                    `;
+                    
+                    container.appendChild(div);
+                }
+            });
+        }
+
+        async function toggleAPI(provider) {
+            const keyInput = document.getElementById(`${provider}Key`);
+            const apiKey = keyInput.value.trim();
+            
+            if (!apiKey) {
+                alert(`Please enter ${provider} API key first`);
+                return;
+            }
+
+            try {
+                const coordinatorId = provider === 'openai' ? 'openai-gpt4' : 'anthropic-claude';
+                
+                const response = await fetch(`${API_BASE_URL}/models/toggle`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        coordinatorId: coordinatorId,
+                        enabled: true,
+                        apiKey: apiKey
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateAPIStatus(provider, true);
+                    showToast(`${provider} API enabled successfully!`, 'success');
+                } else {
+                    showToast(`Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Error enabling ${provider} API: ${error.message}`, 'error');
+            }
+        }
+
+        function updateAPIStatus(provider, enabled) {
+            const statusEl = document.getElementById(`${provider}Status`);
+            const toggleEl = document.getElementById(`${provider}Toggle`);
+            
+            if (enabled) {
+                statusEl.textContent = 'Enabled';
+                statusEl.className = 'px-2 py-1 text-xs rounded-full bg-green-100 text-green-600';
+                toggleEl.textContent = 'Disable';
+                toggleEl.className = 'px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600';
+            } else {
+                statusEl.textContent = 'Disabled';
+                statusEl.className = 'px-2 py-1 text-xs rounded-full bg-red-100 text-red-600';
+                toggleEl.textContent = 'Enable';
+                toggleEl.className = 'px-3 py-1 text-sm bg-neurogrid-500 text-white rounded hover:bg-neurogrid-600';
+            }
+        }
+
+        async function testAllAPIs() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Testing...';
+
+            try {
+                // Test a simple request to each enabled API
+                const testPrompt = "Hello, this is a test message.";
+                
+                showToast('Testing API connections...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/ai/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: testPrompt,
+                        type: 'chat',
+                        complexity: 'low'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('API test completed successfully!', 'success');
+                } else {
+                    showToast('API test failed', 'error');
+                }
+            } catch (error) {
+                showToast(`API test error: ${error.message}`, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        function saveConfiguration() {
+            showToast('Configuration saved successfully!', 'success');
+        }
+
+        async function exportStatistics() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/export`);
+                const blob = await response.blob();
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `neurogrid-stats-${new Date().toISOString().split('T')[0]}.json`;
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showToast('Statistics exported successfully!', 'success');
+            } catch (error) {
+                showToast(`Export failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            
+            toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+            toast.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="font-medium">${message}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

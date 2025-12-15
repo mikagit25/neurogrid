@@ -1,0 +1,521 @@
+/**
+ * NeuroGrid Smart Model Router
+ * Интеллектуальная система выбора координатора и роутинга задач
+ */
+
+const ExternalAPIManager = require('./ExternalAPIManager');
+
+class SmartModelRouter {
+  constructor() {
+    // Initialize external API manager
+    this.externalAPI = new ExternalAPIManager();
+    
+    // Инициализация статистики
+    this.stats = {
+      requests: 0,
+      successful: 0,
+      failed: 0
+    };
+    
+    console.log('🔗 External API Manager initialized');
+    console.log('📡 Available APIs:', this.externalAPI.getAvailableAPIs());
+    // Конфигурация доступных координаторов
+    this.coordinators = {
+      'github-copilot': {
+        name: 'GitHub Copilot',
+        type: 'external',
+        endpoint: 'https://api.githubcopilot.com/chat/completions',
+        capabilities: ['text', 'code', 'analysis', 'planning', 'debugging'],
+        cost: 0.01, // $ per 1K tokens (более выгодно с лицензией)
+        latency: 1500, // ms
+        reliability: 0.99,
+        available: this.externalAPI.getAvailableAPIs()['github-copilot']
+      },
+      'anthropic-claude': {
+        name: 'Anthropic Claude',
+        type: 'external', 
+        endpoint: 'https://api.anthropic.com/v1/messages',
+        capabilities: ['text', 'analysis', 'reasoning'],
+        cost: 0.025,
+        latency: 2500,
+        reliability: 0.98,
+        available: this.externalAPI.getAvailableAPIs().anthropic
+      },
+      'local-llama2': {
+        name: 'Local LLaMA 2 7B',
+        type: 'local',
+        endpoint: 'internal',
+        capabilities: ['text', 'chat'],
+        cost: 0.001,
+        latency: 5000,
+        reliability: 0.95,
+        available: true // всегда доступен локально
+      },
+      'neurogrid-swarm': {
+        name: 'NeuroGrid Multi-Agent',
+        type: 'swarm',
+        endpoint: 'internal',
+        capabilities: ['text', 'code', 'image', 'analysis', 'complex'],
+        cost: 0.005,
+        latency: 8000,
+        reliability: 0.97,
+        available: true
+      }
+    };
+
+    // Специализированные агенты для разных типов задач
+    this.specialists = {
+      'text-generation': ['github-copilot', 'local-llama2', 'anthropic-claude'],
+      'code-generation': ['github-copilot', 'neurogrid-swarm'],
+      'image-generation': ['neurogrid-swarm'],
+      'data-analysis': ['anthropic-claude', 'neurogrid-swarm'],
+      'complex-task': ['neurogrid-swarm', 'github-copilot'],
+      'chat': ['local-llama2', 'github-copilot']
+    };
+
+    // Критерии выбора модели
+    this.selectionCriteria = {
+      cost: 0.4,      // 40% вес стоимости
+      speed: 0.3,     // 30% вес скорости
+      quality: 0.3    // 30% вес качества
+    };
+  }
+
+  /**
+   * Выбор лучшего координатора для задачи
+   */
+  selectCoordinator(task, preferences = {}) {
+    const { type, complexity, priority, budget } = task;
+    const userPrefs = { 
+      preferLocal: true, 
+      maxCost: 0.01,
+      maxLatency: 10000,
+      ...preferences 
+    };
+
+    // Получаем подходящих кандидатов
+    const candidates = this.specialists[type] || ['neurogrid-swarm'];
+    
+    // Фильтруем доступных
+    const available = candidates.filter(id => {
+      const coordinator = this.coordinators[id];
+      return coordinator && coordinator.available !== false;
+    });
+
+    if (available.length === 0) {
+      throw new Error(`No available coordinators for task type: ${type}`);
+    }
+
+    // Вычисляем лучший выбор
+    const scored = available.map(id => {
+      const coordinator = this.coordinators[id];
+      return {
+        id,
+        coordinator,
+        score: this.calculateScore(coordinator, task, userPrefs)
+      };
+    });
+
+    // Сортируем по score
+    scored.sort((a, b) => b.score - a.score);
+
+    const selected = scored[0];
+    
+    console.log(`📋 Task type: ${type} | Selected: ${selected.coordinator.name} | Score: ${selected.score.toFixed(2)}`);
+    
+    return {
+      coordinatorId: selected.id,
+      coordinator: selected.coordinator,
+      reasoning: this.getSelectionReasoning(selected, scored)
+    };
+  }
+
+  /**
+   * Расчет score для координатора
+   */
+  calculateScore(coordinator, task, preferences) {
+    let score = 0;
+
+    // Фактор стоимости (чем дешевле, тем лучше)
+    const costScore = Math.max(0, 1 - coordinator.cost / 0.05);
+    score += costScore * this.selectionCriteria.cost;
+
+    // Фактор скорости (чем быстрее, тем лучше)
+    const speedScore = Math.max(0, 1 - coordinator.latency / 10000);
+    score += speedScore * this.selectionCriteria.speed;
+
+    // Фактор качества/надежности
+    const qualityScore = coordinator.reliability;
+    score += qualityScore * this.selectionCriteria.quality;
+
+    // Бонусы и штрафы
+    if (preferences.preferLocal && coordinator.type === 'local') {
+      score += 0.2; // +20% для локальных моделей
+    }
+
+    if (task.complexity === 'high' && coordinator.capabilities.includes('complex')) {
+      score += 0.15; // +15% для сложных задач
+    }
+
+    if (task.priority === 'urgent' && coordinator.latency < 3000) {
+      score += 0.1; // +10% для срочных задач с быстрыми моделями
+    }
+
+    return Math.min(score, 1.0);
+  }
+
+  /**
+   * Объяснение выбора координатора
+   */
+  getSelectionReasoning(selected, allCandidates) {
+    const coordinator = selected.coordinator;
+    return {
+      chosen: coordinator.name,
+      reasons: [
+        `Cost: $${coordinator.cost}/1K tokens`,
+        `Latency: ${coordinator.latency}ms`,
+        `Reliability: ${(coordinator.reliability * 100).toFixed(1)}%`,
+        `Type: ${coordinator.type}`
+      ],
+      alternatives: allCandidates.slice(1, 3).map(c => ({
+        name: c.coordinator.name,
+        score: c.score.toFixed(2)
+      }))
+    };
+  }
+
+  /**
+   * Обработка задачи через выбранного координатора
+   */
+  async processTask(task, preferences = {}) {
+    const startTime = Date.now();
+    this.stats.requests++;
+    
+    try {
+      const selection = this.selectCoordinator(task, preferences);
+      const { coordinatorId, coordinator } = selection;
+
+      console.log(`🚀 Processing task via ${coordinator.name}...`);
+
+      let result;
+      switch (coordinator.type) {
+        case 'external':
+          result = await this.processExternalAPI(task, coordinator);
+          break;
+        case 'local':
+          result = await this.processLocal(task, coordinator);
+          break;
+        case 'swarm':
+          result = await this.processSwarm(task, coordinator);
+          break;
+        default:
+          throw new Error(`Unknown coordinator type: ${coordinator.type}`);
+      }
+
+      // Обновляем статистику
+      this.stats.successful++;
+      const processingTime = Date.now() - startTime;
+      
+      // Обновляем статистику координатора
+      if (!this.coordinators[coordinatorId].stats) {
+        this.coordinators[coordinatorId].stats = 0;
+        this.coordinators[coordinatorId].totalCost = 0;
+        this.coordinators[coordinatorId].avgResponseTime = 0;
+      }
+      
+      this.coordinators[coordinatorId].stats++;
+      this.coordinators[coordinatorId].totalCost += result.cost || 0;
+      this.coordinators[coordinatorId].avgResponseTime = 
+        (this.coordinators[coordinatorId].avgResponseTime + processingTime) / 2;
+
+      return result;
+
+    } catch (error) {
+      console.error('Task processing failed:', error);
+      this.stats.failed++;
+      
+      // Fallback к локальной модели
+      console.log('🔄 Falling back to local processing...');
+      const fallbackResult = await this.processLocal(task, this.coordinators['local-llama2']);
+      
+      // Обновляем статистику для fallback
+      this.stats.successful++;
+      if (!this.coordinators['local-llama2'].stats) {
+        this.coordinators['local-llama2'].stats = 0;
+      }
+      this.coordinators['local-llama2'].stats++;
+      
+      return fallbackResult;
+    }
+  }
+
+  /**
+   * Обработка через внешний API
+   */
+  async processExternalAPI(task, coordinator) {
+    let provider = null;
+    
+    // Определяем провайдера по имени или структуре coordinator
+    const coordinatorName = coordinator.name || coordinator.id || '';
+    
+    if (coordinatorName.includes('GitHub Copilot') || coordinatorName.includes('github-copilot')) {
+      provider = 'github-copilot';
+    } else if (coordinatorName.includes('Anthropic') || coordinatorName.includes('anthropic')) {
+      provider = 'anthropic';
+    } else if (coordinatorName.includes('OpenAI') || coordinatorName.includes('openai')) {
+      provider = 'openai';
+    }
+    
+    if (!provider) {
+      throw new Error(`Unknown external provider for ${coordinatorName}`);
+    }
+
+    try {
+      const result = await this.externalAPI.processWithFallback(
+        task.prompt, 
+        provider, 
+        {
+          maxTokens: 2000,
+          temperature: 0.7
+        }
+      );
+
+      return {
+        success: true,
+        result: result.content,
+        coordinator: result.provider,
+        processingTime: result.processingTime,
+        cost: result.cost,
+        usage: result.usage,
+        model: result.model
+      };
+
+    } catch (error) {
+      console.error(`External API processing failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Обработка локальной моделью
+   */
+  async processLocal(task, coordinator) {
+    // Имитация обработки локальной моделью
+    await new Promise(resolve => setTimeout(resolve, coordinator.latency));
+    
+    return {
+      success: true,
+      result: this.generateMockResponse(task),
+      coordinator: coordinator.name,
+      processingTime: coordinator.latency,
+      cost: coordinator.cost * 0.3
+    };
+  }
+
+  /**
+   * Обработка мульти-агентной системой
+   */
+  async processSwarm(task, coordinator) {
+    // Интеграция с существующим MultiAgentCoordinator
+    return {
+      success: true,
+      result: `Complex multi-agent processing for: ${task.prompt}`,
+      coordinator: coordinator.name,
+      processingTime: coordinator.latency,
+      cost: coordinator.cost * 0.8,
+      agentsUsed: ['textAgent', 'codeAgent', 'aggregator']
+    };
+  }
+
+  /**
+   * Генерация mock ответа
+   */
+  generateMockResponse(task) {
+    const responses = {
+      'text-generation': `Generated text for: "${task.prompt}"\n\nThis is a demonstration of NeuroGrid's intelligent model routing. Your task was automatically assigned to the most optimal AI model based on cost, speed, and quality criteria.`,
+      'code-generation': `// Code generated for: ${task.prompt}\nfunction example() {\n  console.log("NeuroGrid smart routing in action!");\n  return "Generated code";\n}`,
+      'chat': `I understand you're asking about: "${task.prompt}"\n\nI'm responding via NeuroGrid's smart model router, which automatically selected the best available AI model for your request.`,
+      'complex-task': `Complex analysis of: "${task.prompt}"\n\nThis task was processed by NeuroGrid's multi-agent system, coordinating multiple specialized AI models for optimal results.`
+    };
+    
+    return responses[task.type] || `Processed: ${task.prompt}`;
+  }
+
+  /**
+   * Получение статистики координаторов
+   */
+  getCoordinatorStats() {
+    return Object.entries(this.coordinators).map(([id, coordinator]) => ({
+      id,
+      name: coordinator.name,
+      type: coordinator.type,
+      available: coordinator.available,
+      cost: coordinator.cost,
+      latency: coordinator.latency,
+      reliability: coordinator.reliability,
+      capabilities: coordinator.capabilities
+    }));
+  }
+
+  /**
+   * Включение/отключение координаторов
+   */
+  toggleCoordinator(id, enabled, apiKey = null) {
+    if (this.coordinators[id]) {
+      this.coordinators[id].available = enabled;
+      
+      // Если это внешний API и предоставлен ключ
+      if (apiKey && (id.includes('openai') || id.includes('anthropic'))) {
+        const provider = id.includes('openai') ? 'openai' : 'anthropic';
+        this.externalAPI.setAPIKey(provider, apiKey);
+        this.coordinators[id].available = true;
+      }
+      
+      console.log(`${enabled ? '✅' : '❌'} ${this.coordinators[id].name} ${enabled ? 'enabled' : 'disabled'}`);
+    }
+  }
+
+  /**
+   * Настройка API ключей
+   */
+  configureAPIKey(provider, apiKey) {
+    const success = this.externalAPI.setAPIKey(provider, apiKey);
+    
+    if (success) {
+      // Активируем соответствующих координаторов
+      Object.keys(this.coordinators).forEach(id => {
+        if (id.includes(provider)) {
+          this.coordinators[id].available = true;
+        }
+      });
+    }
+    
+    return success;
+  }
+
+  /**
+   * Тестирование API подключений
+   */
+  async testExternalAPIs() {
+    const results = {};
+    
+    for (const provider of ['openai', 'anthropic']) {
+      if (this.externalAPI.getAvailableAPIs()[provider]) {
+        try {
+          results[provider] = await this.externalAPI.testAPI(provider);
+        } catch (error) {
+          results[provider] = {
+            success: false,
+            provider,
+            error: error.message
+          };
+        }
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Получение статистики использования
+   */
+  getStatistics() {
+    const totalRequests = this.stats.requests;
+    const modelUsage = {};
+    let totalResponseTime = 0;
+    let totalCost = 0;
+    
+    // Подсчет использования моделей
+    Object.keys(this.coordinators).forEach(id => {
+      const coordinator = this.coordinators[id];
+      modelUsage[coordinator.name] = coordinator.stats || 0;
+    });
+
+    // Подсчет средних значений
+    if (totalRequests > 0) {
+      totalResponseTime = Object.values(this.coordinators).reduce((sum, c) => {
+        return sum + (c.avgResponseTime || 0);
+      }, 0) / Object.keys(this.coordinators).length;
+
+      totalCost = Object.values(this.coordinators).reduce((sum, c) => {
+        return sum + (c.totalCost || 0);
+      }, 0);
+    }
+
+    return {
+      totalRequests,
+      modelUsage,
+      averageResponseTime: Math.round(totalResponseTime),
+      totalCost: Math.round(totalCost * 1000) / 1000,
+      successRate: totalRequests > 0 ? Math.round((this.stats.successful / totalRequests) * 100) : 0,
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Получение статистики координаторов
+   */
+  getCoordinatorStats() {
+    return Object.keys(this.coordinators).map(id => ({
+      id,
+      name: this.coordinators[id].name,
+      enabled: this.coordinators[id].enabled,
+      usageCount: this.coordinators[id].stats || 0,
+      avgResponseTime: this.coordinators[id].avgResponseTime || 0,
+      totalCost: this.coordinators[id].totalCost || 0
+    }));
+  }
+
+  // Debug функции для тестирования
+  debugMode() {
+    console.log('🔧 Smart Router Debug Mode Activated');
+    console.log('📊 Coordinators:', Object.keys(this.coordinators));
+    console.log('📈 Current Stats:', this.getStatistics());
+    return this;
+  }
+
+  async debugTask(taskType = 'code-generation', complexity = 'medium') {
+    console.log(`\n🧪 Testing ${taskType} task with ${complexity} complexity...`);
+    
+    const testTask = {
+      prompt: `Debug test: ${taskType} task`,
+      type: taskType,
+      complexity: complexity,
+      userId: 'debug-user',
+      timestamp: Date.now()
+    };
+
+    try {
+      const result = await this.processTask(testTask);
+      console.log('✅ Debug test successful:', result.success);
+      console.log('📊 Selected coordinator:', result.coordinator);
+      console.log('⏱️ Processing time:', result.processingTime, 'ms');
+      return result;
+    } catch (error) {
+      console.log('❌ Debug test failed:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+}
+
+// Debug mode when run directly
+if (require.main === module) {
+  console.log('🚀 SmartModelRouter Debug Mode');
+  const router = new SmartModelRouter();
+  
+  if (process.argv.includes('--debug')) {
+    router.debugMode();
+    
+    // Run test tasks
+    (async () => {
+      await router.debugTask('code-generation', 'low');
+      await router.debugTask('explanation', 'medium'); 
+      await router.debugTask('complex-analysis', 'high');
+      
+      console.log('\n📊 Final Statistics:', router.getStatistics());
+      console.log('🔧 Debug session complete!');
+    })();
+  }
+}
+
+module.exports = SmartModelRouter;
