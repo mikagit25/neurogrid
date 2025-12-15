@@ -92,14 +92,14 @@ class NodeReputationSystem {
 
     if (success) {
       node.successfulTasks++;
-      
+
       // Calculate performance bonuses
       const timeBonus = this.calculateTimeBonus(executionTime, expectedTime);
       const qualityBonus = this.calculateQualityBonus(qualityScore);
       const complexityBonus = this.calculateComplexityBonus(taskComplexity);
-      
+
       const totalBonus = (timeBonus + qualityBonus + complexityBonus) * this.config.bonusMultiplier;
-      
+
       // Apply bonus
       node.reputation += totalBonus;
       node.bonuses.push({
@@ -113,10 +113,10 @@ class NodeReputationSystem {
 
     } else {
       node.failedTasks++;
-      
+
       // Calculate penalty
       const penalty = this.calculateFailurePenalty(taskComplexity) * this.config.penaltyMultiplier;
-      
+
       // Apply penalty
       node.reputation -= penalty;
       node.penalties.push({
@@ -131,14 +131,14 @@ class NodeReputationSystem {
 
     // Update averages
     this.updateNodeAverages(node, taskResult);
-    
+
     // Apply reputation bounds
-    node.reputation = Math.max(this.config.minReputation, 
-                             Math.min(this.config.maxReputation, node.reputation));
-    
+    node.reputation = Math.max(this.config.minReputation,
+      Math.min(this.config.maxReputation, node.reputation));
+
     // Update trust level
     this.updateTrustLevel(node);
-    
+
     // Record in history
     this.recordReputationChange(nodeId, node.reputation, 'task_performance');
 
@@ -150,7 +150,7 @@ class NodeReputationSystem {
    */
   calculateTimeBonus(executionTime, expectedTime) {
     if (!expectedTime || executionTime >= expectedTime) return 0;
-    
+
     const timeRatio = expectedTime / executionTime;
     return Math.min(20, timeRatio * 5); // Max 20 points for exceptional speed
   }
@@ -182,12 +182,12 @@ class NodeReputationSystem {
    */
   updateNodeAverages(node, taskResult) {
     const { executionTime, resourceUsage } = taskResult;
-    
+
     // Update execution time average
     if (executionTime) {
       node.averageExecutionTime = (node.averageExecutionTime * (node.totalTasks - 1) + executionTime) / node.totalTasks;
     }
-    
+
     // Update resource efficiency
     if (resourceUsage && resourceUsage.efficiency) {
       node.resourceEfficiency = (node.resourceEfficiency * (node.totalTasks - 1) + resourceUsage.efficiency) / node.totalTasks;
@@ -199,7 +199,7 @@ class NodeReputationSystem {
    */
   updateTrustLevel(node) {
     const oldLevel = node.level;
-    
+
     for (const [level, range] of Object.entries(this.config.trustLevels)) {
       if (node.reputation >= range.min && node.reputation < range.max) {
         node.level = level;
@@ -256,12 +256,12 @@ class NodeReputationSystem {
   applyReputationDecay() {
     const now = new Date();
     const daysSinceLastUpdate = (now - this.lastUpdate) / (1000 * 60 * 60 * 24);
-    
+
     if (daysSinceLastUpdate >= 1) {
       for (const [nodeId, node] of this.nodeReputations) {
         const decayFactor = Math.pow(this.config.reputationDecayRate, daysSinceLastUpdate);
         const oldReputation = node.reputation;
-        
+
         node.reputation = Math.max(
           this.config.minReputation,
           node.reputation * decayFactor
@@ -317,7 +317,7 @@ class NodeReputationSystem {
   getReputationStats() {
     const nodes = Array.from(this.nodeReputations.values());
     const reputations = nodes.map(n => n.reputation);
-    
+
     return {
       totalNodes: nodes.length,
       averageReputation: reputations.reduce((a, b) => a + b, 0) / reputations.length || 0,

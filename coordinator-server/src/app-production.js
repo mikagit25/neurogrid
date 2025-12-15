@@ -92,9 +92,9 @@ app.get('/api/network/status', (req, res) => {
 app.post('/api/tasks', (req, res) => {
   try {
     const { prompt, model = 'llama2:7b', max_tokens = 500, temperature = 0.7 } = req.body;
-    
+
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
         error: 'Valid prompt is required',
         code: 'INVALID_PROMPT'
@@ -111,7 +111,7 @@ app.post('/api/tasks', (req, res) => {
 
     const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
     const estimatedCost = Math.round((prompt.length * 0.001 + max_tokens * 0.002) * 100) / 100;
-    
+
     res.json({
       success: true,
       task: {
@@ -195,7 +195,7 @@ app.get('/api/tasks', (req, res) => {
 // Get task by ID
 app.get('/api/tasks/:taskId', (req, res) => {
   const { taskId } = req.params;
-  
+
   // Mock detailed task data
   const mockTask = {
     id: taskId,
@@ -216,7 +216,7 @@ app.get('/api/tasks/:taskId', (req, res) => {
       gpu: 'RTX 4090'
     }
   };
-  
+
   res.json({
     success: true,
     task: mockTask
@@ -263,9 +263,9 @@ app.get('/api/nodes', (req, res) => {
       uptime: '97.5%'
     }
   ];
-  
+
   const onlineNodes = mockNodes.filter(node => node.status === 'online');
-  
+
   res.json({
     success: true,
     nodes: mockNodes,
@@ -297,7 +297,7 @@ app.get('/api/wallet/balance', (req, res) => {
 app.get('/api/wallet/transactions', (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 20, 100);
   const type = req.query.type; // 'earn', 'spend', 'deposit', 'withdraw'
-  
+
   const mockTransactions = [
     {
       id: 'tx_' + Date.now() + '_1',
@@ -338,12 +338,12 @@ app.get('/api/wallet/transactions', (req, res) => {
       confirmations: 288
     }
   ];
-  
+
   let filteredTransactions = mockTransactions;
   if (type) {
     filteredTransactions = mockTransactions.filter(tx => tx.type === type);
   }
-  
+
   res.json({
     success: true,
     transactions: filteredTransactions.slice(0, limit),
@@ -381,7 +381,7 @@ app.post('/api/wallet/deposit', (req, res) => {
   try {
     const { amount, method = 'crypto' } = req.body;
     const numAmount = parseFloat(amount);
-    
+
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
       return res.status(400).json({
         success: false,
@@ -389,7 +389,7 @@ app.post('/api/wallet/deposit', (req, res) => {
         code: 'INVALID_AMOUNT'
       });
     }
-    
+
     if (numAmount < 1) {
       return res.status(400).json({
         success: false,
@@ -397,9 +397,9 @@ app.post('/api/wallet/deposit', (req, res) => {
         code: 'AMOUNT_TOO_SMALL'
       });
     }
-    
+
     const depositId = `dep_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-    
+
     res.json({
       success: true,
       deposit: {
@@ -428,7 +428,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
     const { amount, address, method = 'crypto' } = req.body;
     const numAmount = parseFloat(amount);
     const currentBalance = 1097.60; // Available balance
-    
+
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
       return res.status(400).json({
         success: false,
@@ -436,7 +436,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
         code: 'INVALID_AMOUNT'
       });
     }
-    
+
     if (numAmount > currentBalance) {
       return res.status(400).json({
         success: false,
@@ -445,7 +445,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
         code: 'INSUFFICIENT_BALANCE'
       });
     }
-    
+
     if (numAmount < 10) {
       return res.status(400).json({
         success: false,
@@ -453,7 +453,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
         code: 'AMOUNT_TOO_SMALL'
       });
     }
-    
+
     if (!address) {
       return res.status(400).json({
         success: false,
@@ -461,11 +461,11 @@ app.post('/api/wallet/withdraw', (req, res) => {
         code: 'ADDRESS_REQUIRED'
       });
     }
-    
+
     const withdrawalId = `wth_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
     const fee = Math.max(numAmount * 0.01, 0.5); // 1% fee, minimum 0.5 NEURO
     const netAmount = numAmount - fee;
-    
+
     res.json({
       success: true,
       withdrawal: {
@@ -523,12 +523,12 @@ process.on('SIGTERM', () => {
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`🚀 NeuroGrid Coordinator API v1.0.0 started!`);
+  console.log('🚀 NeuroGrid Coordinator API v1.0.0 started!');
   console.log(`📍 Server running on: http://localhost:${PORT}`);
   console.log(`🔍 Health check: http://localhost:${PORT}/health`);
   console.log(`📋 API info: http://localhost:${PORT}/api/info`);
   console.log(`🌍 Environment: ${NODE_ENV}`);
-  console.log(`⚡ Ready to process requests!`);
+  console.log('⚡ Ready to process requests!');
 });
 
 module.exports = app;

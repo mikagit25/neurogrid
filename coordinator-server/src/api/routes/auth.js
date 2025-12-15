@@ -13,14 +13,14 @@ const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
 const _AuthenticationService = require('../../services/AuthenticationService');
-const AuthenticationManager = require('../../security/AuthenticationManager');
+const { AuthenticationManagerSingleton } = require('../../security/AuthenticationManager');
 const _inputValidator = require('../../middleware/validation');
 const { _SecurityMiddleware, authenticate, authorize, rateLimiters } = require('../../middleware/security');
 const _User = require('../../models/User');
 const _logger = require('../../utils/logger');
 
 // Create authentication manager instance
-const authManager = new AuthenticationManager();
+const authManager = AuthenticationManagerSingleton.getInstance();
 
 // Validation functions
 const validations = {

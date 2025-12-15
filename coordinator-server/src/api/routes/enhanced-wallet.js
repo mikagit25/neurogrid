@@ -29,7 +29,7 @@ router.setDependencies = (defi, nft, multiSig) => {
 router.get('/overview', authenticate, async (req, res) => {
   try {
     const userAddress = req.user.walletAddress || req.body.walletAddress;
-    
+
     if (!userAddress) {
       return res.status(400).json({
         success: false,
@@ -153,9 +153,9 @@ router.post('/defi/execute', authenticate, async (req, res) => {
     }
 
     const result = await defiService.executeDeFiTransaction(
-      userAddress, 
-      opportunity, 
-      amount, 
+      userAddress,
+      opportunity,
+      amount,
       privateKey
     );
 
@@ -509,8 +509,8 @@ router.post('/multisig/:walletId/propose', authenticate, async (req, res) => {
     const proposerAddress = req.user.walletAddress;
 
     const result = await multiSigService.createTransactionProposal(
-      walletId, 
-      proposerAddress, 
+      walletId,
+      proposerAddress,
       transactionData
     );
 
@@ -544,8 +544,8 @@ router.post('/multisig/proposal/:proposalId/sign', authenticate, async (req, res
     const signerAddress = req.user.walletAddress;
 
     const result = await multiSigService.signTransactionProposal(
-      proposalId, 
-      signerAddress, 
+      proposalId,
+      signerAddress,
       signature
     );
 
@@ -616,9 +616,9 @@ router.post('/multisig/:walletId/signers', authenticate, async (req, res) => {
     }
 
     const result = await multiSigService.addSigner(
-      walletId, 
-      requestorAddress, 
-      signerAddress, 
+      walletId,
+      requestorAddress,
+      signerAddress,
       role
     );
 

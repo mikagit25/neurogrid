@@ -13,7 +13,7 @@ class DeFiIntegrationService {
       infuraProjectId: config.infuraProjectId || process.env.INFURA_PROJECT_ID,
       alchemyApiKey: config.alchemyApiKey || process.env.ALCHEMY_API_KEY,
       enableTestnet: config.enableTestnet || process.env.NODE_ENV !== 'production',
-      
+
       // Supported protocols
       protocols: {
         uniswap: {
@@ -52,7 +52,7 @@ class DeFiIntegrationService {
   init() {
     this.setupPriceOracles();
     this.loadProtocolData();
-    
+
     logger.info('DeFi Integration Service initialized', {
       protocols: Object.keys(this.config.protocols).filter(p => this.config.protocols[p].enabled),
       testnet: this.config.enableTestnet
@@ -77,10 +77,10 @@ class DeFiIntegrationService {
     try {
       // Load Uniswap pools
       await this.loadUniswapPools();
-      
+
       // Load Aave lending rates
       await this.loadAaveLendingRates();
-      
+
       // Load Compound data
       await this.loadCompoundData();
 
@@ -135,11 +135,11 @@ class DeFiIntegrationService {
 
       // Get token pairs for liquidity provision
       const pairs = await this.getUniswapPairs(tokenAddress);
-      
+
       for (const pair of pairs) {
         // Calculate potential LP rewards
         const lpRewards = await this.calculateLPRewards(pair);
-        
+
         opportunities.push({
           protocol: 'Uniswap',
           type: 'liquidity_provision',
@@ -230,26 +230,26 @@ class DeFiIntegrationService {
       let transactionHash;
 
       switch (opportunity.protocol) {
-        case 'Uniswap':
-          transactionHash = await this.executeUniswapTransaction(
-            userAddress, opportunity, amount, privateKey
-          );
-          break;
+      case 'Uniswap':
+        transactionHash = await this.executeUniswapTransaction(
+          userAddress, opportunity, amount, privateKey
+        );
+        break;
 
-        case 'Aave':
-          transactionHash = await this.executeAaveTransaction(
-            userAddress, opportunity, amount, privateKey
-          );
-          break;
+      case 'Aave':
+        transactionHash = await this.executeAaveTransaction(
+          userAddress, opportunity, amount, privateKey
+        );
+        break;
 
-        case 'Compound':
-          transactionHash = await this.executeCompoundTransaction(
-            userAddress, opportunity, amount, privateKey
-          );
-          break;
+      case 'Compound':
+        transactionHash = await this.executeCompoundTransaction(
+          userAddress, opportunity, amount, privateKey
+        );
+        break;
 
-        default:
-          throw new Error(`Unsupported protocol: ${opportunity.protocol}`);
+      default:
+        throw new Error(`Unsupported protocol: ${opportunity.protocol}`);
       }
 
       // Track analytics
@@ -272,9 +272,9 @@ class DeFiIntegrationService {
       };
 
     } catch (error) {
-      logger.error('DeFi transaction failed', { 
-        error: error.message, 
-        opportunity: opportunity.protocol 
+      logger.error('DeFi transaction failed', {
+        error: error.message,
+        opportunity: opportunity.protocol
       });
       throw error;
     }
@@ -384,14 +384,14 @@ class DeFiIntegrationService {
       };
 
       switch (protocol) {
-        case 'uniswap':
-          performance.metrics = await this.getUniswapHistoricalData(timeframe);
-          break;
-        case 'aave':
-          performance.metrics = await this.getAaveHistoricalData(timeframe);
-          break;
-        default:
-          throw new Error(`Historical data not available for ${protocol}`);
+      case 'uniswap':
+        performance.metrics = await this.getUniswapHistoricalData(timeframe);
+        break;
+      case 'aave':
+        performance.metrics = await this.getAaveHistoricalData(timeframe);
+        break;
+      default:
+        throw new Error(`Historical data not available for ${protocol}`);
       }
 
       return performance;
@@ -428,7 +428,7 @@ class DeFiIntegrationService {
           }
         }
       );
-      
+
       this.uniswapPools = response.data.data.pairs;
     } catch (error) {
       logger.error('Failed to load Uniswap pools', { error: error.message });
@@ -461,7 +461,7 @@ class DeFiIntegrationService {
 
   trackTransaction(opportunity, amount, transactionHash) {
     this.analytics.totalVolume += parseFloat(amount);
-    
+
     if (!this.analytics.protocolStats[opportunity.protocol]) {
       this.analytics.protocolStats[opportunity.protocol] = {
         volume: 0,
@@ -469,7 +469,7 @@ class DeFiIntegrationService {
         uniqueUsers: new Set()
       };
     }
-    
+
     this.analytics.protocolStats[opportunity.protocol].volume += parseFloat(amount);
     this.analytics.protocolStats[opportunity.protocol].transactions += 1;
   }
@@ -544,10 +544,10 @@ class DeFiIntegrationService {
   async executeUniswapTransaction() { return 'mock_tx_hash'; }
   async executeAaveTransaction() { return 'mock_tx_hash'; }
   async executeCompoundTransaction() { return 'mock_tx_hash'; }
-  
+
   async getUniswapPositions() { return []; }
   async getAavePositions() { return []; }
-  
+
   async getUniswapHistoricalData() { return {}; }
   async getAaveHistoricalData() { return {}; }
 }

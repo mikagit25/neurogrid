@@ -17,7 +17,7 @@ class EnhancedWebSocketManager extends EventEmitter {
       roomsActive: 0,
       lastReset: Date.now()
     };
-    
+
     // Start metrics collection
     this.startMetricsCollection();
   }
@@ -88,39 +88,39 @@ class EnhancedWebSocketManager extends EventEmitter {
 
     try {
       const message = JSON.parse(data.toString());
-      
+
       logger.debug(`Received message from ${clientId}:`, message);
 
       switch (message.type) {
-        case 'authenticate':
-          await this.handleAuthentication(clientId, message.payload);
-          break;
-        case 'joinRoom':
-          this.joinRoom(clientId, message.payload.room, message.payload.options);
-          break;
-        case 'leaveRoom':
-          this.leaveRoom(clientId, message.payload.room);
-          break;
-        case 'subscribe':
-          this.handleSubscription(clientId, message.payload);
-          break;
-        case 'unsubscribe':
-          this.handleUnsubscription(clientId, message.payload);
-          break;
-        case 'ping':
-          this.sendToClient(clientId, { type: 'pong', payload: { timestamp: Date.now() } });
-          break;
-        case 'submitMetrics':
-          await this.handleMetricsSubmission(clientId, message.payload);
-          break;
-        case 'requestData':
-          await this.handleDataRequest(clientId, message.payload);
-          break;
-        default:
-          this.sendToClient(clientId, {
-            type: 'error',
-            payload: { message: 'Unknown message type', type: message.type }
-          });
+      case 'authenticate':
+        await this.handleAuthentication(clientId, message.payload);
+        break;
+      case 'joinRoom':
+        this.joinRoom(clientId, message.payload.room, message.payload.options);
+        break;
+      case 'leaveRoom':
+        this.leaveRoom(clientId, message.payload.room);
+        break;
+      case 'subscribe':
+        this.handleSubscription(clientId, message.payload);
+        break;
+      case 'unsubscribe':
+        this.handleUnsubscription(clientId, message.payload);
+        break;
+      case 'ping':
+        this.sendToClient(clientId, { type: 'pong', payload: { timestamp: Date.now() } });
+        break;
+      case 'submitMetrics':
+        await this.handleMetricsSubmission(clientId, message.payload);
+        break;
+      case 'requestData':
+        await this.handleDataRequest(clientId, message.payload);
+        break;
+      default:
+        this.sendToClient(clientId, {
+          type: 'error',
+          payload: { message: 'Unknown message type', type: message.type }
+        });
       }
     } catch (error) {
       logger.error(`Error processing message from ${clientId}:`, error);
@@ -140,14 +140,14 @@ class EnhancedWebSocketManager extends EventEmitter {
 
     try {
       const { token, userId } = payload;
-      
+
       // TODO: Validate JWT token
       // For now, simple validation
       if (token && userId) {
         client.authenticated = true;
         client.userId = userId;
         client.permissions.add('write');
-        
+
         // Store user session
         this.userSessions.set(userId, clientId);
 
@@ -196,16 +196,16 @@ class EnhancedWebSocketManager extends EventEmitter {
     if (!this.rooms.has(roomName)) {
       this.rooms.set(roomName, new Set());
     }
-    
+
     this.rooms.get(roomName).add(clientId);
     client.rooms.add(roomName);
 
     this.sendToClient(clientId, {
       type: 'joinedRoom',
-      payload: { 
-        room: roomName, 
+      payload: {
+        room: roomName,
         memberCount: this.rooms.get(roomName).size,
-        options 
+        options
       }
     });
 
@@ -246,20 +246,20 @@ class EnhancedWebSocketManager extends EventEmitter {
     if (!client) return;
 
     const { subscription, interval = 5000 } = payload;
-    
+
     client.subscriptions.add(subscription);
 
     // Start sending periodic updates
     switch (subscription) {
-      case 'realtime-metrics':
-        this.startRealtimeMetrics(clientId, interval);
-        break;
-      case 'network-stats':
-        this.startNetworkStats(clientId, interval);
-        break;
-      case 'node-updates':
-        this.startNodeUpdates(clientId, interval);
-        break;
+    case 'realtime-metrics':
+      this.startRealtimeMetrics(clientId, interval);
+      break;
+    case 'network-stats':
+      this.startNetworkStats(clientId, interval);
+      break;
+    case 'node-updates':
+      this.startNodeUpdates(clientId, interval);
+      break;
     }
 
     this.sendToClient(clientId, {
@@ -504,7 +504,7 @@ class EnhancedWebSocketManager extends EventEmitter {
         client.ws.close();
       }
     });
-    
+
     this.clients.clear();
     this.rooms.clear();
     this.userSessions.clear();

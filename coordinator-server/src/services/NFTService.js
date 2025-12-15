@@ -14,13 +14,13 @@ class NFTService {
       moralisApiKey: config.moralisApiKey || process.env.MORALIS_API_KEY,
       ipfsGateway: config.ipfsGateway || 'https://ipfs.io/ipfs/',
       enableTestnet: config.enableTestnet || process.env.NODE_ENV !== 'production',
-      
+
       // Supported marketplaces
       marketplaces: {
         opensea: {
           enabled: true,
-          baseUrl: config.enableTestnet ? 
-            'https://testnets-api.opensea.io' : 
+          baseUrl: config.enableTestnet ?
+            'https://testnets-api.opensea.io' :
             'https://api.opensea.io',
           contractAddresses: {
             seaport: '0x00000000006c3852cbEf3e08E8dF289169EdE581'
@@ -35,14 +35,14 @@ class NFTService {
           baseUrl: 'https://api.foundation.app'
         }
       },
-      
+
       // NFT standards
       standards: {
         ERC721: true,
         ERC1155: true,
         ERC998: false // Composable NFTs - future support
       },
-      
+
       ...config
     };
 
@@ -65,7 +65,7 @@ class NFTService {
   init() {
     this.setupMetadataCache();
     this.setupPriceTracking();
-    
+
     logger.info('NFT Service initialized', {
       marketplaces: Object.keys(this.config.marketplaces).filter(m => this.config.marketplaces[m].enabled),
       standards: Object.keys(this.config.standards).filter(s => this.config.standards[s]),
@@ -93,10 +93,10 @@ class NFTService {
 
       // Group by collections
       const collectionMap = new Map();
-      
+
       for (const nft of nfts) {
         const collectionId = nft.contract.address;
-        
+
         if (!collectionMap.has(collectionId)) {
           collectionMap.set(collectionId, {
             contract: nft.contract,
@@ -105,7 +105,7 @@ class NFTService {
             totalValue: 0
           });
         }
-        
+
         collectionMap.get(collectionId).items.push(nft);
       }
 
@@ -114,12 +114,12 @@ class NFTService {
         // Get collection metadata and floor price
         const metadata = await this.getCollectionMetadata(collectionId);
         const floorPrice = await this.getCollectionFloorPrice(collectionId);
-        
+
         collection.name = metadata.name;
         collection.description = metadata.description;
         collection.floorPrice = floorPrice;
         collection.totalValue = collection.items.length * floorPrice;
-        
+
         portfolio.totalEstimatedValue += collection.totalValue;
         portfolio.collections.push(collection);
       }
@@ -219,20 +219,20 @@ class NFTService {
   async getNFTMetadata(contractAddress, tokenId) {
     try {
       const cacheKey = `${contractAddress}:${tokenId}`;
-      
+
       if (this.cache.metadata.has(cacheKey)) {
         return this.cache.metadata.get(cacheKey);
       }
 
       // First try to get metadata from token URI
       const tokenUri = await this.getTokenURI(contractAddress, tokenId);
-      
+
       if (!tokenUri) {
         return this.getDefaultMetadata(contractAddress, tokenId);
       }
 
       let metadataUrl = tokenUri;
-      
+
       // Handle IPFS URLs
       if (tokenUri.startsWith('ipfs://')) {
         metadataUrl = tokenUri.replace('ipfs://', this.config.ipfsGateway);
@@ -248,7 +248,7 @@ class NFTService {
 
       // Cache metadata
       this.cache.metadata.set(cacheKey, metadata);
-      
+
       // Cleanup cache if it gets too large
       if (this.cache.metadata.size > 1000) {
         const firstKey = this.cache.metadata.keys().next().value;
@@ -258,10 +258,10 @@ class NFTService {
       return metadata;
 
     } catch (error) {
-      logger.error('Failed to get NFT metadata', { 
-        error: error.message, 
-        contractAddress, 
-        tokenId 
+      logger.error('Failed to get NFT metadata', {
+        error: error.message,
+        contractAddress,
+        tokenId
       });
       return this.getDefaultMetadata(contractAddress, tokenId);
     }
@@ -274,21 +274,21 @@ class NFTService {
     try {
       // Get collection floor price
       const floorPrice = await this.getCollectionFloorPrice(nft.contract.address);
-      
+
       // Get recent sales data
       const recentSales = await this.getRecentSales(nft.contract.address, 10);
-      
+
       // Calculate rarity-based multiplier
       const rarityMultiplier = this.calculateRarityMultiplier(nft);
-      
+
       // Estimate value
       let estimatedValue = floorPrice;
-      
+
       if (recentSales.length > 0) {
         const avgSalePrice = recentSales.reduce((sum, sale) => sum + sale.price, 0) / recentSales.length;
         estimatedValue = Math.max(floorPrice, avgSalePrice * 0.8); // Conservative estimate
       }
-      
+
       estimatedValue *= rarityMultiplier;
 
       return {
@@ -317,7 +317,7 @@ class NFTService {
   async getCollectionFloorPrice(contractAddress) {
     try {
       const cacheKey = `floor_${contractAddress}`;
-      
+
       if (this.cache.prices.has(cacheKey)) {
         const cached = this.cache.prices.get(cacheKey);
         if (Date.now() - cached.timestamp < 300000) { // 5 minutes cache
@@ -335,7 +335,7 @@ class NFTService {
       );
 
       const floorPrice = response.data.stats.floor_price || 0;
-      
+
       // Cache the price
       this.cache.prices.set(cacheKey, {
         price: floorPrice,
@@ -356,7 +356,7 @@ class NFTService {
   async listNFTForSale(userAddress, nft, listingDetails) {
     try {
       const { price, duration, marketplace } = listingDetails;
-      
+
       if (!this.config.marketplaces[marketplace]?.enabled) {
         throw new Error(`Marketplace ${marketplace} is not supported`);
       }
@@ -364,14 +364,14 @@ class NFTService {
       let result;
 
       switch (marketplace) {
-        case 'opensea':
-          result = await this.listOnOpenSea(userAddress, nft, price, duration);
-          break;
-        case 'rarible':
-          result = await this.listOnRarible(userAddress, nft, price, duration);
-          break;
-        default:
-          throw new Error(`Listing on ${marketplace} not implemented`);
+      case 'opensea':
+        result = await this.listOnOpenSea(userAddress, nft, price, duration);
+        break;
+      case 'rarible':
+        result = await this.listOnRarible(userAddress, nft, price, duration);
+        break;
+      default:
+        throw new Error(`Listing on ${marketplace} not implemented`);
       }
 
       // Track listing
@@ -398,18 +398,18 @@ class NFTService {
   async buyNFT(userAddress, nftListing, privateKey) {
     try {
       const { marketplace, contract, tokenId, price } = nftListing;
-      
+
       let transactionHash;
 
       switch (marketplace) {
-        case 'opensea':
-          transactionHash = await this.buyFromOpenSea(userAddress, nftListing, privateKey);
-          break;
-        case 'rarible':
-          transactionHash = await this.buyFromRarible(userAddress, nftListing, privateKey);
-          break;
-        default:
-          throw new Error(`Buying from ${marketplace} not implemented`);
+      case 'opensea':
+        transactionHash = await this.buyFromOpenSea(userAddress, nftListing, privateKey);
+        break;
+      case 'rarible':
+        transactionHash = await this.buyFromRarible(userAddress, nftListing, privateKey);
+        break;
+      default:
+        throw new Error(`Buying from ${marketplace} not implemented`);
       }
 
       // Track purchase
@@ -445,10 +445,10 @@ class NFTService {
     try {
       // This would implement the actual blockchain transaction
       const transactionHash = await this.executeNFTTransfer(
-        fromAddress, 
-        toAddress, 
-        nft.contract.address, 
-        nft.tokenId, 
+        fromAddress,
+        toAddress,
+        nft.contract.address,
+        nft.tokenId,
         privateKey
       );
 
@@ -555,7 +555,7 @@ class NFTService {
 
     // Simple rarity calculation based on trait frequency
     let rarityScore = 1;
-    
+
     for (const attribute of nft.attributes) {
       // Mock rarity calculation - in production, use actual trait frequencies
       const traitRarity = Math.random() * 0.5 + 0.5; // 0.5 - 1.0
@@ -586,23 +586,23 @@ class NFTService {
 
   // Mock implementations for demonstration
   async getTokenURI() { return null; }
-  async getCollectionMetadata(address) { 
-    return { name: 'Unknown Collection', description: 'Collection metadata unavailable' }; 
+  async getCollectionMetadata(address) {
+    return { name: 'Unknown Collection', description: 'Collection metadata unavailable' };
   }
   async getUserNFTActivity() { return []; }
   async getRecentSales() { return []; }
   async getNFTsFromMoralis() { return []; }
-  
+
   async listOnOpenSea() { return { success: true, listingId: 'mock_listing' }; }
   async listOnRarible() { return { success: true, listingId: 'mock_listing' }; }
-  
+
   async buyFromOpenSea() { return 'mock_tx_hash'; }
   async buyFromRarible() { return 'mock_tx_hash'; }
-  
+
   async executeNFTTransfer() { return 'mock_tx_hash'; }
-  
+
   async updatePopularCollectionPrices() { /* Mock implementation */ }
-  
+
   calculateDiversification() { return 0.7; }
   calculateAverageHoldTime() { return 90; } // days
   calculateProfitLoss() { return 0.15; } // 15% profit

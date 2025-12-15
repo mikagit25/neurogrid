@@ -8,11 +8,11 @@ const { body, param, query, validationResult } = require('express-validator');
 
 const logger = require('../utils/logger');
 const User = require('../models/User');
-const AuthenticationManager = require('../security/AuthenticationManager');
+const { AuthenticationManagerSingleton } = require('../security/AuthenticationManager');
 const inputValidator = require('./validation');
 
 // Create authentication manager instance
-const authManager = new AuthenticationManager();
+const authManager = AuthenticationManagerSingleton.getInstance();
 
 class SecurityMiddleware {
   constructor(config) {

@@ -9,11 +9,11 @@ const logger = require('../utils/logger');
 class RealTimeAnalytics extends EventEmitter {
   constructor(wsManager, dbOptimizer, performanceOptimizer, config = {}) {
     super();
-    
+
     this.wsManager = wsManager;
     this.dbOptimizer = dbOptimizer;
     this.performanceOptimizer = performanceOptimizer;
-    
+
     this.config = {
       updateInterval: config.updateInterval || 5000, // 5 seconds
       retentionPeriod: config.retentionPeriod || 24 * 60 * 60 * 1000, // 24 hours
@@ -49,7 +49,7 @@ class RealTimeAnalytics extends EventEmitter {
     this.startRealTimeMonitoring();
     this.setupPredictiveAnalytics();
     this.setupAlertSystem();
-    
+
     logger.info('Real-time analytics system initialized', {
       updateInterval: this.config.updateInterval,
       alertThresholds: this.config.alertThresholds
@@ -61,9 +61,9 @@ class RealTimeAnalytics extends EventEmitter {
    */
   startRealTimeMonitoring() {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
-    
+
     this.updateInterval = setInterval(async () => {
       try {
         const metrics = await this.collectMetrics();
@@ -84,18 +84,18 @@ class RealTimeAnalytics extends EventEmitter {
    */
   async collectMetrics() {
     const timestamp = Date.now();
-    
+
     // Performance metrics
-    const performanceMetrics = this.performanceOptimizer ? 
+    const performanceMetrics = this.performanceOptimizer ?
       this.performanceOptimizer.getMetrics() : {};
 
     // Database metrics
-    const databaseMetrics = this.dbOptimizer ? 
+    const databaseMetrics = this.dbOptimizer ?
       this.dbOptimizer.getMetrics() : {};
 
     // System metrics
     const systemMetrics = this.getSystemMetrics();
-    
+
     // Network metrics
     const networkMetrics = await this.getNetworkMetrics();
 
@@ -123,7 +123,7 @@ class RealTimeAnalytics extends EventEmitter {
   getSystemMetrics() {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
+
     return {
       memory: {
         used: memUsage.heapUsed,
@@ -151,7 +151,7 @@ class RealTimeAnalytics extends EventEmitter {
   async getNetworkMetrics() {
     // WebSocket connections
     const wsConnections = this.wsManager ? this.wsManager.getConnectionCount() : 0;
-    
+
     // Active HTTP connections (if available)
     const httpConnections = this.getHttpConnectionCount();
 
@@ -162,7 +162,7 @@ class RealTimeAnalytics extends EventEmitter {
       },
       http: {
         connections: httpConnections,
-        activeRequests: this.performanceOptimizer ? 
+        activeRequests: this.performanceOptimizer ?
           this.performanceOptimizer.metrics.requestCount : 0
       }
     };
@@ -233,7 +233,7 @@ class RealTimeAnalytics extends EventEmitter {
    */
   cleanupOldData() {
     const cutoff = Date.now() - this.config.retentionPeriod;
-    
+
     // Clean real-time metrics
     for (const [timestamp] of this.analytics.realTimeMetrics) {
       if (timestamp < cutoff) {
@@ -306,14 +306,14 @@ class RealTimeAnalytics extends EventEmitter {
    */
   checkAlerts(metrics) {
     const alerts = [];
-    
+
     // Memory alert
     if (parseFloat(metrics.system.memory.usagePercent) > this.config.alertThresholds.memoryUsage) {
       alerts.push(this.createAlert('memory', 'High memory usage', metrics.system.memory));
     }
 
     // Database performance alert
-    if (metrics.database && metrics.database.queries && 
+    if (metrics.database && metrics.database.queries &&
         metrics.database.queries.averageTime > this.config.alertThresholds.responseTime) {
       alerts.push(this.createAlert('database', 'Slow database performance', metrics.database));
     }
@@ -354,14 +354,14 @@ class RealTimeAnalytics extends EventEmitter {
    */
   getAlertSeverity(type, data) {
     switch (type) {
-      case 'memory':
-        return parseFloat(data.usagePercent) > 90 ? 'critical' : 'warning';
-      case 'database':
-        return data.queries && data.queries.averageTime > 5000 ? 'critical' : 'warning';
-      case 'nodes':
-        return data.availability < 50 ? 'critical' : 'warning';
-      default:
-        return 'info';
+    case 'memory':
+      return parseFloat(data.usagePercent) > 90 ? 'critical' : 'warning';
+    case 'database':
+      return data.queries && data.queries.averageTime > 5000 ? 'critical' : 'warning';
+    case 'nodes':
+      return data.availability < 50 ? 'critical' : 'warning';
+    default:
+      return 'info';
     }
   }
 
@@ -448,7 +448,7 @@ class RealTimeAnalytics extends EventEmitter {
     const errors = values.map((actual, i) => Math.abs(actual - predicted[i]));
     const avgError = errors.reduce((a, b) => a + b, 0) / errors.length;
     const maxValue = Math.max(...values);
-    
+
     return Math.max(0, 100 - (avgError / maxValue * 100));
   }
 
@@ -458,7 +458,7 @@ class RealTimeAnalytics extends EventEmitter {
   setupAlertSystem() {
     this.on('alert', (alert) => {
       logger.warn('System alert triggered', alert);
-      
+
       // Here you could integrate with external alert systems
       // like Slack, PagerDuty, email notifications, etc.
     });
@@ -520,7 +520,7 @@ class RealTimeAnalytics extends EventEmitter {
    */
   subscribeClient(clientId) {
     this.subscribers.add(clientId);
-    
+
     // Send current state to new subscriber
     const currentState = {
       type: 'analytics_initial_state',
@@ -569,7 +569,7 @@ class RealTimeAnalytics extends EventEmitter {
     if (this.analytics.historicalData.length === 0) return null;
 
     const recent = this.analytics.historicalData.slice(-100);
-    
+
     return {
       memoryUsage: {
         avg: this.average(recent.map(d => parseFloat(d.system.memory.usagePercent))),
@@ -602,10 +602,10 @@ class RealTimeAnalytics extends EventEmitter {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
     }
-    
+
     this.isRunning = false;
     this.subscribers.clear();
-    
+
     logger.info('Real-time analytics stopped');
   }
 }

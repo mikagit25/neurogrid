@@ -75,7 +75,7 @@ router.post('/swarm-task', async (req, res) => {
 router.get('/types', (req, res) => {
   try {
     const agentTypes = agentCoordinator.agentTypes;
-    
+
     // Format agent types for public consumption
     const publicAgentTypes = Object.entries(agentTypes).map(([key, config]) => ({
       id: key,
@@ -110,7 +110,7 @@ router.get('/types', (req, res) => {
 router.get('/stats', (req, res) => {
   try {
     const stats = agentCoordinator.getSwarmStats();
-    
+
     res.json({
       success: true,
       data: stats
@@ -134,7 +134,7 @@ router.get('/task/:taskId', (req, res) => {
   try {
     const { taskId } = req.params;
     const result = agentCoordinator.results.get(taskId);
-    
+
     if (!result) {
       return res.status(404).json({
         success: false,
@@ -164,8 +164,8 @@ router.get('/task/:taskId', (req, res) => {
 router.post('/test-coordination', async (req, res) => {
   try {
     const testTask = {
-      description: "Create a comprehensive business plan for an AI startup, including market analysis, technical architecture, and financial projections",
-      type: "business_planning",
+      description: 'Create a comprehensive business plan for an AI startup, including market analysis, technical architecture, and financial projections',
+      type: 'business_planning',
       requirements: {
         includeCode: true,
         includeAnalytics: true,
@@ -203,34 +203,34 @@ router.get('/examples', (req, res) => {
   try {
     const examples = {
       textAgent: [
-        "Write a technical blog post about machine learning",
-        "Summarize this research paper",
-        "Translate content to multiple languages",
-        "Create marketing copy for a product"
+        'Write a technical blog post about machine learning',
+        'Summarize this research paper',
+        'Translate content to multiple languages',
+        'Create marketing copy for a product'
       ],
       codeAgent: [
-        "Build a REST API for user management",
-        "Debug this Python script",
-        "Review code for security issues", 
-        "Generate unit tests for existing functions"
+        'Build a REST API for user management',
+        'Debug this Python script',
+        'Review code for security issues',
+        'Generate unit tests for existing functions'
       ],
       dataAgent: [
-        "Analyze sales data and provide insights",
-        "Create statistical summary of dataset",
-        "Identify trends in user behavior",
-        "Generate data visualization recommendations"
+        'Analyze sales data and provide insights',
+        'Create statistical summary of dataset',
+        'Identify trends in user behavior',
+        'Generate data visualization recommendations'
       ],
       imageAgent: [
-        "Create logo designs for a tech startup",
-        "Generate product mockups",
-        "Design marketing banners",
-        "Create illustrations for documentation"
+        'Create logo designs for a tech startup',
+        'Generate product mockups',
+        'Design marketing banners',
+        'Create illustrations for documentation'
       ],
       swarmTasks: [
-        "Build a complete web application with documentation",
-        "Create a comprehensive research report with visuals",
-        "Develop a business strategy with technical implementation plan",
-        "Design and analyze a marketing campaign with metrics"
+        'Build a complete web application with documentation',
+        'Create a comprehensive research report with visuals',
+        'Develop a business strategy with technical implementation plan',
+        'Design and analyze a marketing campaign with metrics'
       ]
     };
 
@@ -256,10 +256,10 @@ router.get('/examples', (req, res) => {
 router.post('/cancel-task/:taskId', (req, res) => {
   try {
     const { taskId } = req.params;
-    
+
     // Cancel task (implementation depends on task state management)
     agentCoordinator.cleanupTask(taskId);
-    
+
     res.json({
       success: true,
       message: `Task ${taskId} cancellation requested`
@@ -279,27 +279,27 @@ router.post('/cancel-task/:taskId', (req, res) => {
  */
 function calculateComplexity(description, requirements) {
   let complexity = 1; // Base complexity
-  
+
   // Length factor
   if (description.length > 200) complexity += 1;
   if (description.length > 500) complexity += 1;
-  
+
   // Requirements factor
   const reqCount = Object.keys(requirements).length;
   complexity += Math.floor(reqCount / 2);
-  
+
   // Keyword complexity indicators
   const complexKeywords = [
     'analyze', 'comprehensive', 'detailed', 'complete', 'full',
     'advanced', 'complex', 'multiple', 'integration', 'system'
   ];
-  
-  const hasComplexKeywords = complexKeywords.some(keyword => 
+
+  const hasComplexKeywords = complexKeywords.some(keyword =>
     description.toLowerCase().includes(keyword)
   );
-  
+
   if (hasComplexKeywords) complexity += 1;
-  
+
   return Math.min(5, complexity); // Cap at 5
 }
 

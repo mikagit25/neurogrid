@@ -25,7 +25,7 @@ class MultiSigWalletService {
 
     this.roles = {
       OWNER: 'owner',
-      ADMIN: 'admin', 
+      ADMIN: 'admin',
       OPERATOR: 'operator',
       VIEWER: 'viewer'
     };
@@ -45,7 +45,7 @@ class MultiSigWalletService {
   init() {
     this.setupRolePermissions();
     this.setupTransactionMonitoring();
-    
+
     logger.info('Multi-Signature Wallet Service initialized', {
       minSignatures: this.config.minSignatures,
       maxSigners: this.config.maxSigners,
@@ -81,7 +81,7 @@ class MultiSigWalletService {
         description: description || '',
         creator: creatorAddress,
         createdAt: Date.now(),
-        
+
         // Signer configuration
         signers: new Map(signers.map(signer => [signer.address, {
           address: signer.address,
@@ -90,10 +90,10 @@ class MultiSigWalletService {
           addedBy: creatorAddress,
           permissions: this.getRolePermissions(signer.role || this.roles.OPERATOR)
         }])),
-        
+
         // Security configuration
         threshold: threshold || Math.ceil(signers.length * this.config.defaultThreshold),
-        
+
         // Feature flags
         features: {
           timelock: timelock !== false ? (timelock || this.config.defaultTimelock) : false,
@@ -101,13 +101,13 @@ class MultiSigWalletService {
           roleBasedAccess: roleBasedAccess !== false,
           emergencyStop: true
         },
-        
+
         // Spending limits
         spendingLimits: spendingLimits || {
           daily: { amount: 10, currency: 'ETH' },
           monthly: { amount: 100, currency: 'ETH' }
         },
-        
+
         // State
         status: 'active',
         balance: { ETH: 0, tokens: {} },
@@ -152,7 +152,7 @@ class MultiSigWalletService {
   async createTransactionProposal(walletId, proposerAddress, transactionData) {
     try {
       const wallet = this.getWallet(walletId);
-      
+
       // Verify permissions
       this.verifyPermission(wallet, proposerAddress, this.permissions.CREATE_TRANSACTION);
 
@@ -165,7 +165,7 @@ class MultiSigWalletService {
         walletId,
         proposer: proposerAddress,
         createdAt: Date.now(),
-        
+
         // Transaction data
         transaction: {
           to: transactionData.to,
@@ -174,17 +174,17 @@ class MultiSigWalletService {
           gasLimit: transactionData.gasLimit || 21000,
           description: transactionData.description || ''
         },
-        
+
         // Approval tracking
         signatures: new Map(),
         status: 'pending',
         requiredSignatures: wallet.threshold,
-        
+
         // Timelock
-        timelockEnd: wallet.features.timelock ? 
-          Date.now() + wallet.features.timelock : 
+        timelockEnd: wallet.features.timelock ?
+          Date.now() + wallet.features.timelock :
           Date.now(),
-        
+
         // Execution
         executedAt: null,
         executionTxHash: null,
@@ -563,17 +563,17 @@ class MultiSigWalletService {
 
   async checkTimelockExpirations() {
     const now = Date.now();
-    
+
     for (const [proposalId, proposal] of this.pendingTransactions) {
-      if (proposal.status === 'pending' && 
+      if (proposal.status === 'pending' &&
           proposal.signatures.size >= proposal.requiredSignatures &&
           proposal.timelockEnd <= now) {
         try {
           await this.executeTransaction(proposalId);
         } catch (error) {
-          logger.error('Failed to auto-execute transaction', { 
-            error: error.message, 
-            proposalId 
+          logger.error('Failed to auto-execute transaction', {
+            error: error.message,
+            proposalId
           });
         }
       }
@@ -705,7 +705,7 @@ class MultiSigWalletService {
     const totalWallets = this.wallets.size;
     const totalPendingTx = Array.from(this.pendingTransactions.values())
       .filter(tx => tx.status === 'pending').length;
-    
+
     return {
       totalWallets,
       totalPendingTransactions: totalPendingTx,

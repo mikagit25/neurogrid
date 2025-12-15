@@ -507,7 +507,7 @@ class CoordinatorServer {
 
     // Initialize enhanced WebSocket manager
     this.enhancedWsManager = new EnhancedWebSocketManager();
-    
+
     // Keep legacy WebSocket manager for compatibility
     this.wsManager = WebSocketManager.getInstance();
 
@@ -620,7 +620,7 @@ class CoordinatorServer {
 
       // Initialize enhanced wallet services
       logger.info('Initializing enhanced wallet services...');
-      
+
       this.defiService = new DeFiIntegrationService({
         etherscanApiKey: this.config.get('ETHERSCAN_API_KEY'),
         infuraProjectId: this.config.get('INFURA_PROJECT_ID'),

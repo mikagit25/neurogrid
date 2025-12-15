@@ -565,7 +565,7 @@ class SecureCommunicationManager extends EventEmitter {
       if (!certificate) {
         throw new Error('Certificate is required for OCSP validation');
       }
-      
+
       // In production, this would make an OCSP request to the CA
       return {
         valid: true,

@@ -1,4 +1,7 @@
 const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const SQLiteInitializer = require('../database/sqlite-init');
 const logger = require('../utils/logger');
 
 /**
@@ -8,7 +11,9 @@ const logger = require('../utils/logger');
 class DatabaseManager {
   constructor() {
     this.pool = null;
+    this.db = null; // SQLite database instance
     this.isConnected = false;
+    this.useSQLite = process.env.NODE_ENV === 'development' || process.env.USE_SQLITE === 'true';
     this.connectionConfig = this.getConnectionConfig();
   }
 
@@ -44,6 +49,17 @@ class DatabaseManager {
    */
   async initialize() {
     try {
+      if (this.useSQLite) {
+        logger.info('Initializing SQLite database for development...');
+        const sqliteInit = new SQLiteInitializer();
+        this.db = await sqliteInit.initialize();
+        await sqliteInit.insertTestData();
+        this.isConnected = true;
+        logger.info('SQLite database initialized successfully');
+        return;
+      }
+
+      // PostgreSQL initialization
       this.pool = new Pool(this.connectionConfig);
 
       // Test connection
@@ -103,24 +119,43 @@ class DatabaseManager {
   }
 
   /**
-   * Execute a query with connection from pool
+   * Execute a query with connection from pool or SQLite
    */
   async query(text, params = []) {
     const start = Date.now();
-    let client;
-
+    
     try {
-      client = await this.pool.connect();
-      const result = await client.query(text, params);
-      const duration = Date.now() - start;
+      if (this.useSQLite) {
+        return await this.querySQLite(text, params);
+      }
 
-      logger.debug('Database query executed', {
-        query: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
-        duration,
-        rowCount: result.rowCount
-      });
+      // PostgreSQL query
+      let client;
+      try {
+        client = await this.pool.connect();
+        const result = await client.query(text, params);
+        const duration = Date.now() - start;
 
-      return result;
+        logger.debug('Database query executed', {
+          query: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+          duration,
+          rowCount: result.rowCount
+        });
+
+        return result;
+      } catch (error) {
+        const duration = Date.now() - start;
+        logger.error('Database query failed', {
+          query: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+          error: error.message,
+          duration
+        });
+        throw error;
+      } finally {
+        if (client) {
+          client.release();
+        }
+      }
     } catch (error) {
       const duration = Date.now() - start;
       logger.error('Database query failed', {
@@ -129,11 +164,77 @@ class DatabaseManager {
         duration
       });
       throw error;
-    } finally {
-      if (client) {
-        client.release();
-      }
     }
+  }
+
+  /**
+   * Execute SQLite query
+   */
+  async querySQLite(text, params = []) {
+    const start = Date.now();
+    
+    return new Promise((resolve, reject) => {
+      // Convert PostgreSQL style queries to SQLite
+      const sqliteQuery = this.convertToSQLite(text);
+      
+      if (sqliteQuery.startsWith('SELECT') || sqliteQuery.startsWith('PRAGMA')) {
+        this.db.all(sqliteQuery, params, (err, rows) => {
+          const duration = Date.now() - start;
+          if (err) {
+            logger.error('SQLite query failed', {
+              query: sqliteQuery.substring(0, 100) + (sqliteQuery.length > 100 ? '...' : ''),
+              error: err.message,
+              duration
+            });
+            reject(err);
+          } else {
+            logger.debug('SQLite query executed', {
+              query: sqliteQuery.substring(0, 100) + (sqliteQuery.length > 100 ? '...' : ''),
+              duration,
+              rowCount: rows.length
+            });
+            resolve({ rows, rowCount: rows.length });
+          }
+        });
+      } else {
+        this.db.run(sqliteQuery, params, function(err) {
+          const duration = Date.now() - start;
+          if (err) {
+            logger.error('SQLite query failed', {
+              query: sqliteQuery.substring(0, 100) + (sqliteQuery.length > 100 ? '...' : ''),
+              error: err.message,
+              duration
+            });
+            reject(err);
+          } else {
+            logger.debug('SQLite query executed', {
+              query: sqliteQuery.substring(0, 100) + (sqliteQuery.length > 100 ? '...' : ''),
+              duration,
+              rowCount: this.changes
+            });
+            resolve({ 
+              rows: [], 
+              rowCount: this.changes,
+              insertId: this.lastID 
+            });
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * Convert PostgreSQL queries to SQLite compatible format
+   */
+  convertToSQLite(query) {
+    return query
+      .replace(/NOW\(\)/gi, "datetime('now')")
+      .replace(/CURRENT_TIMESTAMP/gi, "datetime('now')")
+      .replace(/SERIAL/gi, 'INTEGER PRIMARY KEY AUTOINCREMENT')
+      .replace(/BIGSERIAL/gi, 'INTEGER PRIMARY KEY AUTOINCREMENT')
+      .replace(/BOOLEAN/gi, 'INTEGER')
+      .replace(/TRUE/gi, '1')
+      .replace(/FALSE/gi, '0');
   }
 
   /**

@@ -8,7 +8,7 @@ const { EventEmitter } = require('events');
 class MultiAgentCoordinator extends EventEmitter {
   constructor(config = {}) {
     super();
-    
+
     this.config = {
       maxConcurrentAgents: config.maxConcurrentAgents || 5,
       taskTimeout: config.taskTimeout || 300000, // 5 minutes
@@ -31,7 +31,7 @@ class MultiAgentCoordinator extends EventEmitter {
         capabilities: ['writing', 'translation', 'summarization', 'qa']
       },
       codeAgent: {
-        name: 'Code Specialist', 
+        name: 'Code Specialist',
         model: 'codellama-34b',
         specialization: 'code_generation',
         capabilities: ['programming', 'debugging', 'code_review', 'documentation']
@@ -80,10 +80,10 @@ class MultiAgentCoordinator extends EventEmitter {
 
       // Step 1: Coordinator analyzes and breaks down task
       const breakdown = await this.coordinateTask(taskId, taskData);
-      
+
       // Step 2: Dispatch subtasks to specialist agents
       const agentResults = await this.executeAgentSwarm(taskId, breakdown);
-      
+
       // Step 3: Aggregate results
       const finalResult = await this.aggregateResults(taskId, agentResults);
 
@@ -121,7 +121,7 @@ class MultiAgentCoordinator extends EventEmitter {
 
     } catch (error) {
       logger.error(`Swarm task ${taskId} failed:`, error);
-      
+
       this.emit('swarmTaskFailed', {
         taskId,
         error: error.message,
@@ -180,9 +180,9 @@ Only include agents that are actually needed for this task.
       });
 
       const breakdown = JSON.parse(coordinationResult.content);
-      
+
       logger.debug(`Task ${taskId} breakdown:`, breakdown);
-      
+
       return breakdown;
 
     } catch (error) {
@@ -201,19 +201,19 @@ Only include agents that are actually needed for this task.
     try {
       // Group tasks by dependency level
       const dependencyLevels = this.groupByDependencies(taskBreakdown, executionOrder);
-      
+
       // Execute each level (parallel within level, sequential between levels)
       for (const level of dependencyLevels) {
         const levelPromises = level.map(async (agentType) => {
           const agentTask = taskBreakdown[agentType];
-          
+
           if (!agentTask) return null;
 
           logger.debug(`Executing ${agentType} for task ${taskId}`);
 
           const agentResult = await this.executeSpecialistAgent(
-            taskId, 
-            agentType, 
+            taskId,
+            agentType,
             agentTask,
             results // Previous results for dependencies
           );
@@ -239,7 +239,7 @@ Only include agents that are actually needed for this task.
   async executeSpecialistAgent(taskId, agentType, agentTask, previousResults = {}) {
     try {
       const agentConfig = this.agentTypes[agentType];
-      
+
       if (!agentConfig) {
         throw new Error(`Unknown agent type: ${agentType}`);
       }
@@ -334,14 +334,14 @@ Provide the final result in a clear, professional format.
    */
   async callAgent(agentType, params) {
     const startTime = Date.now();
-    
+
     try {
       const agentConfig = this.agentTypes[agentType];
-      
+
       // This would integrate with our existing TaskDispatcher
       // For now, mock the response
       const response = await this.simulateAgentCall(agentConfig, params);
-      
+
       return {
         content: response,
         executionTime: Date.now() - startTime,
@@ -360,7 +360,7 @@ Provide the final result in a clear, professional format.
   async simulateAgentCall(agentConfig, params) {
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
+
     return `[${agentConfig.name} - ${agentConfig.model}] Mock response to: ${params.prompt.substring(0, 100)}...`;
   }
 
@@ -370,21 +370,21 @@ Provide the final result in a clear, professional format.
   assessResultQuality(content, agentConfig) {
     // Basic quality assessment (can be enhanced with ML models)
     let score = 0.5; // Base score
-    
+
     // Length check
     if (content.length > 100) score += 0.1;
     if (content.length > 500) score += 0.1;
-    
+
     // Specialization relevance (basic keyword check)
     const keywords = agentConfig.capabilities.join('|');
     const regex = new RegExp(keywords, 'i');
     if (regex.test(content)) score += 0.2;
-    
+
     // Structure check
     if (content.includes('\n') || content.includes('•') || content.includes('-')) {
       score += 0.1;
     }
-    
+
     return Math.min(1.0, score);
   }
 
@@ -395,10 +395,10 @@ Provide the final result in a clear, professional format.
     const agentCount = Object.keys(agentResults).length;
     const avgAgentQuality = Object.values(agentResults)
       .reduce((sum, result) => sum + result.quality, 0) / agentCount;
-    
+
     // Final quality is weighted average of agent qualities + integration bonus
     const integrationBonus = agentCount > 2 ? 0.1 : 0; // Bonus for multi-agent integration
-    
+
     return Math.min(1.0, avgAgentQuality + integrationBonus);
   }
 
@@ -408,18 +408,18 @@ Provide the final result in a clear, professional format.
   groupByDependencies(taskBreakdown, executionOrder) {
     const levels = [];
     const processed = new Set();
-    
+
     // Simple implementation - can be enhanced with proper topological sorting
     for (const agentType of executionOrder) {
       const task = taskBreakdown[agentType];
       if (!task) continue;
-      
-      const dependenciesReady = !task.dependencies || 
+
+      const dependenciesReady = !task.dependencies ||
         task.dependencies.every(dep => processed.has(dep));
-      
+
       if (dependenciesReady) {
         const currentLevel = levels[levels.length - 1] || [];
-        if (levels.length === 0 || currentLevel.some(agent => 
+        if (levels.length === 0 || currentLevel.some(agent =>
           taskBreakdown[agent]?.dependencies?.includes(agentType))) {
           levels.push([agentType]);
         } else {
@@ -428,7 +428,7 @@ Provide the final result in a clear, professional format.
         processed.add(agentType);
       }
     }
-    
+
     return levels.filter(level => level.length > 0);
   }
 
@@ -459,9 +459,9 @@ Provide the final result in a clear, professional format.
   calculateAverageProcessingTime() {
     const times = Array.from(this.results.values())
       .map(result => result.processingTime);
-    
-    return times.length > 0 
-      ? times.reduce((a, b) => a + b, 0) / times.length 
+
+    return times.length > 0
+      ? times.reduce((a, b) => a + b, 0) / times.length
       : 0;
   }
 }

@@ -45,13 +45,13 @@ app.get('/api/info', (req, res) => {
 // Simple task submission endpoint
 app.post('/api/tasks', (req, res) => {
   const { prompt, model = 'llama2:7b' } = req.body;
-  
+
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt required' });
   }
 
   const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-  
+
   res.json({
     success: true,
     task_id: taskId,
@@ -90,7 +90,7 @@ app.get('/api/nodes', (req, res) => {
         gpu: 'RTX 4090'
       },
       {
-        id: 'node_2', 
+        id: 'node_2',
         location: 'USA',
         status: 'online',
         gpu: 'RTX 3090'
@@ -103,7 +103,7 @@ app.get('/api/nodes', (req, res) => {
 // Get task by ID
 app.get('/api/tasks/:taskId', (req, res) => {
   const { taskId } = req.params;
-  
+
   // Mock task data for development
   const mockTask = {
     id: taskId,
@@ -118,7 +118,7 @@ app.get('/api/tasks/:taskId', (req, res) => {
     node_id: 'node_1',
     node_location: 'Germany'
   };
-  
+
   res.json({
     success: true,
     task: mockTask
@@ -166,7 +166,7 @@ app.get('/api/tokens/transactions', (req, res) => {
       status: 'completed'
     }
   ];
-  
+
   res.json({
     success: true,
     transactions: mockTransactions.slice(0, limit),
@@ -226,11 +226,11 @@ app.use('*', (req, res) => {
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`🚀 NeuroGrid Coordinator API started!`);
+  console.log('🚀 NeuroGrid Coordinator API started!');
   console.log(`📍 Server running on: http://localhost:${PORT}`);
   console.log(`🔍 Health check: http://localhost:${PORT}/health`);
   console.log(`📋 API info: http://localhost:${PORT}/api/info`);
-  console.log(`⚡ Environment: development`);
+  console.log('⚡ Environment: development');
 });
 
 module.exports = app;

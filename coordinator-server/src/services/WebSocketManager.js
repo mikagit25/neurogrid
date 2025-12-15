@@ -1,10 +1,10 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
-const AuthenticationManager = require('../security/AuthenticationManager');
+const { AuthenticationManagerSingleton } = require('../security/AuthenticationManager');
 const logger = require('../utils/logger');
 
 // Create authentication manager instance
-const authManager = new AuthenticationManager();
+const authManager = AuthenticationManagerSingleton.getInstance();
 
 class WebSocketManager extends EventEmitter {
   constructor(options = {}) {

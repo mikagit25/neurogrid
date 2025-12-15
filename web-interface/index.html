@@ -18,6 +18,26 @@
                             700: '#1d4ed8',
                             900: '#1e3a8a'
                         }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-subtle': 'bounceSubtle 2s infinite'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        bounceSubtle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' }
+                        }
                     }
                 }
             }
@@ -54,7 +74,7 @@
                         <!-- Will be populated by JavaScript -->
                     </div>
                     
-                    <button onclick="showTaskSubmission()" class="bg-neurogrid-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-neurogrid-700">
+                    <button onclick="showTaskSubmission()" class="bg-neurogrid-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-neurogrid-700 transition-all duration-200 transform hover:scale-105 hover:shadow-lg">
                         <i class="fas fa-plus mr-2"></i>Submit Task
                     </button>
                 </div>
@@ -75,13 +95,13 @@
                     Run AI models efficiently and affordably on our decentralized network.
                 </p>
                 <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-                    <div class="rounded-md shadow">
-                        <button onclick="showTaskSubmission()" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-neurogrid-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+                    <div class="rounded-md shadow animate-bounce-subtle">
+                        <button onclick="showTaskSubmission()" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-neurogrid-700 bg-white hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 hover:shadow-xl md:py-4 md:text-lg md:px-10">
                             Submit Your First Task
                         </button>
                     </div>
                     <div class="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
-                        <a href="node-setup.html" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-neurogrid-500 hover:bg-neurogrid-600 md:py-4 md:text-lg md:px-10">
+                        <a href="node-setup.html" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-neurogrid-500 hover:bg-neurogrid-600 transition-all duration-300 transform hover:scale-105 hover:shadow-xl md:py-4 md:text-lg md:px-10">
                             <i class="fas fa-download mr-2"></i>Setup Node
                         </a>
                     </div>
@@ -102,17 +122,26 @@
                 </p>
             </div>
             <dl class="mt-10 text-center sm:max-w-3xl sm:mx-auto sm:grid sm:grid-cols-3 sm:gap-8">
-                <div class="flex flex-col">
+                <div class="flex flex-col transform transition-all duration-300 hover:scale-105">
                     <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">Active Nodes</dt>
-                    <dd class="order-1 text-5xl font-extrabold text-neurogrid-600" id="active-nodes">-</dd>
+                    <dd class="order-1 text-5xl font-extrabold text-neurogrid-600 animate-pulse-slow" id="active-nodes">
+                        <span class="loading-spinner hidden">⟳</span>
+                        <span class="stat-value">-</span>
+                    </dd>
                 </div>
-                <div class="flex flex-col mt-10 sm:mt-0">
+                <div class="flex flex-col mt-10 sm:mt-0 transform transition-all duration-300 hover:scale-105">
                     <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">Tasks Completed</dt>
-                    <dd class="order-1 text-5xl font-extrabold text-neurogrid-600" id="tasks-completed">-</dd>
+                    <dd class="order-1 text-5xl font-extrabold text-neurogrid-600 animate-pulse-slow" id="tasks-completed">
+                        <span class="loading-spinner hidden">⟳</span>
+                        <span class="stat-value">-</span>
+                    </dd>
                 </div>
-                <div class="flex flex-col mt-10 sm:mt-0">
+                <div class="flex flex-col mt-10 sm:mt-0 transform transition-all duration-300 hover:scale-105">
                     <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">Available VRAM</dt>
-                    <dd class="order-1 text-5xl font-extrabold text-neurogrid-600" id="available-vram">-</dd>
+                    <dd class="order-1 text-5xl font-extrabold text-neurogrid-600 animate-pulse-slow" id="available-vram">
+                        <span class="loading-spinner hidden">⟳</span>
+                        <span class="stat-value">-</span>
+                    </dd>
                 </div>
             </dl>
         </div>
@@ -218,7 +247,7 @@
     <!-- JavaScript -->
     <script>
         // API Configuration
-        const API_BASE_URL = 'http://localhost:3001/api';
+        const API_BASE_URL = 'http://localhost:8080/api';
         
         // WebSocket connection
         let socket = null;
@@ -419,7 +448,7 @@
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -435,13 +464,13 @@
                     document.querySelector('.fixed').remove();
                     initializeUserSection();
                     
-                    showNotificationBanner('Вход выполнен успешно!', 'success');
+                    showSuccessToast('Вход выполнен успешно!');
                 } else {
                     const error = await response.json();
-                    showNotificationBanner(error.error || 'Ошибка входа', 'error');
+                    showErrorToast('Ошибка входа', error.error || 'Неверные учетные данные');
                 }
             } catch (error) {
-                showNotificationBanner('Ошибка подключения к серверу', 'error');
+                showErrorToast('Ошибка подключения', 'Проверьте соединение с сервером');
             }
         }
 
@@ -454,12 +483,12 @@
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
 
             if (password !== confirmPassword) {
-                showNotificationBanner('Пароли не совпадают', 'error');
+                showErrorToast('Ошибка валидации', 'Пароли не совпадают');
                 return;
             }
 
             try {
-                const response = await fetch('/api/auth/register', {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -475,13 +504,13 @@
                     document.querySelector('.fixed').remove();
                     initializeUserSection();
                     
-                    showNotificationBanner('Регистрация выполнена успешно!', 'success');
+                    showSuccessToast('Регистрация выполнена успешно!');
                 } else {
                     const error = await response.json();
-                    showNotificationBanner(error.error || 'Ошибка регистрации', 'error');
+                    showErrorToast('Ошибка регистрации', error.error || 'Неудалось создать аккаунт');
                 }
             } catch (error) {
-                showNotificationBanner('Ошибка подключения к серверу', 'error');
+                showErrorToast('Ошибка подключения', 'Проверьте соединение с сервером');
             }
         }
 
@@ -489,7 +518,7 @@
         function logout() {
             localStorage.removeItem('authToken');
             initializeUserSection();
-            showNotificationBanner('Вы вышли из системы', 'info');
+            showSuccessToast('Вы вышли из системы');
         }
 
         // Show notification banner
@@ -566,26 +595,68 @@
         
         // Load network statistics
         async function loadStats() {
+            // Show loading indicators
+            showLoadingSpinners(['active-nodes', 'tasks-completed', 'available-vram']);
+            
             try {
                 const response = await fetch(`${API_BASE_URL}/nodes/stats`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    updateStats(data.stats);
+                    updateStats(data.data);
+                } else {
+                    throw new Error('API returned success: false');
                 }
             } catch (error) {
                 console.error('Failed to load stats:', error);
                 // Set fallback values
-                document.getElementById('active-nodes').textContent = '0';
-                document.getElementById('tasks-completed').textContent = '0';
-                document.getElementById('available-vram').textContent = '0 GB';
+                updateStats({
+                    activeNodes: 0,
+                    totalTasks: 0,
+                    totalNodes: 0,
+                    completedTasks: 0,
+                    networkUtilization: 0
+                });
+            } finally {
+                hideLoadingSpinners(['active-nodes', 'tasks-completed', 'available-vram']);
             }
         }
         
         function updateStats(stats) {
-            document.getElementById('active-nodes').textContent = stats.active_nodes || 0;
-            document.getElementById('tasks-completed').textContent = (stats.total_tasks || 0).toLocaleString();
-            document.getElementById('available-vram').textContent = `${Math.round(stats.available_vram_gb || 0)} GB`;
+            // Animate counter updates
+            animateCounterUpdate('active-nodes', stats.activeNodes || 0);
+            animateCounterUpdate('tasks-completed', stats.completedTasks || 0);
+            animateVRAMUpdate('available-vram', stats.totalNodes * 24 || 0); // Assuming 24GB per node
+        }
+        
+        function animateCounterUpdate(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            const statValue = element.querySelector('.stat-value');
+            const currentValue = parseInt(statValue.textContent) || 0;
+            
+            // Simple animation for number changes
+            if (currentValue !== newValue) {
+                statValue.style.transform = 'scale(1.1)';
+                statValue.style.transition = 'transform 0.3s ease';
+                
+                setTimeout(() => {
+                    statValue.textContent = newValue.toLocaleString();
+                    statValue.style.transform = 'scale(1)';
+                }, 150);
+            }
+        }
+        
+        function animateVRAMUpdate(elementId, totalGB) {
+            const element = document.getElementById(elementId);
+            const statValue = element.querySelector('.stat-value');
+            
+            statValue.style.transform = 'scale(1.1)';
+            statValue.style.transition = 'transform 0.3s ease';
+            
+            setTimeout(() => {
+                statValue.textContent = `${Math.round(totalGB)} GB`;
+                statValue.style.transform = 'scale(1)';
+            }, 150);
         }
         
         // Load recent tasks
@@ -790,6 +861,77 @@
         function updateNodeInList(nodeData) {
             // Update specific node in the list
             loadActiveNodes(); // For now, just reload the list
+        }
+        
+        // Utility functions for loading indicators
+        function showLoadingSpinners(elementIds) {
+            elementIds.forEach(id => {
+                const element = document.getElementById(id);
+                const spinner = element.querySelector('.loading-spinner');
+                const value = element.querySelector('.stat-value');
+                if (spinner && value) {
+                    spinner.classList.remove('hidden');
+                    value.style.opacity = '0.5';
+                }
+            });
+        }
+        
+        function hideLoadingSpinners(elementIds) {
+            elementIds.forEach(id => {
+                const element = document.getElementById(id);
+                const spinner = element.querySelector('.loading-spinner');
+                const value = element.querySelector('.stat-value');
+                if (spinner && value) {
+                    spinner.classList.add('hidden');
+                    value.style.opacity = '1';
+                }
+            });
+        }
+        
+        // Enhanced error handling with user-friendly messages
+        function showErrorToast(message, details = '') {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-up';
+            toast.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-medium">${message}</div>
+                        ${details ? `<div class="text-sm opacity-90 mt-1">${details}</div>` : ''}
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        ×
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+        
+        function showSuccessToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-up';
+            toast.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="font-medium">${message}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        ×
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 3000);
         }
     </script>
 </body>

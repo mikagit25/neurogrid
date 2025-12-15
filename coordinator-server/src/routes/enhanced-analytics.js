@@ -154,7 +154,7 @@ router.get('/performance/network', authenticate, async (req, res) => {
   try {
     const timeRange = req.query.timeRange || '24h';
     const timeRangeMs = parseTimeRange(timeRange);
-    
+
     const performanceData = await generateNetworkPerformanceData(timeRangeMs);
 
     res.json({
@@ -278,7 +278,7 @@ router.get('/usage/statistics', authenticate, async (req, res) => {
 router.post('/metrics/submit', authenticate, async (req, res) => {
   try {
     const { nodeId, metrics } = req.body;
-    
+
     if (!nodeId || !metrics) {
       return res.status(400).json({
         success: false,
@@ -318,7 +318,7 @@ router.post('/metrics/submit', authenticate, async (req, res) => {
 function calculateNetworkLoad(metrics) {
   const nodeMetrics = metrics.filter(m => m.type === 'node');
   if (nodeMetrics.length === 0) return 0;
-  
+
   const totalCpu = nodeMetrics.reduce((sum, m) => sum + (m.data.cpuUsage || 0), 0);
   return totalCpu / nodeMetrics.length;
 }
@@ -327,7 +327,7 @@ function calculateAvgResponseTime(metrics) {
   const responseTimes = metrics
     .map(m => m.data.responseTime)
     .filter(rt => rt !== undefined);
-  
+
   if (responseTimes.length === 0) return 0;
   return responseTimes.reduce((sum, rt) => sum + rt, 0) / responseTimes.length;
 }
@@ -336,14 +336,14 @@ function calculateThroughput(metrics) {
   const taskCounts = metrics
     .map(m => m.data.completedTasks || 0)
     .reduce((sum, count) => sum + count, 0);
-  
+
   return taskCounts;
 }
 
 function calculateErrorRate(metrics) {
   const totalTasks = metrics.reduce((sum, m) => sum + (m.data.totalTasks || 0), 0);
   const failedTasks = metrics.reduce((sum, m) => sum + (m.data.failedTasks || 0), 0);
-  
+
   if (totalTasks === 0) return 0;
   return (failedTasks / totalTasks) * 100;
 }
@@ -351,11 +351,11 @@ function calculateErrorRate(metrics) {
 function generateSystemAlerts() {
   const alerts = [];
   const now = Date.now();
-  
+
   // Check for high CPU usage
   const recentNodes = Array.from(realtimeMetrics.values())
     .filter(m => m.type === 'node' && m.timestamp > now - 60000);
-  
+
   const highCpuNodes = recentNodes.filter(m => m.data.cpuUsage > 90);
   if (highCpuNodes.length > 0) {
     alerts.push({
@@ -391,18 +391,18 @@ function parseTimeRange(timeRange) {
     '7d': 7 * 24 * 60 * 60 * 1000,
     '30d': 30 * 24 * 60 * 60 * 1000
   };
-  
+
   return ranges[timeRange] || ranges['24h'];
 }
 
 async function generateNetworkPerformanceData(timeRangeMs) {
   const now = Date.now();
   const startTime = now - timeRangeMs;
-  
+
   // Generate mock performance data (in production, query from database)
   const intervals = 20;
   const intervalSize = timeRangeMs / intervals;
-  
+
   const performanceData = [];
   for (let i = 0; i < intervals; i++) {
     const timestamp = startTime + (i * intervalSize);
@@ -415,7 +415,7 @@ async function generateNetworkPerformanceData(timeRangeMs) {
       errorRate: Math.random() * 5
     });
   }
-  
+
   return {
     data: performanceData,
     timeRange: timeRangeMs,
@@ -437,7 +437,7 @@ async function getTopPerformingNodes(limit, metric) {
           lastUpdate: 0
         };
       }
-      
+
       // Use the most recent data for each node
       if (m.timestamp > acc[m.nodeId].lastUpdate) {
         acc[m.nodeId] = {
@@ -449,7 +449,7 @@ async function getTopPerformingNodes(limit, metric) {
           lastUpdate: m.timestamp
         };
       }
-      
+
       return acc;
     }, {});
 
@@ -461,7 +461,7 @@ async function getTopPerformingNodes(limit, metric) {
 async function generateUsageStatistics() {
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
-  
+
   return {
     daily: {
       tasksCompleted: Math.floor(Math.random() * 5000) + 1000,
@@ -487,7 +487,7 @@ async function generateUsageStatistics() {
 
 function cleanupOldMetrics() {
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
-  
+
   for (const [key, metric] of realtimeMetrics) {
     if (metric.timestamp < oneHourAgo) {
       realtimeMetrics.delete(key);

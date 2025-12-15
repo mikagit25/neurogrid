@@ -37,7 +37,7 @@ class DatabaseOptimizer {
     this.optimizeConnectionPool();
     this.setupQueryOptimization();
     this.setupMonitoring();
-    
+
     logger.info('Database optimizer initialized', {
       maxConnections: this.config.maxConnections,
       queryCache: this.config.enableQueryCache,
@@ -57,7 +57,7 @@ class DatabaseOptimizer {
       idle: this.config.idleTimeout,
       evict: this.config.idleTimeout / 2, // Evict idle connections
       handleDisconnects: true,
-      
+
       // Connection validation
       validate: (connection) => {
         return connection && !connection._invalid;
@@ -92,11 +92,11 @@ class DatabaseOptimizer {
    */
   setupQueryOptimization() {
     const originalQuery = this.db.query;
-    
+
     this.db.query = async (sql, params = [], options = {}) => {
       const startTime = Date.now();
       const queryHash = this.generateQueryHash(sql, params);
-      
+
       try {
         // Check cache first
         if (this.config.enableQueryCache && options.cache !== false) {
@@ -110,7 +110,7 @@ class DatabaseOptimizer {
 
         // Optimize query if needed
         const optimizedSql = this.optimizeQuery(sql);
-        
+
         // Use prepared statement if enabled
         let result;
         if (this.config.enablePreparedStatements && this.shouldUsePreparedStatement(sql)) {
@@ -153,8 +153,8 @@ class DatabaseOptimizer {
     let optimized = sql;
 
     // Add LIMIT if not present for potentially large result sets
-    if (optimized.toLowerCase().includes('select') && 
-        !optimized.toLowerCase().includes('limit') && 
+    if (optimized.toLowerCase().includes('select') &&
+        !optimized.toLowerCase().includes('limit') &&
         !optimized.toLowerCase().includes('count(')) {
       optimized += ' LIMIT 1000';
     }
@@ -178,13 +178,13 @@ class DatabaseOptimizer {
    */
   shouldUsePreparedStatement(sql) {
     const normalizedSql = sql.toLowerCase().trim();
-    
+
     // Use prepared statements for common patterns
-    return normalizedSql.includes('where') && 
+    return normalizedSql.includes('where') &&
            normalizedSql.includes('?') &&
-           (normalizedSql.startsWith('select') || 
-            normalizedSql.startsWith('insert') || 
-            normalizedSql.startsWith('update') || 
+           (normalizedSql.startsWith('select') ||
+            normalizedSql.startsWith('insert') ||
+            normalizedSql.startsWith('update') ||
             normalizedSql.startsWith('delete'));
   }
 
@@ -193,13 +193,13 @@ class DatabaseOptimizer {
    */
   async executePreparedStatement(sql, params) {
     const stmtHash = require('crypto').createHash('md5').update(sql).digest('hex');
-    
+
     let stmt = this.preparedStatements.get(stmtHash);
     if (!stmt) {
       if (this.db.prepare) {
         stmt = await this.db.prepare(sql);
         this.preparedStatements.set(stmtHash, stmt);
-        
+
         // Limit prepared statements cache size
         if (this.preparedStatements.size > 100) {
           const firstKey = this.preparedStatements.keys().next().value;
@@ -214,7 +214,7 @@ class DatabaseOptimizer {
         return this.db.query(sql, params);
       }
     }
-    
+
     return stmt.execute ? stmt.execute(params) : stmt.run(params);
   }
 
@@ -223,18 +223,18 @@ class DatabaseOptimizer {
    */
   shouldCacheQuery(sql) {
     const normalizedSql = sql.toLowerCase().trim();
-    
+
     // Cache read-only queries
     if (!normalizedSql.startsWith('select')) {
       return false;
     }
-    
+
     // Don't cache queries with temporal data
     const temporalKeywords = ['now()', 'current_timestamp', 'sysdate', 'getdate()'];
     if (temporalKeywords.some(keyword => normalizedSql.includes(keyword))) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -247,7 +247,7 @@ class DatabaseOptimizer {
       timestamp: Date.now(),
       ttl: ttl
     });
-    
+
     // Limit cache size
     if (this.queryCache.size > 1000) {
       const oldestKey = this.queryCache.keys().next().value;
@@ -267,10 +267,10 @@ class DatabaseOptimizer {
    */
   updateMetrics(sql, queryTime, params) {
     this.metrics.totalQueries++;
-    
+
     // Update average query time
-    this.metrics.averageQueryTime = 
-      (this.metrics.averageQueryTime * (this.metrics.totalQueries - 1) + queryTime) / 
+    this.metrics.averageQueryTime =
+      (this.metrics.averageQueryTime * (this.metrics.totalQueries - 1) + queryTime) /
       this.metrics.totalQueries;
 
     // Track slow queries
@@ -292,7 +292,7 @@ class DatabaseOptimizer {
     };
 
     this.metrics.slowQueries.push(slowQuery);
-    
+
     // Keep only last 100 slow queries
     if (this.metrics.slowQueries.length > 100) {
       this.metrics.slowQueries = this.metrics.slowQueries.slice(-100);
@@ -310,7 +310,7 @@ class DatabaseOptimizer {
       if (this.db.pool && this.db.pool.getStatus) {
         const status = this.db.pool.getStatus();
         this.metrics.activeConnections = status.active || 0;
-        
+
         if (status.active > this.config.maxConnections * 0.8) {
           logger.warn('High database connection usage', {
             active: status.active,
@@ -331,7 +331,7 @@ class DatabaseOptimizer {
           cleanedCount++;
         }
       }
-      
+
       if (cleanedCount > 0) {
         logger.debug('Cleaned expired query cache entries', { count: cleanedCount });
       }
@@ -351,7 +351,7 @@ class DatabaseOptimizer {
       cache: {
         hits: this.metrics.cacheHits,
         misses: this.metrics.cacheMisses,
-        hitRatio: this.metrics.totalQueries > 0 ? 
+        hitRatio: this.metrics.totalQueries > 0 ?
           (this.metrics.cacheHits / (this.metrics.cacheHits + this.metrics.cacheMisses) * 100).toFixed(2) : 0,
         size: this.queryCache.size
       },
@@ -372,7 +372,7 @@ class DatabaseOptimizer {
    */
   async optimize() {
     logger.info('Running database optimization cycle');
-    
+
     // Clear expired cache entries
     let clearedCache = 0;
     for (const [key, value] of this.queryCache.entries()) {
@@ -381,7 +381,7 @@ class DatabaseOptimizer {
         clearedCache++;
       }
     }
-    
+
     // Analyze slow queries and suggest optimizations
     if (this.metrics.slowQueries.length > 0) {
       const recentSlowQueries = this.metrics.slowQueries.slice(-10);

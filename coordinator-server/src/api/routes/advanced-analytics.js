@@ -64,7 +64,7 @@ router.get('/realtime', authenticate, requireRole(['admin', 'operator']), (req, 
     }
 
     const realtimeData = Array.from(realTimeAnalytics.analytics.realTimeMetrics.values()).slice(-1)[0];
-    
+
     res.json({
       success: true,
       data: realtimeData || null
@@ -123,14 +123,14 @@ router.get('/alerts', authenticate, requireRole(['admin', 'operator']), (req, re
 
     const limit = parseInt(req.query.limit) || 50;
     const severity = req.query.severity;
-    
+
     let alerts = realTimeAnalytics.analytics.alerts;
-    
+
     // Filter by severity if specified
     if (severity) {
       alerts = alerts.filter(alert => alert.severity === severity);
     }
-    
+
     // Limit results
     alerts = alerts.slice(-limit);
 
@@ -168,9 +168,9 @@ router.get('/historical', authenticate, requireRole(['admin', 'operator']), (req
 
     const timeframe = req.query.timeframe || '1h'; // 1h, 6h, 24h, 7d
     const metric = req.query.metric; // specific metric to filter
-    
+
     let data = realTimeAnalytics.analytics.historicalData;
-    
+
     // Filter by timeframe
     const timeframeMs = {
       '1h': 60 * 60 * 1000,
@@ -178,10 +178,10 @@ router.get('/historical', authenticate, requireRole(['admin', 'operator']), (req
       '24h': 24 * 60 * 60 * 1000,
       '7d': 7 * 24 * 60 * 60 * 1000
     };
-    
+
     const cutoff = Date.now() - (timeframeMs[timeframe] || timeframeMs['1h']);
     data = data.filter(d => d.timestamp > cutoff);
-    
+
     // Filter by specific metric if requested
     if (metric) {
       data = data.map(d => ({
@@ -224,7 +224,7 @@ router.post('/subscribe', authenticate, requireRole(['admin', 'operator']), (req
     }
 
     const { clientId } = req.body;
-    
+
     if (!clientId) {
       return res.status(400).json({
         success: false,
@@ -240,9 +240,9 @@ router.post('/subscribe', authenticate, requireRole(['admin', 'operator']), (req
       clientId
     });
 
-    logger.info('Analytics subscription created', { 
-      clientId, 
-      userId: req.user.id 
+    logger.info('Analytics subscription created', {
+      clientId,
+      userId: req.user.id
     });
 
   } catch (error) {
@@ -269,7 +269,7 @@ router.post('/unsubscribe', authenticate, requireRole(['admin', 'operator']), (r
     }
 
     const { clientId } = req.body;
-    
+
     if (!clientId) {
       return res.status(400).json({
         success: false,
@@ -309,7 +309,7 @@ router.get('/health', authenticate, requireRole(['admin', 'operator']), (req, re
 
     const health = realTimeAnalytics.analytics.systemHealth;
     const recentMetrics = Array.from(realTimeAnalytics.analytics.realTimeMetrics.values()).slice(-5);
-    
+
     res.json({
       success: true,
       data: {
@@ -351,7 +351,7 @@ router.post('/alert/:alertId/acknowledge', authenticate, requireRole(['admin']),
 
     // Find and update alert
     const alertIndex = realTimeAnalytics.analytics.alerts.findIndex(alert => alert.id === alertId);
-    
+
     if (alertIndex === -1) {
       return res.status(404).json({
         success: false,
@@ -370,10 +370,10 @@ router.post('/alert/:alertId/acknowledge', authenticate, requireRole(['admin']),
       message: 'Alert acknowledged successfully'
     });
 
-    logger.info('Alert acknowledged', { 
-      alertId, 
+    logger.info('Alert acknowledged', {
+      alertId,
       acknowledgedBy: req.user.id,
-      note 
+      note
     });
 
   } catch (error) {
@@ -401,7 +401,7 @@ router.get('/export', authenticate, requireRole(['admin']), (req, res) => {
 
     const format = req.query.format || 'json'; // json, csv
     const timeframe = req.query.timeframe || '24h';
-    
+
     if (format !== 'json' && format !== 'csv') {
       return res.status(400).json({
         success: false,
@@ -410,7 +410,7 @@ router.get('/export', authenticate, requireRole(['admin']), (req, res) => {
     }
 
     const dashboardData = realTimeAnalytics.getDashboardData();
-    
+
     if (format === 'json') {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="neurogrid-analytics-${timeframe}.json"`);
@@ -418,7 +418,7 @@ router.get('/export', authenticate, requireRole(['admin']), (req, res) => {
     } else if (format === 'csv') {
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="neurogrid-analytics-${timeframe}.csv"`);
-      
+
       // Convert to CSV (simplified)
       const csvData = dashboardData.realTimeMetrics.map(metric => ({
         timestamp: new Date(metric.timestamp).toISOString(),
@@ -427,19 +427,19 @@ router.get('/export', authenticate, requireRole(['admin']), (req, res) => {
         activeTasks: metric.tasks.active,
         systemHealth: metric.health.status
       }));
-      
+
       const csv = [
         'timestamp,memoryUsage,nodesOnline,activeTasks,systemHealth',
         ...csvData.map(row => `${row.timestamp},${row.memoryUsage},${row.nodesOnline},${row.activeTasks},${row.systemHealth}`)
       ].join('\n');
-      
+
       res.send(csv);
     }
 
-    logger.info('Analytics data exported', { 
-      format, 
-      timeframe, 
-      exportedBy: req.user.id 
+    logger.info('Analytics data exported', {
+      format,
+      timeframe,
+      exportedBy: req.user.id
     });
 
   } catch (error) {

@@ -71,7 +71,7 @@ class EnhancedAIValidator {
     } catch (error) {
       logger.error(`AI validation failed for ${validationId}:`, error);
       this.validationStats.failedValidations++;
-      
+
       return {
         isValid: false,
         qualityScore: 0,
@@ -138,7 +138,7 @@ class EnhancedAIValidator {
   async validateOutputFormat(taskType, outputData) {
     try {
       const formatRules = this.getFormatRules(taskType);
-      
+
       if (!formatRules) {
         return { name: 'format', score: 1.0, message: 'No format rules defined' };
       }
@@ -171,10 +171,10 @@ class EnhancedAIValidator {
     try {
       // For now, implement basic consistency checks
       // In production, this would compare against a database of known good results
-      
+
       const inputHash = this.hashInput(inputData);
       const knownResult = await this.getKnownResult(taskType, inputHash);
-      
+
       if (!knownResult) {
         return { name: 'consistency', score: 0.8, message: 'No reference result available' };
       }
@@ -199,7 +199,7 @@ class EnhancedAIValidator {
   async validatePerformance(taskType, executionTime, resourceUsage) {
     try {
       const benchmarks = this.getPerformanceBenchmarks(taskType);
-      
+
       if (!benchmarks) {
         return { name: 'performance', score: 1.0, message: 'No performance benchmarks available' };
       }
@@ -241,20 +241,20 @@ class EnhancedAIValidator {
   async validateQuality(taskType, inputData, outputData, metadata) {
     try {
       switch (taskType) {
-        case 'text_generation':
-          return this.validateTextQuality(inputData, outputData, metadata);
-        
-        case 'image_generation':
-          return this.validateImageQuality(inputData, outputData, metadata);
-        
-        case 'code_generation':
-          return this.validateCodeQuality(inputData, outputData, metadata);
-        
-        case 'data_analysis':
-          return this.validateAnalysisQuality(inputData, outputData, metadata);
-        
-        default:
-          return { name: 'quality', score: 0.8, message: 'Generic quality validation' };
+      case 'text_generation':
+        return this.validateTextQuality(inputData, outputData, metadata);
+
+      case 'image_generation':
+        return this.validateImageQuality(inputData, outputData, metadata);
+
+      case 'code_generation':
+        return this.validateCodeQuality(inputData, outputData, metadata);
+
+      case 'data_analysis':
+        return this.validateAnalysisQuality(inputData, outputData, metadata);
+
+      default:
+        return { name: 'quality', score: 0.8, message: 'Generic quality validation' };
       }
 
     } catch (error) {
@@ -447,7 +447,7 @@ class EnhancedAIValidator {
 
     // Update average validation time
     const totalValidations = this.validationStats.totalValidations;
-    this.validationStats.averageValidationTime = 
+    this.validationStats.averageValidationTime =
       (this.validationStats.averageValidationTime * (totalValidations - 1) + validationTime) / totalValidations;
   }
 
@@ -457,8 +457,8 @@ class EnhancedAIValidator {
   getValidationStats() {
     return {
       ...this.validationStats,
-      successRate: this.validationStats.totalValidations > 0 
-        ? this.validationStats.successfulValidations / this.validationStats.totalValidations 
+      successRate: this.validationStats.totalValidations > 0
+        ? this.validationStats.successfulValidations / this.validationStats.totalValidations
         : 0,
       cacheSize: this.validationCache.size
     };

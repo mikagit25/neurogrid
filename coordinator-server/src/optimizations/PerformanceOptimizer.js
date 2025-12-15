@@ -41,7 +41,7 @@ class PerformanceOptimizer {
     this.setupStreamProcessing();
     this.setupResponseTimeOptimization();
     this.setupMemoryOptimization();
-    
+
     logger.info('Performance Optimizer initialized', {
       cluster: this.config.enableCluster,
       compression: this.config.enableCompression,
@@ -54,7 +54,7 @@ class PerformanceOptimizer {
    */
   setupCluster() {
     const numCPUs = Math.min(this.config.maxWorkers, os.cpus().length);
-    
+
     logger.info(`Starting ${numCPUs} worker processes`);
 
     for (let i = 0; i < numCPUs; i++) {
@@ -86,7 +86,7 @@ class PerformanceOptimizer {
     this.app.use(compression({
       // Compress responses larger than 1kb
       threshold: 1024,
-      
+
       // Higher compression for JSON/text
       level: (req, res) => {
         const contentType = res.getHeader('content-type') || '';
@@ -102,7 +102,7 @@ class PerformanceOptimizer {
         if (res.getHeader('content-type') === 'text/event-stream') {
           return false;
         }
-        
+
         // Don't compress already compressed content
         if (res.getHeader('content-encoding')) {
           return false;
@@ -147,18 +147,18 @@ class PerformanceOptimizer {
     // Override res.json for large objects
     this.app.use((req, res, next) => {
       const originalJson = res.json;
-      
+
       res.json = function(obj) {
         const jsonStr = JSON.stringify(obj);
-        
+
         // Stream large responses
         if (jsonStr.length > 100000) { // 100KB threshold
           res.setHeader('Content-Type', 'application/json');
           res.setHeader('Transfer-Encoding', 'chunked');
-          
+
           const chunkSize = 8192; // 8KB chunks
           let offset = 0;
-          
+
           const sendChunk = () => {
             const chunk = jsonStr.slice(offset, offset + chunkSize);
             if (chunk.length > 0) {
@@ -169,13 +169,13 @@ class PerformanceOptimizer {
               res.end();
             }
           };
-          
+
           sendChunk();
         } else {
           originalJson.call(this, obj);
         }
       };
-      
+
       next();
     });
 
@@ -188,12 +188,12 @@ class PerformanceOptimizer {
   setupResponseTimeOptimization() {
     this.app.use((req, res, next) => {
       const startTime = Date.now();
-      
+
       res.on('finish', () => {
         const duration = Date.now() - startTime;
         this.metrics.requestCount++;
         this.metrics.responseTime.push(duration);
-        
+
         // Keep only last 1000 response times for analysis
         if (this.metrics.responseTime.length > 1000) {
           this.metrics.responseTime = this.metrics.responseTime.slice(-1000);
@@ -210,7 +210,7 @@ class PerformanceOptimizer {
           });
         }
       });
-      
+
       next();
     });
   }
@@ -226,7 +226,7 @@ class PerformanceOptimizer {
         timestamp: Date.now(),
         ...memUsage
       });
-      
+
       // Keep only last 100 memory measurements
       if (this.metrics.memoryUsage.length > 100) {
         this.metrics.memoryUsage = this.metrics.memoryUsage.slice(-100);
@@ -238,7 +238,7 @@ class PerformanceOptimizer {
         global.gc();
         logger.info('Garbage collection triggered', { heapUsedMB });
       }
-      
+
       // Log memory warnings
       if (heapUsedMB > 1024) { // 1GB warning
         logger.warn('High memory usage detected', {
@@ -257,15 +257,15 @@ class PerformanceOptimizer {
     if (path.includes('/api/tasks') || path.includes('/api/nodes/status')) {
       return 'no-cache, no-store, must-revalidate'; // Real-time data
     }
-    
+
     if (path.includes('/api/stats') || path.includes('/api/analytics')) {
       return 'public, max-age=60'; // Cache for 1 minute
     }
-    
+
     if (path.includes('/api/auth') || path.includes('/api/wallet')) {
       return 'private, no-cache'; // Sensitive data
     }
-    
+
     return 'public, max-age=300'; // Default: 5 minutes
   }
 
@@ -273,12 +273,12 @@ class PerformanceOptimizer {
    * Get performance metrics
    */
   getMetrics() {
-    const avgResponseTime = this.metrics.responseTime.length > 0 
+    const avgResponseTime = this.metrics.responseTime.length > 0
       ? this.metrics.responseTime.reduce((a, b) => a + b, 0) / this.metrics.responseTime.length
       : 0;
 
     const lastMemory = this.metrics.memoryUsage[this.metrics.memoryUsage.length - 1];
-    
+
     return {
       requests: {
         total: this.metrics.requestCount,
@@ -310,23 +310,23 @@ class PerformanceOptimizer {
    */
   async optimize() {
     logger.info('Running performance optimization cycle');
-    
+
     // Clear old metrics
     if (this.metrics.responseTime.length > 10000) {
       this.metrics.responseTime = this.metrics.responseTime.slice(-1000);
     }
-    
+
     if (this.metrics.memoryUsage.length > 1000) {
       this.metrics.memoryUsage = this.metrics.memoryUsage.slice(-100);
     }
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
     }
-    
+
     this.metrics.lastOptimized = new Date().toISOString();
-    
+
     logger.info('Performance optimization completed');
     return this.getMetrics();
   }

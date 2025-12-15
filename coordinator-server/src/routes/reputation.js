@@ -14,7 +14,7 @@ const reputationSystem = new NodeReputationSystem();
 router.get('/stats', async (req, res) => {
   try {
     const stats = reputationSystem.getReputationStats();
-    
+
     res.json({
       success: true,
       data: stats
@@ -37,7 +37,7 @@ router.get('/node/:nodeId', async (req, res) => {
   try {
     const { nodeId } = req.params;
     const nodeReputation = reputationSystem.getNodeReputation(nodeId);
-    
+
     if (!nodeReputation) {
       return res.status(404).json({
         success: false,
@@ -67,7 +67,7 @@ router.get('/top', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const topNodes = reputationSystem.getTopNodes(limit);
-    
+
     res.json({
       success: true,
       data: topNodes
@@ -89,7 +89,7 @@ router.get('/top', async (req, res) => {
 router.post('/register', async (req, res) => {
   try {
     const { nodeId, metadata = {} } = req.body;
-    
+
     if (!nodeId) {
       return res.status(400).json({
         success: false,
@@ -98,9 +98,9 @@ router.post('/register', async (req, res) => {
     }
 
     const nodeReputation = reputationSystem.registerNode(nodeId, metadata);
-    
+
     logger.info(`New node registered: ${nodeId}`);
-    
+
     res.json({
       success: true,
       data: nodeReputation
@@ -122,7 +122,7 @@ router.post('/register', async (req, res) => {
 router.post('/update', async (req, res) => {
   try {
     const { nodeId, taskResult } = req.body;
-    
+
     if (!nodeId || !taskResult) {
       return res.status(400).json({
         success: false,
@@ -131,7 +131,7 @@ router.post('/update', async (req, res) => {
     }
 
     const newReputation = reputationSystem.updateTaskPerformance(nodeId, taskResult);
-    
+
     res.json({
       success: true,
       data: {
@@ -158,7 +158,7 @@ router.get('/validation-probability/:nodeId', async (req, res) => {
   try {
     const { nodeId } = req.params;
     const probability = reputationSystem.getValidationProbability(nodeId);
-    
+
     res.json({
       success: true,
       data: {
@@ -184,7 +184,7 @@ router.get('/validation-probability/:nodeId', async (req, res) => {
 router.post('/decay', async (req, res) => {
   try {
     reputationSystem.applyReputationDecay();
-    
+
     res.json({
       success: true,
       message: 'Reputation decay applied successfully'
@@ -208,7 +208,7 @@ router.get('/leaderboard', async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const topNodes = reputationSystem.getTopNodes(limit);
     const stats = reputationSystem.getReputationStats();
-    
+
     res.json({
       success: true,
       data: {
