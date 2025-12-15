@@ -1,0 +1,50 @@
+# Multi-stage build for production-optimized coordinator server
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Build application (if there's a build step)
+RUN npm run build || true
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Add non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S neurogrid -u 1001
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application and dependencies
+COPY --from=builder --chown=neurogrid:nodejs /app .
+
+# Create necessary directories
+RUN mkdir -p logs uploads data && \
+    chown -R neurogrid:nodejs logs uploads data
+
+# Switch to non-root user
+USER neurogrid
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Start application with PM2 for production stability
+CMD ["npx", "pm2-runtime", "start", "ecosystem.config.js"]

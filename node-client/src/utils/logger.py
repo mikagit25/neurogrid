@@ -13,17 +13,22 @@ from typing import Optional
 import json
 from datetime import datetime
 
+# Optional advanced logging dependencies
 try:
     import colorlog
     COLORLOG_AVAILABLE = True
 except ImportError:
+    colorlog = None
     COLORLOG_AVAILABLE = False
+    print("Warning: colorlog not available. Install with: pip install colorlog")
 
 try:
     import structlog
     STRUCTLOG_AVAILABLE = True
 except ImportError:
+    structlog = None
     STRUCTLOG_AVAILABLE = False
+    print("Warning: structlog not available. Install with: pip install structlog")
 
 
 class NeuroGridFormatter(logging.Formatter):
@@ -123,6 +128,7 @@ def setup_logging(
         elif enable_json:
             console_formatter = JSONFormatter()
         else:
+            # Fallback to basic colored format without colorlog
             console_format = (
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )

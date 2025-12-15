@@ -40,10 +40,13 @@ const notificationRoutes = require('./api/routes/notifications');
 const profileRoutes = require('./api/routes/profile');
 const consensusRoutes = require('./routes/consensus');
 const advancedAnalyticsRoutes = require('./routes/analytics');
+const realTimeAnalyticsRoutes = require('./api/routes/advanced-analytics');
+const enhancedAnalyticsRoutes = require('./routes/enhanced-analytics');
+const enhancedWalletRoutes = require('./api/routes/enhanced-wallet');
 const deploymentRoutes = require('./routes/deployment');
 const reputationRoutes = require('./routes/reputation');
 const agentsRoutes = require('./routes/agents');
-const cryptoRoutes = require('../routes/crypto');
+const cryptoRoutes = require('./routes/crypto');
 
 // Import services
 const TaskDispatcher = require('./services/TaskDispatcher');
@@ -51,8 +54,10 @@ const NodeManager = require('./services/NodeManager');
 const TokenEngine = require('./services/TokenEngine');
 const PaymentGateway = require('./services/PaymentGateway');
 const { WebSocketManager } = require('./services/WebSocketManager');
+const EnhancedWebSocketManager = require('./websocket/enhanced-manager');
 const { MonitoringService } = require('./services/MonitoringService');
 const WalletModel = require('./models/WalletModel');
+const { initializeWebSocketRoutes } = require('./api/routes/websocket');
 
 // Import security infrastructure
 const { AuthenticationManagerSingleton } = require('./security/AuthenticationManager');
@@ -67,12 +72,32 @@ const MonitoringController = require('./controllers/MonitoringController');
 // Import Swagger documentation
 const { setupApiDocs, specs } = require('./config/swagger');
 
+// Import optimization modules
+const PerformanceOptimizer = require('./optimizations/PerformanceOptimizer');
+const DatabaseOptimizer = require('./optimizations/DatabaseOptimizer');
+const RealTimeAnalytics = require('./analytics/RealTimeAnalytics');
+
+// Import enhanced wallet services
+const DeFiIntegrationService = require('./services/DeFiIntegrationService');
+const NFTService = require('./services/NFTService');
+const MultiSigWalletService = require('./services/MultiSigWalletService');
+
 class CoordinatorServer {
   constructor(config) {
     this.config = config;
     this.app = express();
     this.server = null;
     this.port = config.get('PORT', 3001);
+
+    // Initialize optimizers and analytics
+    this.performanceOptimizer = null;
+    this.databaseOptimizer = null;
+    this.realTimeAnalytics = null;
+
+    // Initialize enhanced wallet services
+    this.defiService = null;
+    this.nftService = null;
+    this.multiSigService = null;
 
     // Initialize Redis and caching
     this.redisConfig = new RedisConfig(config);
@@ -259,6 +284,16 @@ class CoordinatorServer {
           metrics.cache = cacheStats;
         }
 
+        // Add performance metrics
+        if (this.performanceOptimizer) {
+          metrics.performance = this.performanceOptimizer.getMetrics();
+        }
+
+        // Add database metrics
+        if (this.databaseOptimizer) {
+          metrics.database = this.databaseOptimizer.getMetrics();
+        }
+
         res.json({
           success: true,
           data: metrics
@@ -268,6 +303,44 @@ class CoordinatorServer {
         res.status(500).json({
           success: false,
           error: 'Failed to fetch metrics'
+        });
+      }
+    });
+
+    // Performance optimization endpoint (admin only)
+    this.app.post('/api/admin/optimize', authenticate, async (req, res) => {
+      try {
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied'
+          });
+        }
+
+        const results = {};
+
+        // Run performance optimization
+        if (this.performanceOptimizer) {
+          results.performance = await this.performanceOptimizer.optimize();
+        }
+
+        // Run database optimization
+        if (this.databaseOptimizer) {
+          results.database = await this.databaseOptimizer.optimize();
+        }
+
+        logger.info('Manual optimization completed', { admin: req.user.id });
+
+        res.json({
+          success: true,
+          message: 'Optimization completed successfully',
+          results
+        });
+      } catch (error) {
+        logger.error('Optimization failed', { error: error.message });
+        res.status(500).json({
+          success: false,
+          error: 'Optimization failed'
         });
       }
     });
@@ -389,6 +462,9 @@ class CoordinatorServer {
     this.app.use('/api/profile', profileRoutes.router || profileRoutes);
     this.app.use('/api/consensus', consensusRoutes);
     this.app.use('/api/advanced-analytics', advancedAnalyticsRoutes);
+    this.app.use('/api/realtime-analytics', realTimeAnalyticsRoutes);
+    this.app.use('/api/v2/analytics', enhancedAnalyticsRoutes);
+    this.app.use('/api/enhanced-wallet', enhancedWalletRoutes);
     this.app.use('/api/reputation', reputationRoutes);
     this.app.use('/api/agents', agentsRoutes);
     this.app.use('/api/crypto', cryptoRoutes);
@@ -429,13 +505,32 @@ class CoordinatorServer {
   setupWebSocket() {
     this.server = http.createServer(this.app);
 
-    // Initialize WebSocket manager
+    // Initialize enhanced WebSocket manager
+    this.enhancedWsManager = new EnhancedWebSocketManager();
+    
+    // Keep legacy WebSocket manager for compatibility
     this.wsManager = WebSocketManager.getInstance();
 
-    // Setup WebSocket upgrade handling
-    this.server.on('upgrade', (request, socket, head) => {
-      this.wsManager.handleUpgrade(request, socket, head);
+    // Setup enhanced WebSocket upgrade handling
+    const WebSocket = require('ws');
+    const wss = new WebSocket.Server({ server: this.server, path: '/ws' });
+
+    wss.on('connection', (ws, req) => {
+      this.enhancedWsManager.handleConnection(ws, req);
     });
+
+    // Initialize WebSocket API routes
+    const wsRoutes = initializeWebSocketRoutes(this.enhancedWsManager);
+    this.app.use('/api/websocket', wsRoutes);
+
+    // Setup legacy WebSocket handling for compatibility
+    this.server.on('upgrade', (request, socket, head) => {
+      if (request.url !== '/ws') {
+        this.wsManager.handleUpgrade(request, socket, head);
+      }
+    });
+
+    logger.info('Enhanced WebSocket system initialized');
   }
 
 
@@ -490,6 +585,65 @@ class CoordinatorServer {
       // Start monitoring controller services
       logger.info('Starting monitoring infrastructure...');
       // Monitoring controller services start automatically on initialization
+
+      // Initialize performance optimizers
+      logger.info('Initializing performance optimizers...');
+      this.performanceOptimizer = new PerformanceOptimizer(this.app, {
+        enableCluster: this.config.get('ENABLE_CLUSTER', process.env.NODE_ENV === 'production'),
+        enableCompression: true,
+        enableHttpCache: true,
+        enableStreamProcessing: true,
+        maxWorkers: this.config.get('MAX_WORKERS', require('os').cpus().length)
+      });
+
+      // Initialize database optimizer
+      this.databaseOptimizer = new DatabaseOptimizer(db, {
+        enableQueryCache: this.config.get('ENABLE_DB_CACHE', true),
+        enablePreparedStatements: this.config.get('ENABLE_PREPARED_STATEMENTS', true),
+        maxConnections: this.config.get('DB_MAX_CONNECTIONS', 50)
+      });
+
+      // Initialize real-time analytics
+      logger.info('Initializing real-time analytics system...');
+      this.realTimeAnalytics = new RealTimeAnalytics(this.wsManager, this.databaseOptimizer, this.performanceOptimizer, {
+        updateInterval: this.config.get('ANALYTICS_UPDATE_INTERVAL', 5000),
+        retentionPeriod: this.config.get('ANALYTICS_RETENTION', 24 * 60 * 60 * 1000),
+        alertThresholds: {
+          responseTime: this.config.get('ALERT_RESPONSE_TIME', 2000),
+          memoryUsage: this.config.get('ALERT_MEMORY_USAGE', 80),
+          nodeAvailability: this.config.get('ALERT_NODE_AVAILABILITY', 80)
+        }
+      });
+
+      // Set dependencies for analytics routes
+      realTimeAnalyticsRoutes.setDependencies(this.realTimeAnalytics, this.wsManager);
+
+      // Initialize enhanced wallet services
+      logger.info('Initializing enhanced wallet services...');
+      
+      this.defiService = new DeFiIntegrationService({
+        etherscanApiKey: this.config.get('ETHERSCAN_API_KEY'),
+        infuraProjectId: this.config.get('INFURA_PROJECT_ID'),
+        alchemyApiKey: this.config.get('ALCHEMY_API_KEY'),
+        enableTestnet: this.config.get('ENABLE_TESTNET', process.env.NODE_ENV !== 'production')
+      });
+
+      this.nftService = new NFTService({
+        openSeaApiKey: this.config.get('OPENSEA_API_KEY'),
+        alchemyApiKey: this.config.get('ALCHEMY_API_KEY'),
+        moralisApiKey: this.config.get('MORALIS_API_KEY'),
+        enableTestnet: this.config.get('ENABLE_TESTNET', process.env.NODE_ENV !== 'production')
+      });
+
+      this.multiSigService = new MultiSigWalletService({
+        minSignatures: this.config.get('MULTISIG_MIN_SIGNATURES', 2),
+        maxSigners: this.config.get('MULTISIG_MAX_SIGNERS', 10),
+        enableTimelock: this.config.get('MULTISIG_ENABLE_TIMELOCK', true),
+        defaultTimelock: this.config.get('MULTISIG_DEFAULT_TIMELOCK', 24 * 60 * 60 * 1000)
+      });
+
+      // Set dependencies for enhanced wallet routes
+      enhancedWalletRoutes.setDependencies(this.defiService, this.nftService, this.multiSigService);
 
       // Initialize legacy services
       logger.info('Initializing legacy services...');
