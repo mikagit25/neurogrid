@@ -86,12 +86,12 @@ class SmartModelRouter {
 
     // Специализированные агенты для разных типов задач
     this.specialists = {
-      'text-generation': ['github-copilot', 'local-llama2', 'anthropic-claude'],
-      'code-generation': ['github-copilot', 'neurogrid-swarm'],
-      'image-generation': ['neurogrid-swarm'],
-      'data-analysis': ['anthropic-claude', 'neurogrid-swarm'],
-      'complex-task': ['neurogrid-swarm', 'github-copilot'],
-      'chat': ['local-llama2', 'github-copilot']
+      'text-generation': ['google-gemini', 'openai-gpt3.5', 'anthropic-claude'],
+      'code-generation': ['huggingface-codellama', 'openai-gpt4'],
+      'analysis': ['anthropic-claude', 'openai-gpt4'],
+      'reasoning': ['anthropic-claude', 'openai-gpt4'],
+      'simple-tasks': ['google-gemini', 'openai-gpt3.5'],
+      'complex-tasks': ['openai-gpt4', 'anthropic-claude']
     };
 
     // Критерии выбора модели

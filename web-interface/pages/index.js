@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
+import apiConfig from '../src/config/api';
 
 export default function Home() {
   const [stats, setStats] = useState({
@@ -7,10 +8,14 @@ export default function Home() {
     totalJobs: 0,
     savedCost: 0
   });
-  
+
+  const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Get API configuration
+    setConfig(apiConfig.getConfig());
+
     // Simulate loading stats
     setTimeout(() => {
       setStats({
@@ -29,7 +34,7 @@ export default function Home() {
         <meta name="description" content="Democratizing AI computing through decentralized GPU networks" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      
+
       {/* Navigation */}
       <nav className="relative z-10 bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="container mx-auto px-6 py-4">
@@ -71,13 +76,13 @@ export default function Home() {
               NeuroGrid
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Democratizing AI computing through decentralized GPU networks. 
+              Democratizing AI computing through decentralized GPU networks.
               Save 50-85% on AI inference costs while GPU providers earn sustainable income.
             </p>
-            
+
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <a 
+              <a
                 href="/dashboard"
                 className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
@@ -86,7 +91,7 @@ export default function Home() {
                   <span>Real-time Dashboard</span>
                 </span>
               </a>
-              <a 
+              <a
                 href="/api-test"
                 className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
@@ -95,7 +100,7 @@ export default function Home() {
                   <span>API Testing</span>
                 </span>
               </a>
-              <a 
+              <a
                 href="/tasks"
                 className="group relative px-8 py-4 bg-white/10 text-white font-semibold rounded-xl hover:bg-white/20 transition-all duration-200 border border-white/20 hover:border-white/30 backdrop-blur-sm"
               >
@@ -158,24 +163,26 @@ export default function Home() {
           <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 backdrop-blur-sm rounded-2xl p-8 border border-green-500/30 mb-8">
             <div className="flex items-center justify-center mb-4">
               <div className="w-3 h-3 bg-green-400 rounded-full mr-3 animate-pulse"></div>
-              <span className="text-green-400 font-semibold">Local Development Environment Active</span>
+              <span className="text-green-400 font-semibold">
+                {config?.environment === 'production' ? 'Production Environment Active' : 'Development Environment Active'}
+              </span>
             </div>
             <div className="grid md:grid-cols-2 gap-6 text-center">
               <div>
                 <div className="text-white font-semibold mb-2">🚀 API Server</div>
-                <div className="text-gray-300 font-mono text-sm">http://localhost:3001</div>
+                <div className="text-gray-300 font-mono text-sm">{config?.baseURL || 'Loading...'}</div>
               </div>
               <div>
                 <div className="text-white font-semibold mb-2">🌐 Web Interface</div>
-                <div className="text-gray-300 font-mono text-sm">http://localhost:3000</div>
+                <div className="text-gray-300 font-mono text-sm">{config?.appURL || 'Loading...'}</div>
               </div>
             </div>
           </div>
 
           {/* Production Link */}
           <div className="text-center">
-            <a 
-              href="http://neurogrid.network" 
+            <a
+              href="http://neurogrid.network"
               className="inline-flex items-center space-x-2 px-6 py-3 bg-red-500/20 text-red-300 rounded-xl hover:bg-red-500/30 transition-all duration-200 border border-red-500/30"
             >
               <span>←</span>

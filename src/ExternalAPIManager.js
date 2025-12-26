@@ -134,66 +134,9 @@ class ExternalAPIManager {
       const response = await fetch(this.endpoints.openai, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKeys['github-copilot']}`,
+          'Authorization': `Bearer ${this.apiKeys.openai}`,
           'Content-Type': 'application/json',
           'User-Agent': 'NeuroGrid-Smart-Router/1.0'
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: maxTokens,
-          temperature: temperature
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`GitHub Copilot API error: ${response.status} - ${errorData.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      return {
-        success: true,
-        content: data.choices[0].message.content,
-        model: model,
-        usage: data.usage,
-        cost: this.calculateCost(data.usage, this.models['github-copilot'].costPer1K)
-      };
-
-    } catch (error) {
-      console.error('GitHub Copilot API Error:', error);
-      return {
-        success: false,
-        error: error.message,
-        fallback: 'local'
-      };
-    }
-  }
-
-  /**
-   * Обработка через OpenAI API
-   */
-  async processOpenAI(prompt, modelConfig = {}) {
-    if (!this.apiKeys.openai) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    const model = modelConfig.model || 'gpt-4-turbo-preview';
-    const maxTokens = modelConfig.maxTokens || 2000;
-    const temperature = modelConfig.temperature || 0.7;
-
-    try {
-      const response = await fetch(this.endpoints.openai, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKeys.openai}`,
-          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: model,
@@ -401,36 +344,89 @@ class ExternalAPIManager {
   }
 
   /**
-   * Резервное переключение между API с приоритетом GitHub Copilot
+   * Резервное переключение между API с умным выбором
    */
-  async processWithFallback(prompt, preferredProvider = 'github-copilot', modelConfig = {}) {
-    // Порядок приоритета: GitHub Copilot -> Anthropic -> OpenAI
-    const providers = ['github-copilot', 'anthropic', 'openai'].filter(p => !!this.apiKeys[p]);
-    
-    // Ставим предпочтительного провайдера первым
-    if (preferredProvider && providers.includes(preferredProvider)) {
-      providers.splice(providers.indexOf(preferredProvider), 1);
-      providers.unshift(preferredProvider);
-    }
-
-    for (const provider of providers) {
-      try {
-        console.log(`🔄 Trying ${provider.toUpperCase()} API...`);
-        const result = await this.processExternal(provider, prompt, modelConfig);
-        console.log(`✅ Successfully processed via ${provider.toUpperCase()}`);
-        return result;
+  async processWithFallback(prompt, taskType = 'text-generation', modelConfig = {}) {
+    try {
+      // Выбираем лучший провайдер для задачи
+      const bestProvider = this.selectBestProvider(taskType, modelConfig.complexity || 'medium');
+      console.log(`🎯 Selected ${bestProvider.toUpperCase()} for ${taskType}`);
+      
+      const result = await this.processExternal(bestProvider, prompt, modelConfig);
+      console.log(`✅ Successfully processed via ${bestProvider.toUpperCase()}`);
+      return result;
+      
+    } catch (error) {
+      console.warn(`⚠️ Primary provider failed: ${error.message}`);
+      
+      // Fallback to available APIs in priority order
+      const available = Object.entries(this.getAvailableAPIs())
+        .filter(([provider, isAvailable]) => isAvailable)
+        .map(([provider]) => provider);
         
-      } catch (error) {
-        console.warn(`⚠️ ${provider.toUpperCase()} failed: ${error.message}`);
-        
-        // Если это последний провайдер, выбрасываем ошибку
-        if (provider === providers[providers.length - 1]) {
-          throw new Error(`All external APIs failed. Last error: ${error.message}`);
+      for (const provider of this.providerPriority) {
+        if (available.includes(provider)) {
+          try {
+            console.log(`🔄 Fallback to ${provider.toUpperCase()}...`);
+            const result = await this.processExternal(provider, prompt, modelConfig);
+            console.log(`✅ Fallback success via ${provider.toUpperCase()}`);
+            return result;
+          } catch (fallbackError) {
+            console.warn(`⚠️ ${provider.toUpperCase()} fallback failed: ${fallbackError.message}`);
+          }
         }
       }
     }
 
-    throw new Error('No external APIs available');
+    throw new Error('All external APIs failed');
+  }
+
+  /**
+   * Универсальный метод обработки через внешние API
+   */
+  async processExternal(provider, prompt, modelConfig = {}) {
+    switch (provider) {
+      case 'openai':
+        return await this.processOpenAI(prompt, modelConfig);
+      case 'anthropic':
+        return await this.processAnthropic(prompt, modelConfig);
+      case 'gemini':
+        return await this.processGemini(prompt, modelConfig);
+      case 'huggingface':
+        return await this.processHuggingFace(prompt, modelConfig);
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  }
+
+  /**
+   * Заглушка для методов API (добавьте реализацию при необходимости)
+   */
+  async processAnthropic(prompt, modelConfig) {
+    return { success: true, response: 'Mock response from Anthropic', provider: 'anthropic', processingTime: 1000 };
+  }
+
+  async processGemini(prompt, modelConfig) {
+    return { success: true, response: 'Mock response from Gemini', provider: 'gemini', processingTime: 500 };
+  }
+
+  async processHuggingFace(prompt, modelConfig) {
+    return { success: true, response: 'Mock response from HuggingFace', provider: 'huggingface', processingTime: 2000 };
+  }
+
+  /**
+   * Расчет стоимости запроса
+   */
+  calculateCost(provider, tokens) {
+    const rates = {
+      'openai': 0.03,
+      'anthropic': 0.015,
+      'gemini': 0.0005,
+      'huggingface': 0.001
+    };
+    
+    const rate = rates[provider] || 0.01;
+    return (tokens / 1000) * rate;
   }
 }
 

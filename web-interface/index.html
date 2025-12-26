@@ -371,26 +371,17 @@
     </footer>
 
     <!-- JavaScript -->
+    <script src="/src/config/production-config.js"></script>
     <script>
-        // API Configuration - адаптивное определение API URL
-        const API_BASE_URL = (() => {
-            // Автоматически определяем базовый URL на основе текущего домена
-            const protocol = window.location.protocol;
-            const hostname = window.location.hostname;
-            const port = window.location.port;
-            
-            // Если localhost - используем стандартный порт 8080
-            if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return `${protocol}//${hostname}:8080/api`;
-            }
-            
-            // Для продакшен доменов используем текущий домен без порта
-            return `${protocol}//${hostname}/api`;
-        })();
+        // API Configuration - используем централизованную конфигурацию
+        const config = window.NeuroGridConfig;
+        const API_BASE_URL = config.getApiUrl('/');
         
         console.log('🌐 API Base URL:', API_BASE_URL);
+        console.log('🔧 Environment:', config.environment);
+        console.log('🏠 Domain:', config.config.domain);
         
-        // WebSocket connection
+        // WebSocket connection using centralized config
         let socket = null;
         
         // Initialize the application
@@ -700,19 +691,17 @@
             }, 5000);
         }
         
-        // WebSocket connection
+        // WebSocket connection using centralized config
         function connectWebSocket() {
             try {
-                // Use adaptive WebSocket URL based on current domain
-                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                    ? 'localhost:8080' 
-                    : window.location.host;
+                // Use centralized WebSocket URL configuration
+                const wsUrl = config.getWebSocketUrl('/ws');
                 
-                socket = new WebSocket(`${wsProtocol}//${wsHost}`);
+                console.log('🔌 Connecting to WebSocket:', wsUrl);
+                socket = new WebSocket(wsUrl);
                 
                 socket.onopen = function() {
-                    console.log('WebSocket connected');
+                    console.log('✅ WebSocket connected');
                 };
                 
                 socket.onmessage = function(event) {
@@ -721,12 +710,16 @@
                 };
                 
                 socket.onclose = function() {
-                    console.log('WebSocket disconnected');
+                    console.log('❌ WebSocket disconnected');
                     // Reconnect after 5 seconds
                     setTimeout(connectWebSocket, 5000);
                 };
+                
+                socket.onerror = function(error) {
+                    console.error('❌ WebSocket error:', error);
+                };
             } catch (error) {
-                console.error('WebSocket connection failed:', error);
+                console.error('❌ WebSocket connection failed:', error);
             }
         }
         

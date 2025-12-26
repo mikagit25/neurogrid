@@ -382,7 +382,7 @@ curl -X GET "https://api.neurogrid.io/v1/nodes" \
             },
             servers: [
                 {
-                    url: 'http://localhost:3001/api',
+                    url: window.API_BASE_URL || 'http://localhost:8080/api',
                     description: 'Development server'
                 },
                 {

@@ -426,8 +426,8 @@
 
     <!-- JavaScript -->
     <script>
-        // API Configuration
-        const API_BASE_URL = 'http://localhost:3001/api';
+        // API Configuration - будет заменено автоматически
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080/api';
         
         // Support form functions
         function showSupportForm(type) {

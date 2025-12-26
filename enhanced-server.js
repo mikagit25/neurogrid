@@ -12,6 +12,9 @@ const fs = require('fs');
 const WebSocket = require('ws');
 const http = require('http');
 
+// Import production configuration system
+const config = require('./src/config/production-config');
+
 // Import Smart Model Router
 const SmartModelRouter = require('./src/SmartModelRouter');
 const PerformanceMonitor = require('./src/PerformanceMonitor');
@@ -23,18 +26,13 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const clients = new Set();
 
-// Environment Configuration
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const PORT = process.env.PORT || 8080;
-const DOMAIN = process.env.DOMAIN || 'localhost';
+// Use centralized configuration
+const serverConfig = config.getServerConfig();
+const PORT = serverConfig.port;
+const DOMAIN = serverConfig.hostname;
+const CORS_ORIGINS = serverConfig.corsOrigins.join(',');
 
-// CORS configuration for different environments
-const CORS_ORIGINS = process.env.CORS_ORIGINS || 
-  NODE_ENV === 'production' 
-    ? 'https://neurogrid.network,https://www.neurogrid.network'
-    : 'http://localhost:3000,http://localhost:8080,http://127.0.0.1:8080';
-
-console.log(`🌍 Environment: ${NODE_ENV}`);
+console.log(`🌍 Environment: ${config.environment}`);
 console.log(`🏠 Domain: ${DOMAIN}`);
 console.log(`🔗 CORS Origins: ${CORS_ORIGINS}`);
 
@@ -54,15 +52,15 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = perfMonitor.recordRequestStart();
-  
+
   // Override res.end to capture response time
   const originalEnd = res.end;
-  res.end = function(...args) {
+  res.end = function (...args) {
     const responseTime = perfMonitor.recordRequestEnd(req.startTime, res.statusCode < 400);
     console.log(`📊 ${req.method} ${req.path} - ${res.statusCode} (${responseTime}ms)`);
     originalEnd.apply(this, args);
   };
-  
+
   next();
 });
 // Serve static files from specific directories only (not root to avoid conflicts)
@@ -73,18 +71,18 @@ app.use('/deploy', express.static(path.join(__dirname, 'deploy')));
 app.use((req, res, next) => {
   const allowedOrigins = CORS_ORIGINS.split(',');
   const origin = req.headers.origin;
-  
+
   // Allow any origin in development
   if (NODE_ENV === 'development') {
     res.header('Access-Control-Allow-Origin', origin || '*');
   } else if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
   }
-  
+
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
-  
+
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -112,7 +110,7 @@ const mockTasks = [
     reward: 0.25
   },
   {
-    id: 'task-002', 
+    id: 'task-002',
     model: 'stable-diffusion',
     status: 'running',
     createdAt: new Date(Date.now() - 600000).toISOString(),
@@ -137,7 +135,7 @@ const mockNodes = [
     tasksCompleted: 247
   },
   {
-    id: 'node-gpu-002', 
+    id: 'node-gpu-002',
     name: 'V100-Cluster',
     status: 'busy',
     gpu: 'NVIDIA Tesla V100',
@@ -219,7 +217,7 @@ app.get('/api/nodes', (req, res) => {
 // Auth endpoints (mock)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
-  
+
   // Простая mock авторизация
   if (email && password) {
     res.json({
@@ -242,10 +240,10 @@ app.post('/api/auth/login', (req, res) => {
 
 app.post('/api/auth/register', (req, res) => {
   const { email, password } = req.body;
-  
+
   if (email && password && password.length >= 8) {
     res.json({
-      success: true, 
+      success: true,
       data: {
         accessToken: `mock-token-${Date.now()}`,
         user: {
@@ -292,7 +290,7 @@ app.get('/api/auth/profile', (req, res) => {
 app.post('/api/tasks', async (req, res) => {
   try {
     const { model, input, priority, type = 'text-generation' } = req.body;
-    
+
     if (!input) {
       return res.status(400).json({
         success: false,
@@ -310,7 +308,7 @@ app.post('/api/tasks', async (req, res) => {
       };
 
       const result = await modelRouter.processTask(task);
-      
+
       const newTask = {
         id: `task-${Date.now()}`,
         model: result.coordinator,
@@ -325,7 +323,7 @@ app.post('/api/tasks', async (req, res) => {
       };
 
       mockTasks.unshift(newTask);
-      
+
       return res.json({
         success: true,
         task: newTask
@@ -340,15 +338,15 @@ app.post('/api/tasks', async (req, res) => {
         status: 'pending',
         createdAt: new Date().toISOString()
       };
-      
+
       mockTasks.unshift(newTask);
-      
+
       return res.json({
         success: true,
         task: newTask
       });
     }
-    
+
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -363,7 +361,86 @@ app.get('/api/models/available', (req, res) => {
     success: true,
     data: {
       coordinators: modelRouter.getCoordinatorStats(),
-      totalAvailable: modelRouter.getCoordinatorStats().filter(c => c.available).length
+      totalAvailable: modelRouter.getCoordinatorStats().filter(c => c.available).length,
+      llm_providers: ['mock', 'openai', 'huggingface', 'local'] // Доступные LLM провайдеры
+    }
+  });
+});
+
+// NEW: LLM Integration Endpoint
+app.post('/api/llm/generate', async (req, res) => {
+  try {
+    const { prompt, model, provider, max_tokens = 1000, temperature = 0.7 } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'Prompt is required'
+      });
+    }
+
+    // Симулируем вызов LLM интеграции
+    // В реальной системе здесь был бы вызов к llm_integration.py
+    const mockResponses = [
+      `Based on your prompt "${prompt.substring(0, 50)}...", here's a comprehensive response from NeuroGrid's distributed AI network. This demonstrates how the system routes requests to available language models across the decentralized network.`,
+      `NeuroGrid LLM Response: I understand your query about "${prompt.substring(0, 40)}...". In our decentralized network, this request would be processed by the most suitable available node with the appropriate model.`,
+      `Distributed AI Result: Your input "${prompt.substring(0, 60)}..." has been processed successfully. This showcases NeuroGrid's ability to provide AI inference through our network of GPU providers.`
+    ];
+
+    // Симулируем время обработки
+    const processingStartTime = Date.now();
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 500));
+    const processingTime = (Date.now() - processingStartTime) / 1000;
+
+    const result = {
+      success: true,
+      data: {
+        result: mockResponses[Math.floor(Math.random() * mockResponses.length)],
+        model: model || 'auto-selected',
+        provider: provider || 'neurogrid-mock',
+        processing_time: processingTime,
+        tokens_used: Math.floor(prompt.length / 4) + Math.floor(Math.random() * 200) + 50,
+        cost_neuro: (processingTime * 0.001).toFixed(6), // Стоимость в NEURO токенах
+        cost_usd: (processingTime * 0.01).toFixed(4), // Эквивалент в USD
+        timestamp: new Date().toISOString(),
+        node_id: `node-llm-${Math.floor(Math.random() * 5) + 1}`
+      }
+    };
+
+    res.json(result);
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// LLM Models Management
+app.get('/api/llm/models', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      available_models: {
+        'text-generation': [
+          { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai', cost: 0.002 },
+          { id: 'gpt-4', name: 'GPT-4', provider: 'openai', cost: 0.03 },
+          { id: 'llama2-7b', name: 'Llama 2 7B', provider: 'local', cost: 0.0001 },
+          { id: 'llama2-13b', name: 'Llama 2 13B', provider: 'local', cost: 0.0002 },
+          { id: 'mistral-7b', name: 'Mistral 7B', provider: 'huggingface', cost: 0.0001 },
+          { id: 'mock-llm', name: 'Mock LLM (Demo)', provider: 'mock', cost: 0.0000 }
+        ],
+        'code-generation': [
+          { id: 'codellama-7b', name: 'Code Llama 7B', provider: 'local', cost: 0.0001 },
+          { id: 'starcoder', name: 'StarCoder', provider: 'huggingface', cost: 0.0002 }
+        ],
+        'image-generation': [
+          { id: 'stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'local', cost: 0.001 },
+          { id: 'dall-e-3', name: 'DALL-E 3', provider: 'openai', cost: 0.04 }
+        ]
+      },
+      total_models: 8
     }
   });
 });
@@ -371,7 +448,7 @@ app.get('/api/models/available', (req, res) => {
 app.post('/api/ai/process', async (req, res) => {
   try {
     const { prompt, type = 'text-generation', complexity = 'medium', priority = 'normal' } = req.body;
-    
+
     if (!prompt) {
       return res.status(400).json({
         success: false,
@@ -394,14 +471,14 @@ app.post('/api/ai/process', async (req, res) => {
     };
 
     const result = await modelRouter.processTask(task, preferences);
-    
+
     // Broadcast real-time stats update
     try {
       broadcastStatsUpdate();
     } catch (error) {
       console.error('❌ Broadcast after task error:', error);
     }
-    
+
     res.json({
       success: true,
       data: result
@@ -417,10 +494,10 @@ app.post('/api/ai/process', async (req, res) => {
 
 app.post('/api/models/toggle', (req, res) => {
   const { coordinatorId, enabled, apiKey } = req.body;
-  
+
   try {
     modelRouter.toggleCoordinator(coordinatorId, enabled, apiKey);
-    
+
     res.json({
       success: true,
       data: {
@@ -454,7 +531,7 @@ app.get('/api/models/stats', (req, res) => {
 // Model Configuration endpoint
 app.post('/api/models/configure', (req, res) => {
   const { modelId, config } = req.body;
-  
+
   if (!modelId || !config) {
     return res.status(400).json({
       success: false,
@@ -475,7 +552,7 @@ app.post('/api/models/configure', (req, res) => {
 app.get('/api/models/export', (req, res) => {
   const stats = modelRouter.getStatistics();
   const coordinators = modelRouter.getCoordinatorStats();
-  
+
   const exportData = {
     timestamp: new Date().toISOString(),
     system: {
@@ -487,7 +564,7 @@ app.get('/api/models/export', (req, res) => {
     modelUsage: stats.modelUsage,
     coordinators: coordinators
   };
-  
+
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', `attachment; filename="neurogrid-stats-${Date.now()}.json"`);
   res.json(exportData);
@@ -496,7 +573,7 @@ app.get('/api/models/export', (req, res) => {
 // Configure API Keys
 app.post('/api/models/configure', (req, res) => {
   const { provider, apiKey } = req.body;
-  
+
   if (!provider || !apiKey) {
     return res.status(400).json({
       success: false,
@@ -506,7 +583,7 @@ app.post('/api/models/configure', (req, res) => {
 
   try {
     const success = modelRouter.configureAPIKey(provider, apiKey);
-    
+
     if (success) {
       res.json({
         success: true,
@@ -533,7 +610,7 @@ app.post('/api/models/configure', (req, res) => {
 app.post('/api/models/test', async (req, res) => {
   try {
     const results = await modelRouter.testExternalAPIs();
-    
+
     res.json({
       success: true,
       data: {
@@ -590,7 +667,7 @@ app.get('/investors', (req, res) => {
 app.get('/health', (req, res) => {
   const stats = modelRouter.getStatistics();
   const performance = perfMonitor.getSummary();
-  
+
   res.json({
     status: 'OK',
     service: 'NeuroGrid Smart Model Router',
@@ -598,7 +675,7 @@ app.get('/health', (req, res) => {
     version: '2.0.0-smart-router',
     features: [
       'Smart AI Model Routing',
-      'Real-time Statistics', 
+      'Real-time Statistics',
       'External API Integration',
       'Web Dashboard',
       'Admin Panel',
@@ -646,10 +723,10 @@ app.use((req, res) => {
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 NeuroGrid Smart Model Router - Production Ready!`);
   console.log(`📍 Server running on: http://0.0.0.0:${PORT}`);
-  console.log(`🌐 All interfaces: IPv4 and IPv6`);
-  console.log(`🎯 Smart Router Dashboard: http://localhost:${PORT}/`);
-  console.log(`🛠️ Admin Panel: http://localhost:${PORT}/admin.html`);
-  console.log(`🔍 Health check: http://localhost:${PORT}/health`);
+  console.log(`🌐 Domain: ${DOMAIN}`);
+  console.log(`🎯 Smart Router Dashboard: ${config.getWebUrl('/')}`);
+  console.log(`🛠️ Admin Panel: ${config.getWebUrl('/admin.html')}`);
+  console.log(`🔍 Health check: ${config.getWebUrl('/health')}`);
   console.log(`📋 Available routes:`);
   console.log(`   / - Smart Router Dashboard (Production Ready)`);
   console.log(`   /admin.html - Admin Panel & Configuration`);
@@ -668,6 +745,13 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   GET  /api/nodes/stats - Network stats`);
   console.log(`   GET  /api/tasks - Task list`);
   console.log(`   POST /api/tasks - Submit task`);
+  
+  if (config.isProduction()) {
+    console.log(`\n🎉 PRODUCTION MODE ACTIVE!`);
+    console.log(`   Public URL: ${config.getWebUrl('/')}`);
+    console.log(`   API URL: ${config.getApiUrl('/')}`);
+    console.log(`   WebSocket URL: ${config.getWebSocketUrl('/')}`);
+  }
 });
 
 // WebSocket Connection Handler
@@ -675,20 +759,20 @@ wss.on('connection', (ws, req) => {
   console.log('🔌 WebSocket client connected from', req.socket.remoteAddress);
   clients.add(ws);
   perfMonitor.recordWebSocketConnection();
-  
+
   // Send initial stats
   ws.send(JSON.stringify({
     type: 'stats_update',
     data: modelRouter.getStatistics()
   }));
-  
+
   // Handle incoming messages
   ws.on('message', (message) => {
     try {
       perfMonitor.recordWebSocketMessageReceived();
       const data = JSON.parse(message);
       console.log('📨 WebSocket message:', data);
-      
+
       switch (data.type) {
         case 'request_stats':
           ws.send(JSON.stringify({
@@ -708,14 +792,14 @@ wss.on('connection', (ws, req) => {
       perfMonitor.recordWebSocketError();
     }
   });
-  
+
   // Handle disconnect
   ws.on('close', () => {
     console.log('🔌 WebSocket client disconnected');
     clients.delete(ws);
     perfMonitor.recordWebSocketDisconnection();
   });
-  
+
   ws.on('error', (error) => {
     console.error('❌ WebSocket error:', error);
     clients.delete(ws);
@@ -729,14 +813,14 @@ function broadcastStatsUpdate() {
   try {
     const stats = modelRouter.getStatistics();
     const performance = perfMonitor.getSummary();
-    
+
     const message = JSON.stringify({
       type: 'stats_update',
       data: stats,
       performance: performance,
       timestamp: new Date().toISOString()
     });
-    
+
     clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         try {
@@ -749,7 +833,7 @@ function broadcastStatsUpdate() {
         }
       }
     });
-    
+
     console.log(`📊 Broadcasted stats to ${clients.size} clients (Req: ${performance.requests}, Mem: ${performance.memoryUsed}MB)`);
   } catch (error) {
     console.error('❌ Broadcast error:', error);

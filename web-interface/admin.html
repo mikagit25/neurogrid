@@ -242,23 +242,14 @@
         </div>
     </div>
 
+    <script src="/src/config/production-config.js"></script>
     <script>
-        // Адаптивное определение API URL
-        const API_BASE_URL = (() => {
-            const protocol = window.location.protocol;
-            const hostname = window.location.hostname;
-            const port = window.location.port;
-            
-            // Для localhost используем порт 8080
-            if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return `${protocol}//${hostname}:8080/api`;
-            }
-            
-            // Для продакшен доменов используем текущий домен
-            return `${protocol}//${hostname}/api`;
-        })();
+        // Используем централизованную конфигурацию
+        const config = window.NeuroGridConfig;
+        const API_BASE_URL = config.getApiUrl('/');
         
         console.log('🔧 Admin Panel API URL:', API_BASE_URL);
+        console.log('🌍 Environment:', config.environment);
         
         // Load initial data
         document.addEventListener('DOMContentLoaded', function() {

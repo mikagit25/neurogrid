@@ -194,7 +194,8 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:3001';
+        // Configuration - будет заменено автоматически
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080';
         let networkChart = null;
         let currentNodes = [];
         let selectedNodeId = null;
