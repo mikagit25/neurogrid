@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for NeuroGrid Coordinator Server Production Deployment
-FROM node:18-alpine AS base
+FROM node:25-alpine AS base
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -55,7 +55,7 @@ RUN npm run build --if-present
 RUN rm -rf tests/ docs/ *.md .git* .eslint* .prettier*
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:25-alpine AS production
 
 # Install production system dependencies
 RUN apk add --no-cache \
