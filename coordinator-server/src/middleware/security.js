@@ -720,6 +720,7 @@ const sanitizeInput = (req, res, next) => {
 module.exports = {
   SecurityMiddleware,
   authenticate,
+  authorize,
   rateLimiters,
   validations,
   validateRequest,

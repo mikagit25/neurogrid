@@ -193,9 +193,12 @@
         </div>
     </div>
 
+    <script src="/src/config/production-config.js"></script>
     <script>
         // Configuration - будет заменено автоматически
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080';
+        const config = new NeuroGridConfig();
+        const API_BASE_URL = config.getApiUrl('');
+        const WEB_BASE_URL = config.getWebUrl();
         let networkChart = null;
         let currentNodes = [];
         let selectedNodeId = null;

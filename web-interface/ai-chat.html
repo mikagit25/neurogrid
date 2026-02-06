@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid AI Chat - Decentralized AI Interface</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .chat-container {
+            height: 70vh;
+            max-height: 600px;
+        }
+        .message {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing-indicator {
+            display: none;
+        }
+        .typing-indicator.active {
+            display: flex;
+        }
+        .dot {
+            animation: bounce 1.5s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.1s; }
+        .dot:nth-child(3) { animation-delay: 0.2s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        .model-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .model-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .model-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(45deg, #667eea10, #764ba210);
+        }
+        .token-cost {
+            background: linear-gradient(45deg, #ffd700, #ff6b35);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                        <span class="text-purple-600 font-bold text-xl">NG</span>
+                    </div>
+                    <div>
+                        <h1 class="text-white text-xl font-bold">NeuroGrid AI Chat</h1>
+                        <p class="text-purple-200 text-sm">Decentralized AI Computing Platform</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-white">
+                        <span class="text-sm opacity-75">NEURO Balance:</span>
+                        <span id="userBalance" class="font-bold">--</span>
+                    </div>
+                    <a href="index.html" class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Model Selection Panel -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-robot text-purple-600 mr-2"></i>
+                        AI Models
+                    </h3>
+                    
+                    <!-- Provider Selection -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-cloud text-blue-600 mr-2"></i>
+                            🤖 AI Providers
+                        </h4>
+                        <div class="space-y-2">
+                            <div class="provider-card border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-blue-50 transition" data-provider="google-gemini">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-sm text-blue-800">🧠 Google Gemini</div>
+                                        <div class="text-xs text-blue-600">Fast & affordable</div>
+                                        <div class="text-xs font-bold text-green-600">$0.0005/1k tokens</div>
+                                    </div>
+                                    <div id="gemini-status" class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                </div>
+                            </div>
+                            <div class="provider-card border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-orange-50 transition" data-provider="huggingface">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-sm text-orange-800">🤗 Hugging Face</div>
+                                        <div class="text-xs text-orange-600">Open source models</div>
+                                        <div class="text-xs font-bold text-blue-600">$0.001-0.02/1k tokens</div>
+                                    </div>
+                                    <div id="hf-status" class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text Models -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">💬 Text Models</h4>
+                        <div id="text-models" class="space-y-2">
+                            <!-- Models will be loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Image Models -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">🎨 Image Models</h4>
+                        <div id="image-models" class="space-y-2">
+                            <!-- Models will be loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Network Status -->
+                    <div class="border-t pt-4 mb-4">
+                        <div class="text-xs text-gray-600 mb-2">Network Status</div>
+                        <div class="flex items-center space-x-2">
+                            <div id="networkStatus" class="w-2 h-2 bg-green-400 rounded-full"></div>
+                            <span class="text-xs">Active Nodes: <span id="activeNodes">--</span></span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Avg Response: <span id="avgResponse">--</span>ms</div>
+                    </div>
+
+                    <!-- Prompt Templates -->
+                    <div class="border-t pt-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-magic text-purple-600 mr-1"></i>
+                            Quick Templates
+                        </h4>
+                        <div class="space-y-1">
+                            <button class="template-btn text-left w-full text-xs p-2 bg-gray-50 hover:bg-gray-100 rounded transition" data-prompt="Explain quantum computing in simple terms">
+                                📚 Explain quantum computing
+                            </button>
+                            <button class="template-btn text-left w-full text-xs p-2 bg-gray-50 hover:bg-gray-100 rounded transition" data-prompt="Write a Python function to sort a list">
+                                💻 Python sorting function
+                            </button>
+                            <button class="template-btn text-left w-full text-xs p-2 bg-gray-50 hover:bg-gray-100 rounded transition" data-prompt="Create a beautiful sunset landscape">
+                                🎨 Sunset landscape
+                            </button>
+                            <button class="template-btn text-left w-full text-xs p-2 bg-gray-50 hover:bg-gray-100 rounded transition" data-prompt="Summarize the latest AI trends in 2026">
+                                🔮 AI trends 2026
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-md">
+                    <!-- Chat Header -->
+                    <div class="border-b px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold">AI Chat Interface</h3>
+                                <p class="text-sm text-gray-500">
+                                    Selected: <span id="selectedModel" class="font-medium text-purple-600">Choose a model</span>
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button id="clearChat" class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm transition">
+                                    <i class="fas fa-trash mr-1"></i> Clear
+                                </button>
+                                <button id="saveChat" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded text-sm transition">
+                                    <i class="fas fa-save mr-1"></i> Save
+                                </button>
+                                <button id="settingsBtn" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded text-sm transition">
+                                    <i class="fas fa-cog mr-1"></i> Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div id="chatContainer" class="chat-container overflow-y-auto p-6 space-y-4">
+                        <div class="message flex items-start space-x-3">
+                            <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-gray-100 rounded-lg px-4 py-2">
+                                    <p class="text-sm">👋 Welcome to NeuroGrid AI Chat! Select a model from the sidebar to start chatting with AI powered by our decentralized network.</p>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">System</div>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div class="typing-indicator message flex items-start space-x-3">
+                            <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-gray-100 rounded-lg px-4 py-2">
+                                    <div class="flex space-x-1">
+                                        <div class="dot w-2 h-2 bg-gray-400 rounded-full"></div>
+                                        <div class="dot w-2 h-2 bg-gray-400 rounded-full"></div>
+                                        <div class="dot w-2 h-2 bg-gray-400 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="border-t p-6">
+                        <div class="flex space-x-4">
+                            <div class="flex-1">
+                                <textarea 
+                                    id="messageInput" 
+                                    rows="3" 
+                                    placeholder="Type your message... (Select a model first)"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600 resize-none"
+                                    disabled
+                                ></textarea>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <button 
+                                    id="sendButton" 
+                                    class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    disabled
+                                >
+                                    <i class="fas fa-paper-plane mr-1"></i> Send
+                                </button>
+                                <div class="text-xs text-gray-500 text-center">
+                                    Cost: <span id="estimatedCost">0</span> NEURO
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Stats -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="text-sm text-gray-600">Tokens Used Today</div>
+                        <div class="text-2xl font-bold text-purple-600" id="tokensUsed">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="text-sm text-gray-600">NEURO Spent</div>
+                        <div class="text-2xl font-bold text-green-600" id="neuroSpent">0.0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="text-sm text-gray-600">Messages Sent</div>
+                        <div class="text-2xl font-bold text-blue-600" id="messagesSent">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-96 max-w-90vw">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">AI Chat Settings</h3>
+                <button id="closeSettings" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Temperature (0.1-1.0)</label>
+                    <input id="temperatureSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.7" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <div class="text-xs text-gray-500 mt-1">Current: <span id="temperatureValue">0.7</span></div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Max Tokens</label>
+                    <input id="maxTokensInput" type="number" min="50" max="500" value="150" 
+                           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Image Resolution</label>
+                    <select id="imageResolution" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="512">512x512</option>
+                        <option value="768">768x768</option>
+                        <option value="1024">1024x1024</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-center">
+                    <input id="autoSave" type="checkbox" checked class="mr-2">
+                    <label class="text-sm">Auto-save chats</label>
+                </div>
+                
+                <div class="flex space-x-2 pt-4">
+                    <button id="resetStats" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2 rounded transition">
+                        Reset Stats
+                    </button>
+                    <button id="exportChat" class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded transition">
+                        Export Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js"></script>
+    <script>
+        class NeuroGridAIChat {
+            constructor() {
+                this.selectedModel = null;
+                this.selectedModelType = null;
+                this.selectedProvider = null;
+                this.apiUrl = this.detectEnvironment();
+                this.userBalance = 100.0; // Demo balance
+                this.tokensUsed = 0;
+                this.neuroSpent = 0;
+                this.messagesSent = 0;
+                this.imagesGenerated = 0;
+                
+                // Available models and providers
+                this.availableModels = { text_models: [], image_models: [], providers: {} };
+                
+                // Settings
+                this.settings = {
+                    temperature: 0.7,
+                    maxTokens: 150,
+                    imageResolution: 512,
+                    autoSave: true
+                };
+                
+                // Chat history
+                this.chatHistory = [];
+                
+                // WebSocket for streaming
+                this.ws = null;
+                this.streamingRequestId = null;
+                this.currentStreamingMessage = null;
+                
+                this.init();
+                this.loadAvailableModels();
+                this.loadSettings();
+                this.loadNetworkStatus();
+                this.updateUI();
+                this.initWebSocket();
+            }
+
+            detectEnvironment() {
+                const hostname = window.location.hostname;
+                if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                    return 'http://localhost:3001/api'; // Updated to test server port
+                }
+                return '/api';
+            }
+
+            init() {
+                // Provider selection
+                document.querySelectorAll('.provider-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('selected', 'border-blue-500', 'bg-blue-100'));
+                        card.classList.add('selected', 'border-blue-500', 'bg-blue-100');
+                        
+                        this.selectedProvider = card.dataset.provider;
+                        this.updateModelsDisplay();
+                        this.clearSelection();
+                    });
+                });
+
+                // Send message
+                document.getElementById('sendButton').addEventListener('click', () => this.sendMessage());
+                document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Clear chat
+                document.getElementById('clearChat').addEventListener('click', () => this.clearChat());
+
+                // Message input cost estimation
+                document.getElementById('messageInput').addEventListener('input', () => this.estimateCost());
+                
+                // Settings modal
+                document.getElementById('settingsBtn').addEventListener('click', () => {
+                    document.getElementById('settingsModal').classList.remove('hidden');
+                });
+                
+                document.getElementById('closeSettings').addEventListener('click', () => {
+                    document.getElementById('settingsModal').classList.add('hidden');
+                });
+                
+                // Template buttons
+                document.querySelectorAll('.template-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.getElementById('messageInput').value = btn.dataset.prompt;
+                        this.estimateCost();
+                    });
+                });
+            }
+
+            async sendMessage() {
+                if (!this.selectedModel) {
+                    this.showNotification('Please select a model first', 'warning');
+                    return;
+                }
+
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+                
+                if (!message) {
+                    this.showNotification('Please enter a message', 'warning');
+                    return;
+                }
+
+                // Check if WebSocket is available for streaming
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.sendStreamingMessage(message);
+                    return;
+                }
+
+                // Fallback to regular HTTP API
+                // Clear input
+                input.value = '';
+                this.estimateCost();
+
+                // Add user message
+                this.addMessage(message, 'user');
+
+                // Show typing indicator
+                this.showTyping(true);
+
+                try {
+                    const response = await this.callNeuroGridAPI(message);
+                    this.showTyping(false);
+                    
+                    if (this.selectedModelType === 'image') {
+                        this.addImageMessage(response.data, 'assistant');
+                    } else {
+                        this.addMessage(response.data, 'assistant');
+                    }
+
+                    this.updateStats(response.tokens_used, response.cost);
+
+                } catch (error) {
+                    this.showTyping(false);
+                    this.addMessage('❌ Error: ' + (error.message || 'Failed to process your request. Please try again.'), 'error');
+                }
+
+                this.scrollToBottom();
+            }
+
+            async callNeuroGridAPI(message) {
+                try {
+                    if (this.selectedModelType === 'image') {
+                        const response = await axios.post(`${this.apiUrl}/ai/image`, {
+                            prompt: message,
+                            model: this.selectedModel,
+                            provider: this.selectedProvider
+                        });
+                        
+                        if (response.data.success) {
+                            return {
+                                data: response.data.data,
+                                tokens_used: 1,
+                                cost: response.data.cost,
+                                provider: response.data.provider_used
+                            };
+                        } else {
+                            throw new Error(response.data.error || 'Failed to generate image');
+                        }
+                    } else {
+                        const response = await axios.post(`${this.apiUrl}/ai/chat`, {
+                            message: message,
+                            model: this.selectedModel,
+                            provider: this.selectedProvider,
+                            options: {
+                                temperature: this.settings.temperature,
+                                maxTokens: this.settings.maxTokens
+                            }
+                        });
+                        
+                        if (response.data.success) {
+                            return {
+                                data: response.data.data,
+                                tokens_used: response.data.tokens_used,
+                                cost: response.data.cost,
+                                provider: response.data.provider_used
+                            };
+                        } else {
+                            throw new Error(response.data.error || 'Failed to process message');
+                        }
+                    }
+                } catch (error) {
+                    // Fallback to demo mode if API fails
+                    console.warn('API call failed, using demo mode:', error);
+                    return this.demoModeResponse(message);
+                }
+            }
+
+            async loadAvailableModels() {
+                try {
+                    const response = await axios.get(`${this.apiUrl}/ai/models`);
+                    if (response.data.success) {
+                        this.availableModels = response.data.data;
+                        this.updateProviderStatus();
+                        console.log('📊 Loaded models:', this.availableModels);
+                    }
+                } catch (error) {
+                    console.warn('Failed to load models, using fallback:', error);
+                    this.loadFallbackModels();
+                }
+            }
+
+            loadFallbackModels() {
+                // Fallback models when API is not available
+                this.availableModels = {
+                    text_models: [
+                        { id: 'gemini-pro', name: 'Gemini Pro', provider: 'google-gemini', cost_per_token: 0.0005, configured: false },
+                        { id: 'llama2-7b', name: 'Llama 2 7B', provider: 'huggingface', cost_per_token: 0.01, configured: false }
+                    ],
+                    image_models: [
+                        { id: 'stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'huggingface', cost_per_image: 0.5, configured: false }
+                    ],
+                    providers: {
+                        'google-gemini': { configured: false },
+                        'huggingface': { configured: false }
+                    }
+                };
+                this.updateProviderStatus();
+            }
+
+            updateProviderStatus() {
+                // Update provider status indicators
+                const geminiStatus = document.getElementById('gemini-status');
+                const hfStatus = document.getElementById('hf-status');
+                
+                if (geminiStatus) {
+                    geminiStatus.className = this.availableModels.providers['google-gemini']?.configured 
+                        ? 'w-3 h-3 bg-green-400 rounded-full' 
+                        : 'w-3 h-3 bg-gray-400 rounded-full';
+                }
+                
+                if (hfStatus) {
+                    hfStatus.className = this.availableModels.providers['huggingface']?.configured 
+                        ? 'w-3 h-3 bg-green-400 rounded-full' 
+                        : 'w-3 h-3 bg-gray-400 rounded-full';
+                }
+            }
+
+            updateModelsDisplay() {
+                if (!this.selectedProvider) return;
+                
+                // Filter models for selected provider
+                const textModels = this.availableModels.text_models.filter(m => m.provider === this.selectedProvider);
+                const imageModels = this.availableModels.image_models.filter(m => m.provider === this.selectedProvider);
+                
+                // Update text models
+                const textContainer = document.getElementById('text-models');
+                if (textContainer) {
+                    textContainer.innerHTML = textModels.map(model => `
+                        <div class="model-card border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition" 
+                             data-model="${model.id}" data-type="text" data-provider="${model.provider}">
+                            <div class="font-medium text-sm">${model.name}</div>
+                            <div class="text-xs text-gray-500">${this.getModelDescription(model.id)}</div>
+                            <div class="text-xs token-cost font-bold">${model.cost_per_token} NEURO/token</div>
+                            ${!model.configured ? '<div class="text-xs text-orange-500">⚠️ Mock mode</div>' : ''}
+                        </div>
+                    `).join('');
+                }
+                
+                // Update image models
+                const imageContainer = document.getElementById('image-models');
+                if (imageContainer) {
+                    imageContainer.innerHTML = imageModels.map(model => `
+                        <div class="model-card border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition" 
+                             data-model="${model.id}" data-type="image" data-provider="${model.provider}">
+                            <div class="font-medium text-sm">${model.name}</div>
+                            <div class="text-xs text-gray-500">${this.getModelDescription(model.id)}</div>
+                            <div class="text-xs token-cost font-bold">${model.cost_per_image} NEURO/image</div>
+                            ${!model.configured ? '<div class="text-xs text-orange-500">⚠️ Mock mode</div>' : ''}
+                        </div>
+                    `).join('');
+                }
+                
+                // Add click handlers to new model cards
+                this.attachModelCardHandlers();
+            }
+
+            attachModelCardHandlers() {
+                document.querySelectorAll('.model-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected', 'border-purple-500', 'bg-purple-50'));
+                        card.classList.add('selected', 'border-purple-500', 'bg-purple-50');
+                        
+                        this.selectedModel = card.dataset.model;
+                        this.selectedModelType = card.dataset.type;
+                        
+                        const modelName = card.querySelector('.font-medium').textContent;
+                        const providerName = this.getProviderDisplayName(this.selectedProvider);
+                        
+                        document.getElementById('selectedModel').textContent = `${providerName} - ${modelName}`;
+                        document.getElementById('messageInput').disabled = false;
+                        document.getElementById('sendButton').disabled = false;
+                        document.getElementById('messageInput').placeholder = 
+                            this.selectedModelType === 'image' ? 'Describe the image you want to generate...' : 'Type your message...';
+                        
+                        this.estimateCost();
+                    });
+                });
+            }
+
+            clearSelection() {
+                this.selectedModel = null;
+                this.selectedModelType = null;
+                
+                document.getElementById('selectedModel').textContent = 'Choose a model';
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('sendButton').disabled = true;
+                document.getElementById('messageInput').placeholder = 'Select a provider and model first';
+                
+                document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected', 'border-purple-500', 'bg-purple-50'));
+                document.getElementById('estimatedCost').textContent = '0';
+            }
+
+            getProviderDisplayName(provider) {
+                const names = {
+                    'google-gemini': '🧠 Gemini',
+                    'huggingface': '🤗 HuggingFace'
+                };
+                return names[provider] || provider;
+            }
+
+            getModelDescription(modelId) {
+                const descriptions = {
+                    'gemini-pro': 'Advanced reasoning & conversation',
+                    'gemini-pro-vision': 'Multimodal understanding',
+                    'llama2-7b': 'General conversation',
+                    'llama2-13b': 'Advanced reasoning',
+                    'codellama-7b': 'Code generation',
+                    'mistral-7b': 'Fast & efficient',
+                    'stable-diffusion-xl': 'High-quality images',
+                    'stable-diffusion-2': 'Creative generation'
+                };
+                return descriptions[modelId] || 'AI model';
+            }
+            }
+
+            demoModeResponse(message) {
+                const tokens = Math.floor(Math.random() * 100) + 50;
+                const cost = this.calculateCost(tokens);
+
+                if (this.selectedModelType === 'image') {
+                    return {
+                        data: 'https://picsum.photos/512/512?random=' + Date.now(),
+                        tokens_used: 1,
+                        cost: 0.3
+                    };
+                } else {
+                    const responses = {
+                        'llama2-7b': this.generateLlamaResponse(message),
+                        'codellama-7b': this.generateCodeResponse(message),
+                        'mistral-7b': this.generateMistralResponse(message)
+                    };
+                    
+                    return {
+                        data: responses[this.selectedModel] || this.generateGenericResponse(message),
+                        tokens_used: tokens,
+                        cost: cost
+                    };
+                }
+            }
+
+            generateLlamaResponse(message) {
+                const responses = [
+                    "I understand your question about " + message.slice(0, 20) + "... Let me provide a comprehensive answer based on my training data.",
+                    "That's an interesting point you've raised. From my perspective as Llama 2, I can help you explore this topic further.",
+                    "Thank you for your question. I'll do my best to provide a helpful and informative response."
+                ];
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            generateCodeResponse(message) {
+                if (message.toLowerCase().includes('python')) {
+                    return `# Here's a Python solution:\n\ndef example_function():\n    print("Hello from CodeLlama!")\n    return "Processing your request..."\n\n# This function demonstrates the concept you asked about`;
+                }
+                return "I see you're looking for code help. Could you specify which programming language you'd like me to assist with?";
+            }
+
+            generateMistralResponse(message) {
+                return "Thanks for your message! As Mistral 7B, I'm optimized for efficient and accurate responses. How can I assist you further with " + message.slice(0, 30) + "...?";
+            }
+
+            generateGenericResponse(message) {
+                return "I've processed your message through the NeuroGrid decentralized network. How else can I help you today?";
+            }
+
+            calculateCost(tokens) {
+                const rates = {
+                    'llama2-7b': 0.01,
+                    'llama2-13b': 0.02,
+                    'codellama-7b': 0.015,
+                    'mistral-7b': 0.012,
+                    'stable-diffusion-xl': 0.5,
+                    'stable-diffusion-2': 0.3
+                };
+                
+                if (this.selectedModelType === 'image') {
+                    return rates[this.selectedModel] || 0.3;
+                }
+                
+                return (rates[this.selectedModel] || 0.01) * tokens;
+            }
+
+            estimateCost() {
+                const message = document.getElementById('messageInput').value;
+                const estimatedTokens = Math.ceil(message.length / 4); // Rough estimation
+                const cost = this.selectedModelType === 'image' ? 
+                    this.calculateCost(1) : this.calculateCost(estimatedTokens);
+                
+                document.getElementById('estimatedCost').textContent = cost.toFixed(3);
+            }
+
+            addMessage(content, sender) {
+                const chatContainer = document.getElementById('chatContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message flex items-start space-x-3';
+
+                const avatarClass = sender === 'user' ? 'bg-blue-600' : 
+                                  sender === 'error' ? 'bg-red-600' : 'bg-purple-600';
+                const icon = sender === 'user' ? 'fa-user' : 'fa-robot';
+                const bgClass = sender === 'user' ? 'bg-blue-100' : 
+                               sender === 'error' ? 'bg-red-100' : 'bg-gray-100';
+
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 ${avatarClass} rounded-full flex items-center justify-center">
+                        <i class="fas ${icon} text-white text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="${bgClass} rounded-lg px-4 py-2">
+                            <p class="text-sm whitespace-pre-wrap">${content}</p>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${this.getTimestamp()}</div>
+                    </div>
+                `;
+
+                // Insert before typing indicator
+                const typingIndicator = document.querySelector('.typing-indicator');
+                chatContainer.insertBefore(messageDiv, typingIndicator);
+            }
+
+            addImageMessage(imageUrl, sender) {
+                const chatContainer = document.getElementById('chatContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message flex items-start space-x-3';
+
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-gray-100 rounded-lg px-4 py-2">
+                            <img src="${imageUrl}" alt="Generated image" class="max-w-full h-auto rounded-lg" style="max-width: 300px;">
+                            <p class="text-sm mt-2">✨ Generated image via NeuroGrid network</p>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${this.getTimestamp()}</div>
+                    </div>
+                `;
+
+                const typingIndicator = document.querySelector('.typing-indicator');
+                chatContainer.insertBefore(messageDiv, typingIndicator);
+            }
+
+            showTyping(show) {
+                const typingIndicator = document.querySelector('.typing-indicator');
+                if (show) {
+                    typingIndicator.classList.add('active');
+                } else {
+                    typingIndicator.classList.remove('active');
+                }
+            }
+
+            clearChat() {
+                const chatContainer = document.getElementById('chatContainer');
+                // Keep only welcome message and typing indicator
+                const messages = chatContainer.querySelectorAll('.message:not(.typing-indicator)');
+                messages.forEach((msg, index) => {
+                    if (index > 0) msg.remove(); // Keep first welcome message
+                });
+            }
+
+            updateStats(tokens, cost) {
+                this.tokensUsed += tokens || 0;
+                this.neuroSpent += cost || 0;
+                this.messagesSent += 1;
+
+                document.getElementById('tokensUsed').textContent = this.tokensUsed;
+                document.getElementById('neuroSpent').textContent = this.neuroSpent.toFixed(3);
+                document.getElementById('messagesSent').textContent = this.messagesSent;
+            }
+
+            async loadNetworkStatus() {
+                try {
+                    // Simulate network status
+                    document.getElementById('activeNodes').textContent = Math.floor(Math.random() * 50) + 10;
+                    document.getElementById('avgResponse').textContent = Math.floor(Math.random() * 500) + 100;
+                    
+                    // Update periodically
+                    setTimeout(() => this.loadNetworkStatus(), 30000);
+                } catch (error) {
+                    console.error('Failed to load network status:', error);
+                }
+            }
+
+            updateUI() {
+                document.getElementById('userBalance').textContent = this.userBalance.toFixed(2);
+            }
+
+            scrollToBottom() {
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            getTimestamp() {
+                return new Date().toLocaleTimeString();
+            }
+
+            showNotification(message, type = 'info') {
+                // Simple notification system
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${
+                    type === 'error' ? 'bg-red-500' : 
+                    type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                }`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
+
+            // New Methods for Enhanced Features
+
+            setupTemplateButtons() {
+                document.querySelectorAll('.template-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const prompt = btn.dataset.prompt;
+                        document.getElementById('messageInput').value = prompt;
+                        this.estimateCost();
+                    });
+                });
+            }
+
+            setupSettingsModal() {
+                const modal = document.getElementById('settingsModal');
+                const settingsBtn = document.getElementById('settingsBtn');
+                const closeBtn = document.getElementById('closeSettings');
+                const temperatureSlider = document.getElementById('temperatureSlider');
+                const temperatureValue = document.getElementById('temperatureValue');
+
+                settingsBtn.addEventListener('click', () => {
+                    modal.classList.remove('hidden');
+                });
+
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                });
+
+                // Temperature slider
+                temperatureSlider.addEventListener('input', (e) => {
+                    this.settings.temperature = parseFloat(e.target.value);
+                    temperatureValue.textContent = e.target.value;
+                    this.saveSettings();
+                });
+
+                // Max tokens
+                document.getElementById('maxTokensInput').addEventListener('change', (e) => {
+                    this.settings.maxTokens = parseInt(e.target.value);
+                    this.saveSettings();
+                });
+
+                // Image resolution
+                document.getElementById('imageResolution').addEventListener('change', (e) => {
+                    this.settings.imageResolution = parseInt(e.target.value);
+                    this.saveSettings();
+                });
+
+                // Auto-save checkbox
+                document.getElementById('autoSave').addEventListener('change', (e) => {
+                    this.settings.autoSave = e.target.checked;
+                    this.saveSettings();
+                });
+
+                // Reset stats
+                document.getElementById('resetStats').addEventListener('click', () => {
+                    this.resetStatistics();
+                });
+
+                // Export chat
+                document.getElementById('exportChat').addEventListener('click', () => {
+                    this.exportCurrentChat();
+                });
+
+                // Save chat
+                document.getElementById('saveChat').addEventListener('click', () => {
+                    this.saveCurrentChat();
+                });
+
+                // Close modal on outside click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.add('hidden');
+                    }
+                });
+            }
+
+            openSettings() {
+                document.getElementById('settingsModal').classList.remove('hidden');
+                this.updateSettingsUI();
+            }
+
+            updateSettingsUI() {
+                document.getElementById('temperatureSlider').value = this.settings.temperature;
+                document.getElementById('temperatureValue').textContent = this.settings.temperature;
+                document.getElementById('maxTokensInput').value = this.settings.maxTokens;
+                document.getElementById('imageResolution').value = this.settings.imageResolution;
+                document.getElementById('autoSave').checked = this.settings.autoSave;
+            }
+
+            saveSettings() {
+                localStorage.setItem('neurogrid-ai-settings', JSON.stringify(this.settings));
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('neurogrid-ai-settings');
+                if (saved) {
+                    this.settings = { ...this.settings, ...JSON.parse(saved) };
+                }
+            }
+
+            saveCurrentChat() {
+                const chatData = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    model: this.selectedModel,
+                    messages: this.chatHistory,
+                    stats: {
+                        tokensUsed: this.tokensUsed,
+                        neuroSpent: this.neuroSpent,
+                        messagesSent: this.messagesSent,
+                        imagesGenerated: this.imagesGenerated
+                    }
+                };
+
+                const savedChats = JSON.parse(localStorage.getItem('neurogrid-saved-chats') || '[]');
+                savedChats.push(chatData);
+                
+                // Keep only last 20 chats
+                if (savedChats.length > 20) {
+                    savedChats.shift();
+                }
+
+                localStorage.setItem('neurogrid-saved-chats', JSON.stringify(savedChats));
+                this.showNotification('Chat saved successfully!', 'info');
+            }
+
+            loadSavedChats() {
+                const savedChats = JSON.parse(localStorage.getItem('neurogrid-saved-chats') || '[]');
+                console.log(`Loaded ${savedChats.length} saved chats`);
+            }
+
+            exportCurrentChat() {
+                const chatContent = this.generateChatExport();
+                const blob = new Blob([chatContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `neurogrid-chat-${new Date().toISOString().split('T')[0]}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.showNotification('Chat exported successfully!', 'info');
+            }
+
+            generateChatExport() {
+                const header = `NeuroGrid AI Chat Export
+Generated: ${new Date().toLocaleString()}
+Model: ${this.selectedModel || 'None'}
+Tokens Used: ${this.tokensUsed}
+NEURO Spent: ${this.neuroSpent.toFixed(3)}
+Messages: ${this.messagesSent}
+Images Generated: ${this.imagesGenerated}
+
+=== CHAT HISTORY ===
+
+`;
+                
+                const messages = this.chatHistory.map(msg => 
+                    `[${msg.timestamp}] ${msg.role.toUpperCase()}: ${msg.content}`
+                ).join('\\n\\n');
+
+                return header + messages;
+            }
+
+            resetStatistics() {
+                if (confirm('Are you sure you want to reset all statistics?')) {
+                    this.tokensUsed = 0;
+                    this.neuroSpent = 0;
+                    this.messagesSent = 0;
+                    this.imagesGenerated = 0;
+                    this.updateStats(0, 0);
+                    this.showNotification('Statistics reset!', 'info');
+                }
+            }
+
+            // WebSocket Methods for Streaming
+
+            initWebSocket() {
+                const wsUrl = this.apiUrl.replace('http', 'ws').replace('/api', '/ws');
+                console.log('Connecting to WebSocket:', wsUrl);
+                
+                this.ws = new WebSocket(wsUrl);
+                
+                this.ws.onopen = () => {
+                    console.log('✅ WebSocket connected');
+                    this.showNotification('Real-time streaming enabled!', 'info');
+                };
+                
+                this.ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    this.handleWebSocketMessage(data);
+                };
+                
+                this.ws.onclose = () => {
+                    console.log('❌ WebSocket disconnected');
+                    // Attempt to reconnect after 3 seconds
+                    setTimeout(() => this.initWebSocket(), 3000);
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+            }
+
+            handleWebSocketMessage(data) {
+                switch (data.type) {
+                    case 'connection':
+                        console.log('WebSocket connection established');
+                        break;
+                        
+                    case 'ai_response_start':
+                        this.handleStreamStart(data);
+                        break;
+                        
+                    case 'ai_response_progress':
+                        this.handleStreamProgress(data);
+                        break;
+                        
+                    case 'ai_response_complete':
+                        this.handleStreamComplete(data);
+                        break;
+                        
+                    case 'ai_image_start':
+                        this.handleImageStart(data);
+                        break;
+                        
+                    case 'ai_image_progress':
+                        this.handleImageProgress(data);
+                        break;
+                        
+                    case 'ai_image_complete':
+                        this.handleImageComplete(data);
+                        break;
+                        
+                    case 'ai_response_error':
+                    case 'ai_image_error':
+                        this.handleStreamError(data);
+                        break;
+                        
+                    default:
+                        console.log('Unknown WebSocket message:', data.type);
+                }
+            }
+
+            handleStreamStart(data) {
+                this.showTyping(false);
+                
+                // Create message container for streaming text
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message flex items-start space-x-3';
+                messageDiv.id = `stream-${data.requestId}`;
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-gray-100 rounded-lg px-4 py-2">
+                            <div class="streaming-text text-sm"></div>
+                            <div class="streaming-info text-xs text-gray-500 mt-2">
+                                <span class="tokens">0 tokens</span> • 
+                                <span class="progress">0%</span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${data.model}</div>
+                    </div>
+                `;
+                
+                const chatContainer = document.getElementById('chatContainer');
+                const typingIndicator = document.querySelector('.typing-indicator');
+                chatContainer.insertBefore(messageDiv, typingIndicator);
+                this.scrollToBottom();
+            }
+
+            handleStreamProgress(data) {
+                const messageDiv = document.getElementById(`stream-${data.requestId}`);
+                if (messageDiv) {
+                    const textElement = messageDiv.querySelector('.streaming-text');
+                    const tokensElement = messageDiv.querySelector('.tokens');
+                    const progressElement = messageDiv.querySelector('.progress');
+                    
+                    textElement.textContent = data.partial_text;
+                    tokensElement.textContent = `${data.tokens_so_far} tokens`;
+                    progressElement.textContent = `${data.progress}%`;
+                    
+                    this.scrollToBottom();
+                }
+            }
+
+            handleStreamComplete(data) {
+                const messageDiv = document.getElementById(`stream-${data.requestId}`);
+                if (messageDiv) {
+                    // Remove streaming indicators and finalize message
+                    const infoElement = messageDiv.querySelector('.streaming-info');
+                    infoElement.innerHTML = `
+                        <span class="text-green-600">✓ Complete</span> • 
+                        ${data.result.tokens_used} tokens • 
+                        ${data.result.cost.toFixed(3)} NEURO
+                    `;
+                    
+                    // Update statistics
+                    this.updateStats(data.result.tokens_used, data.result.cost);
+                    
+                    // Add to chat history
+                    this.chatHistory.push({
+                        role: 'assistant',
+                        content: data.result.data,
+                        timestamp: new Date().toLocaleTimeString(),
+                        model: data.model,
+                        tokens: data.result.tokens_used,
+                        cost: data.result.cost
+                    });
+                    
+                    // Auto-save if enabled
+                    if (this.settings.autoSave) {
+                        this.saveCurrentChat();
+                    }
+                }
+                
+                this.streamingRequestId = null;
+            }
+
+            handleImageStart(data) {
+                this.showTyping(false);
+                
+                // Create message container for image generation
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message flex items-start space-x-3';
+                messageDiv.id = `image-${data.requestId}`;
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-gray-100 rounded-lg px-4 py-2">
+                            <div class="image-generation-progress">
+                                <div class="flex items-center mb-2">
+                                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent mr-2"></div>
+                                    <span class="text-sm">Generating image...</span>
+                                </div>
+                                <div class="progress-bar bg-gray-200 rounded-full h-2 mb-2">
+                                    <div class="progress-fill bg-purple-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    <span class="stage">Initializing</span> • 
+                                    <span class="progress-text">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${data.model}</div>
+                    </div>
+                `;
+                
+                const chatContainer = document.getElementById('chatContainer');
+                const typingIndicator = document.querySelector('.typing-indicator');
+                chatContainer.insertBefore(messageDiv, typingIndicator);
+                this.scrollToBottom();
+            }
+
+            handleImageProgress(data) {
+                const messageDiv = document.getElementById(`image-${data.requestId}`);
+                if (messageDiv) {
+                    const stageElement = messageDiv.querySelector('.stage');
+                    const progressElement = messageDiv.querySelector('.progress-text');
+                    const fillElement = messageDiv.querySelector('.progress-fill');
+                    
+                    stageElement.textContent = data.stage.charAt(0).toUpperCase() + data.stage.slice(1);
+                    progressElement.textContent = `${data.progress}%`;
+                    fillElement.style.width = `${data.progress}%`;
+                }
+            }
+
+            handleImageComplete(data) {
+                const messageDiv = document.getElementById(`image-${data.requestId}`);
+                if (messageDiv) {
+                    // Replace progress with final image
+                    const contentDiv = messageDiv.querySelector('.bg-gray-100');
+                    contentDiv.innerHTML = `
+                        <img src="${data.result.data}" alt="Generated image" class="max-w-full h-auto rounded-lg mb-2" style="max-width: 400px;">
+                        <div class="text-xs text-gray-500">
+                            <span class="text-green-600">✓ Generated</span> • 
+                            ${data.result.resolution} • 
+                            ${data.result.cost} NEURO
+                        </div>
+                    `;
+                    
+                    // Update statistics
+                    this.imagesGenerated++;
+                    this.updateStats(0, data.result.cost);
+                    document.getElementById('imagesGenerated').textContent = this.imagesGenerated;
+                    
+                    // Add to chat history
+                    this.chatHistory.push({
+                        role: 'assistant',
+                        content: `[Image: ${data.result.prompt}]`,
+                        image_url: data.result.data,
+                        timestamp: new Date().toLocaleTimeString(),
+                        model: data.model,
+                        cost: data.result.cost
+                    });
+                    
+                    // Auto-save if enabled
+                    if (this.settings.autoSave) {
+                        this.saveCurrentChat();
+                    }
+                }
+                
+                this.streamingRequestId = null;
+            }
+
+            handleStreamError(data) {
+                this.showNotification(`Streaming error: ${data.error}`, 'error');
+                
+                const messageDiv = document.getElementById(`stream-${data.requestId}`) || 
+                                 document.getElementById(`image-${data.requestId}`);
+                if (messageDiv) {
+                    messageDiv.remove();
+                }
+                
+                this.streamingRequestId = null;
+                this.showTyping(false);
+            }
+
+            sendStreamingMessage(message) {
+                if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                    this.showNotification('WebSocket not connected, using regular API', 'warning');
+                    return this.sendMessage(); // Fallback to regular API
+                }
+
+                if (this.streamingRequestId) {
+                    this.showNotification('Another request is in progress', 'warning');
+                    return;
+                }
+
+                this.streamingRequestId = Date.now().toString();
+
+                // Add user message to chat
+                this.addUserMessage(message);
+                
+                // Send streaming request
+                if (this.selectedModelType === 'image') {
+                    this.ws.send(JSON.stringify({
+                        type: 'ai_image_stream',
+                        prompt: message,
+                        model: this.selectedModel,
+                        options: {
+                            width: this.settings.imageResolution,
+                            height: this.settings.imageResolution,
+                            steps: 20,
+                            guidance: 7.5
+                        },
+                        requestId: this.streamingRequestId
+                    }));
+                } else {
+                    this.ws.send(JSON.stringify({
+                        type: 'ai_chat_stream',
+                        message: message,
+                        model: this.selectedModel,
+                        options: {
+                            temperature: this.settings.temperature,
+                            maxTokens: this.settings.maxTokens
+                        },
+                        requestId: this.streamingRequestId
+                    }));
+                }
+
+                // Clear input
+                document.getElementById('messageInput').value = '';
+                this.estimateCost();
+            }
+        }
+
+        // Initialize the chat interface
+        document.addEventListener('DOMContentLoaded', () => {
+            new NeuroGridAIChat();
+        });
+    </script>
+</body>
+</html>

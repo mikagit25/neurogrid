@@ -43,13 +43,21 @@ export default function Home() {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">N</span>
               </div>
-              <span className="text-white text-xl font-bold">NeuroGrid</span>
+              <a href="/" className="text-white text-xl font-bold hover:text-blue-300 transition-colors">NeuroGrid</a>
             </div>
-            <div className="flex items-center space-x-4 text-sm">
-              <div className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full border border-green-500/30">
-                🟢 Local Dev
+            <div className="flex items-center space-x-6">
+              <div className="hidden md:flex items-center space-x-4">
+                <a href="/dashboard" className="text-gray-300 hover:text-white transition-colors">Dashboard</a>
+                <a href="/api-test" className="text-gray-300 hover:text-white transition-colors">API Test</a>
+                <a href="/tasks" className="text-gray-300 hover:text-white transition-colors">Tasks</a>
+                <a href="/api-docs.html" className="text-gray-300 hover:text-white transition-colors">API Docs</a>
               </div>
-              <span className="text-gray-300">v1.0.0</span>
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full border border-green-500/30">
+                  {config?.environment === 'production' ? '🟢 Production' : '🟡 Dev'}
+                </div>
+                <span className="text-gray-300">v1.0.0</span>
+              </div>
             </div>
           </div>
         </div>
@@ -107,6 +115,15 @@ export default function Home() {
                 <span className="flex items-center space-x-2">
                   <span>📋</span>
                   <span>Task Management</span>
+                </span>
+              </a>
+              <a
+                href="/api-docs.html"
+                className="group relative px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <span className="flex items-center space-x-2">
+                  <span>📚</span>
+                  <span>API Documentation</span>
                 </span>
               </a>
             </div>

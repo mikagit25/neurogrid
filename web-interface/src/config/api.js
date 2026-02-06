@@ -24,23 +24,27 @@ class APIConfig {
 
     getBaseURL() {
         // First try environment variable
-        if (process.env.NEXT_PUBLIC_API_URL) {
+        if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim()) {
             return process.env.NEXT_PUBLIC_API_URL;
         }
 
         // In browser, detect from current location
         if (typeof window !== 'undefined') {
-            const { protocol, hostname } = window.location;
+            const { protocol, hostname, port } = window.location;
 
-            // Production detection
+            // Production detection (not localhost)
             if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-                // Use same hostname with different port or subdomain
-                return `${protocol}//api.${hostname}`;
+                // For production, try to use api subdomain or same domain with API port
+                if (hostname === 'neurogrid.network' || hostname.endsWith('.neurogrid.network')) {
+                    return `${protocol}//api.neurogrid.network`;
+                }
+                // For other domains, assume API is on same host with port 3001 or 8080
+                return `${protocol}//${hostname}:3001`;
             }
         }
 
         // Development fallback
-        return 'http://localhost:8080';
+        return 'http://localhost:3001';
     }
 
     getWebSocketURL() {

@@ -6,6 +6,9 @@
  * Supports multiple environments: development, staging, production
  */
 
+// Load environment variables
+require('dotenv').config({ silent: true });
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -19,12 +22,58 @@ const config = require('./src/config/production-config');
 const SmartModelRouter = require('./src/SmartModelRouter');
 const PerformanceMonitor = require('./src/PerformanceMonitor');
 
+// Import Hugging Face AI Client
+const HuggingFaceClient = require('./src/ai/huggingface-client');
+
 const app = express();
 const server = http.createServer(app);
 
 // WebSocket Server
 const wss = new WebSocket.Server({ server });
 const clients = new Set();
+
+// WebSocket connection handling
+wss.on('connection', (ws, req) => {
+  console.log('🔌 New WebSocket connection established');
+  clients.add(ws);
+  
+  // Send welcome message
+  ws.send(JSON.stringify({
+    type: 'connection',
+    message: 'Connected to NeuroGrid AI Chat',
+    timestamp: new Date().toISOString()
+  }));
+
+  ws.on('message', async (message) => {
+    try {
+      const data = JSON.parse(message);
+      console.log(`📨 WebSocket message:`, data.type);
+      
+      if (data.type === 'ai_chat_stream') {
+        await handleStreamingAIRequest(ws, data);
+      } else if (data.type === 'ai_image_stream') {
+        await handleStreamingImageRequest(ws, data);
+      }
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        error: 'Failed to process message',
+        details: error.message
+      }));
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('🔌 WebSocket connection closed');
+    clients.delete(ws);
+  });
+
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+    clients.delete(ws);
+  });
+});
 
 // Use centralized configuration
 const serverConfig = config.getServerConfig();
@@ -41,6 +90,9 @@ const modelRouter = new SmartModelRouter();
 
 // Initialize Performance Monitor
 const perfMonitor = new PerformanceMonitor();
+
+// Initialize Hugging Face AI Client
+const hfClient = new HuggingFaceClient();
 
 console.log('🤖 Smart Model Router initialized');
 console.log('📊 Available coordinators:', modelRouter.getCoordinatorStats().length);
@@ -67,13 +119,25 @@ app.use((req, res, next) => {
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/deploy', express.static(path.join(__dirname, 'deploy')));
 
+// Serve production config for all pages
+app.use('/src/config', express.static(path.join(__dirname, 'src', 'config')));
+
+// Serve web-interface static files
+app.use('/web-interface', express.static(path.join(__dirname, 'web-interface')));
+
+// Serve root-level static files (index.html, demo.html, etc.)
+app.use(express.static(path.join(__dirname), { 
+  index: false,  // Don't auto-serve index.html from static middleware
+  dotfiles: 'ignore'
+}));
+
 // CORS middleware - adaptive for environments
 app.use((req, res, next) => {
   const allowedOrigins = CORS_ORIGINS.split(',');
   const origin = req.headers.origin;
 
   // Allow any origin in development
-  if (NODE_ENV === 'development') {
+  if (config.environment === 'development') {
     res.header('Access-Control-Allow-Origin', origin || '*');
   } else if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
@@ -186,12 +250,89 @@ app.get('/admin.html', (req, res) => {
   }
 });
 
-// API Endpoints
+// Additional web-interface pages
+app.get('/analytics.html', (req, res) => {
+  const analyticsPath = path.join(__dirname, 'web-interface', 'analytics.html');
+  if (fs.existsSync(analyticsPath)) {
+    res.sendFile(analyticsPath);
+  } else {
+    res.status(404).send('Analytics page not found');
+  }
+});
+
+app.get('/support.html', (req, res) => {
+  const supportPath = path.join(__dirname, 'web-interface', 'support.html');
+  if (fs.existsSync(supportPath)) {
+    res.sendFile(supportPath);
+  } else {
+    res.status(404).send('Support page not found');
+  }
+});
+
+app.get('/node-monitoring.html', (req, res) => {
+  const nodeMonitoringPath = path.join(__dirname, 'web-interface', 'node-monitoring.html');
+  if (fs.existsSync(nodeMonitoringPath)) {
+    res.sendFile(nodeMonitoringPath);
+  } else {
+    res.status(404).send('Node monitoring page not found');
+  }
+});
+
+app.get('/api-docs.html', (req, res) => {
+  const apiDocsPath = path.join(__dirname, 'web-interface', 'api-docs.html');
+  if (fs.existsSync(apiDocsPath)) {
+    res.sendFile(apiDocsPath);
+  } else {
+    res.status(404).send('API documentation not found');
+  }
+});
+
+// System test page
+app.get('/system-test.html', (req, res) => {
+  const testPath = path.join(__dirname, 'system-test.html');
+  if (fs.existsSync(testPath)) {
+    res.sendFile(testPath);
+  } else {
+    res.status(404).send('System test page not found');
+  }
+});
+
+app.get('/api/network/status', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      network: {
+        nodes_online: mockStats.activeNodes,
+        total_tasks: mockStats.completedTasks,
+        avg_response_time: '2.3s',
+        cost_savings: '78%'
+      },
+      nodes: mockNodes.slice(0, 3)
+    }
+  });
+});
+
+// Additional API endpoints  
 app.get('/api/nodes/stats', (req, res) => {
   res.json({
     success: true,
     data: mockStats
   });
+});
+
+app.post('/api/tasks', (req, res) => {
+  const { type, input, model } = req.body;
+  
+  // Mock task submission
+  const mockResult = {
+    success: true,
+    result: `Processed ${type} task: "${input}" using ${model}`,
+    estimated_time: '2.3s',
+    estimated_cost: '0.05',
+    node: `GPU-Node-${Math.floor(Math.random() * 5) + 1} (${['US-East', 'US-West', 'EU-Central', 'Asia-Pacific'][Math.floor(Math.random() * 4)]})`
+  };
+  
+  res.json(mockResult);
 });
 
 app.get('/api/tasks', (req, res) => {
@@ -202,6 +343,85 @@ app.get('/api/tasks', (req, res) => {
       total: mockTasks.length
     }
   });
+});
+
+// AI Chat endpoints
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const { message, model, options = {} } = req.body;
+    
+    if (!message || !model) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message and model are required'
+      });
+    }
+
+    console.log(`🤖 Processing text request: ${model} - "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
+    
+    // Generate text using Hugging Face or fallback to mock
+    const result = await hfClient.generateText(model, message, options);
+    
+    console.log(`✅ Text generated: ${result.tokens_used} tokens, ${result.processing_time}ms`);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('AI Chat Error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process AI request',
+      details: error.message
+    });
+  }
+});
+
+app.post('/api/ai/image', async (req, res) => {
+  try {
+    const { prompt, model, options = {} } = req.body;
+    
+    if (!prompt || !model) {
+      return res.status(400).json({
+        success: false,
+        error: 'Prompt and model are required'
+      });
+    }
+
+    console.log(`🎨 Processing image request: ${model} - "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`);
+    
+    // Generate image using Hugging Face or fallback to mock
+    const result = await hfClient.generateImage(model, prompt, options);
+    
+    console.log(`✅ Image generated: ${result.resolution}, ${result.processing_time}ms`);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('AI Image Error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate image',
+      details: error.message
+    });
+  }
+});
+
+app.get('/api/ai/models', (req, res) => {
+  try {
+    const models = hfClient.getAvailableModels();
+    
+    res.json({
+      success: true,
+      data: models,
+      huggingface_enabled: !!hfClient.apiKey,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Models API Error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch models',
+      details: error.message
+    });
+  }
 });
 
 app.get('/api/nodes', (req, res) => {
@@ -849,3 +1069,101 @@ setInterval(() => {
 }, 30000);
 
 console.log('🔌 WebSocket server ready for real-time updates');
+
+// Streaming AI request handlers
+async function handleStreamingAIRequest(ws, data) {
+  const { message, model, options = {}, requestId } = data;
+  
+  try {
+    console.log(`🤖 Streaming text request: ${model} - "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
+    
+    // Send initial response
+    ws.send(JSON.stringify({
+      type: 'ai_response_start',
+      requestId,
+      model,
+      timestamp: new Date().toISOString()
+    }));
+
+    // Generate text with streaming
+    const result = await hfClient.generateText(model, message, options, (progress) => {
+      // Send progress updates
+      ws.send(JSON.stringify({
+        type: 'ai_response_progress',
+        requestId,
+        partial_text: progress.partial_text,
+        tokens_so_far: progress.tokens_so_far,
+        progress: progress.progress,
+        timestamp: new Date().toISOString()
+      }));
+    });
+
+    // Send final result
+    ws.send(JSON.stringify({
+      type: 'ai_response_complete',
+      requestId,
+      result,
+      timestamp: new Date().toISOString()
+    }));
+
+    console.log(`✅ Streaming text completed: ${result.tokens_used} tokens`);
+
+  } catch (error) {
+    console.error('Streaming AI error:', error);
+    ws.send(JSON.stringify({
+      type: 'ai_response_error',
+      requestId,
+      error: 'Failed to process streaming request',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    }));
+  }
+}
+
+async function handleStreamingImageRequest(ws, data) {
+  const { prompt, model, options = {}, requestId } = data;
+  
+  try {
+    console.log(`🎨 Streaming image request: ${model} - "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`);
+    
+    // Send initial response
+    ws.send(JSON.stringify({
+      type: 'ai_image_start',
+      requestId,
+      model,
+      timestamp: new Date().toISOString()
+    }));
+
+    // Generate image with progress tracking
+    const result = await hfClient.generateImage(model, prompt, options, (progress) => {
+      // Send progress updates
+      ws.send(JSON.stringify({
+        type: 'ai_image_progress',
+        requestId,
+        stage: progress.stage,
+        progress: progress.progress,
+        timestamp: new Date().toISOString()
+      }));
+    });
+
+    // Send final result
+    ws.send(JSON.stringify({
+      type: 'ai_image_complete',
+      requestId,
+      result,
+      timestamp: new Date().toISOString()
+    }));
+
+    console.log(`✅ Streaming image completed: ${result.resolution}`);
+
+  } catch (error) {
+    console.error('Streaming image error:', error);
+    ws.send(JSON.stringify({
+      type: 'ai_image_error',
+      requestId,
+      error: 'Failed to process streaming image request',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    }));
+  }
+}

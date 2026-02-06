@@ -1,6 +1,5 @@
 const { Pool } = require('pg');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+// Removed unused imports: sqlite3, path
 const SQLiteInitializer = require('../database/sqlite-init');
 const logger = require('../utils/logger');
 
@@ -123,7 +122,7 @@ class DatabaseManager {
    */
   async query(text, params = []) {
     const start = Date.now();
-    
+
     try {
       if (this.useSQLite) {
         return await this.querySQLite(text, params);
@@ -172,11 +171,11 @@ class DatabaseManager {
    */
   async querySQLite(text, params = []) {
     const start = Date.now();
-    
+
     return new Promise((resolve, reject) => {
       // Convert PostgreSQL style queries to SQLite
       const sqliteQuery = this.convertToSQLite(text);
-      
+
       if (sqliteQuery.startsWith('SELECT') || sqliteQuery.startsWith('PRAGMA')) {
         this.db.all(sqliteQuery, params, (err, rows) => {
           const duration = Date.now() - start;
@@ -212,10 +211,10 @@ class DatabaseManager {
               duration,
               rowCount: this.changes
             });
-            resolve({ 
-              rows: [], 
+            resolve({
+              rows: [],
               rowCount: this.changes,
-              insertId: this.lastID 
+              insertId: this.lastID
             });
           }
         });

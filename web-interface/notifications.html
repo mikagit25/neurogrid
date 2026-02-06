@@ -199,9 +199,12 @@
     </button>
 
     <!-- JavaScript -->
+    <script src="/src/config/production-config.js"></script>
     <script>
         // Configuration - будет заменено автоматически
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080/api';
+        const config = new NeuroGridConfig();
+        const API_BASE_URL = config.getApiUrl('/api');
+        const WEB_BASE_URL = config.getWebUrl();
         let notifications = [];
         let currentPage = 0;
         let hasMore = true;

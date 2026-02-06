@@ -1,8 +1,8 @@
 const express = require('express');
 const { body, query, validationResult } = require('express-validator');
-const NotificationService = require('../services/NotificationService');
-const { authenticate } = require('../middleware/auth');
-const logger = require('../utils/logger');
+const NotificationService = require('../../services/NotificationService');
+const { authenticate } = require('../../middleware/security');
+const logger = require('../../utils/logger');
 
 const router = express.Router();
 const notificationService = new NotificationService();

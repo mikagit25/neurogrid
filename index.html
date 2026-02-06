@@ -138,7 +138,15 @@
         </div>
     </section>
 
+    <script src="/src/config/production-config.js"></script>
     <script>
+        // Configuration for API calls
+        const config = new NeuroGridConfig();
+        const API_BASE_URL = config.getApiUrl('');
+        const WEB_BASE_URL = config.getWebUrl();
+        
+        console.log('🌐 API Base URL:', API_BASE_URL);
+        
         // Mock data and demo functionality
         let taskCounter = 0;
 
@@ -164,7 +172,7 @@
 
             try {
                 // Simulate API call
-                const response = await fetch('/api/tasks', {
+                const response = await fetch(`${API_BASE_URL}/api/tasks`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -199,7 +207,7 @@
         // Load network status
         async function loadNetworkStatus() {
             try {
-                const response = await fetch('/api/network/status');
+                const response = await fetch(`${API_BASE_URL}/api/network/status`);
                 const data = await response.json();
                 
                 if (data.success) {

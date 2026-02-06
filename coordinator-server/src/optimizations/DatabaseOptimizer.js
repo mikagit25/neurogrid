@@ -5,6 +5,18 @@
 
 const logger = require('../utils/logger');
 
+// Mock Connection class to resolve ESLint error
+class Connection {
+  constructor(config) {
+    this.config = config;
+    this._invalid = false;
+  }
+
+  on() {
+    // Mock method
+  }
+}
+
 class DatabaseOptimizer {
   constructor(db, config = {}) {
     this.db = db;

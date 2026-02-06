@@ -43,10 +43,12 @@ describe('MetricsCollector', () => {
         const values = {
           'METRICS_ENABLED': true,
           'METRICS_PORT': 9090,
-          'METRICS_PATH': '/metrics'
+          'METRICS_PATH': '/metrics',
+          'METRICS_INTERVAL': 60000
         };
         return values[key] || defaultValue;
-      })
+      }),
+      metricsEnabled: false  // Force mock metrics for tests
     };
 
     metricsCollector = new MetricsCollector(mockConfig);

@@ -28,10 +28,10 @@ class SQLiteInitializer {
 
       // Enable foreign keys
       await this.run('PRAGMA foreign_keys = ON;');
-      
+
       // Create tables
       await this.createTables();
-      
+
       logger.info('SQLite database initialized successfully');
       return this.db;
     } catch (error) {

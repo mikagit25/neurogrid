@@ -425,9 +425,12 @@
     </footer>
 
     <!-- JavaScript -->
+    <script src="/src/config/production-config.js"></script>
     <script>
         // API Configuration - будет заменено автоматически
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080/api';
+        const config = new NeuroGridConfig();
+        const API_BASE_URL = config.getApiUrl('/api');
+        const WEB_BASE_URL = config.getWebUrl();
         
         // Support form functions
         function showSupportForm(type) {

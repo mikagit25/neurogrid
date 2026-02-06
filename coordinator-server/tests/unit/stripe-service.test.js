@@ -51,32 +51,46 @@ describe('StripeService', () => {
     // Access the mocked Stripe instance
     mockStripe = stripeService.stripe;
 
-    // Ensure all required mock methods exist
-    if (!mockStripe.products) {
-      mockStripe.products = {
-        retrieve: jest.fn(),
-        create: jest.fn()
+    // Verify mockStripe exists and has required methods
+    if (mockStripe && typeof mockStripe === 'object') {
+      // Mock methods exist from jest.mock above
+      // Just ensure they return sensible defaults
+      mockStripe.products.retrieve.mockResolvedValue({ id: 'prod_test', name: 'Test Product' });
+      mockStripe.products.create.mockResolvedValue({ id: 'prod_new', name: 'New Product' });
+      mockStripe.customers.list.mockResolvedValue({ data: [] });
+      mockStripe.customers.create.mockResolvedValue({ id: 'cus_test', email: 'test@example.com' });
+    } else {
+      // If mockStripe is not properly initialized, set it up manually
+      mockStripe = {
+        products: {
+          retrieve: jest.fn().mockResolvedValue({ id: 'prod_test', name: 'Test Product' }),
+          create: jest.fn().mockResolvedValue({ id: 'prod_new', name: 'New Product' })
+        },
+        prices: {
+          retrieve: jest.fn().mockResolvedValue({ id: 'price_test', unit_amount: 2999 }),
+          create: jest.fn().mockResolvedValue({ id: 'price_new', unit_amount: 2999 })
+        },
+        customers: {
+          list: jest.fn().mockResolvedValue({ data: [] }),
+          create: jest.fn().mockResolvedValue({ id: 'cus_test', email: 'test@example.com' })
+        },
+        subscriptions: {
+          create: jest.fn().mockResolvedValue({ id: 'sub_test', status: 'active' }),
+          update: jest.fn().mockResolvedValue({ id: 'sub_test', status: 'active' }),
+          cancel: jest.fn().mockResolvedValue({ id: 'sub_test', status: 'canceled' }),
+          retrieve: jest.fn().mockResolvedValue({ id: 'sub_test', status: 'active' })
+        },
+        subscriptionItems: {
+          createUsageRecord: jest.fn().mockResolvedValue({ id: 'usage_test' })
+        },
+        paymentIntents: {
+          create: jest.fn().mockResolvedValue({ id: 'pi_test', status: 'succeeded' })
+        },
+        webhooks: {
+          constructEvent: jest.fn().mockReturnValue({ id: 'evt_test', type: 'invoice.payment_succeeded' })
+        }
       };
-    }
-    if (!mockStripe.prices) {
-      mockStripe.prices = {
-        retrieve: jest.fn(),
-        create: jest.fn()
-      };
-    }
-    if (!mockStripe.customers) {
-      mockStripe.customers = {
-        list: jest.fn(),
-        create: jest.fn()
-      };
-    }
-    if (!mockStripe.subscriptions) {
-      mockStripe.subscriptions = {
-        create: jest.fn(),
-        update: jest.fn(),
-        cancel: jest.fn(),
-        retrieve: jest.fn()
-      };
+      stripeService.stripe = mockStripe;
     }
     if (!mockStripe.subscriptionItems) {
       mockStripe.subscriptionItems = {

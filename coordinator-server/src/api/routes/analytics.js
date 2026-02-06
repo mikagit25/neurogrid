@@ -1,10 +1,10 @@
 const express = require('express');
 const { query, validationResult } = require('express-validator');
-const { authenticate } = require('../middleware/auth');
-const AdvancedAnalyticsService = require('../services/AdvancedAnalyticsService');
-const { ValidationHelper: _ValidationHelper } = require('../../utils/validation');
+const { authenticate } = require('../../middleware/security');
+const AdvancedAnalyticsService = require('../../services/AdvancedAnalyticsService');
+// const { ValidationHelper: _ValidationHelper } = require('../../utils/validation'); // Commented out - file not found
 const { ResponseHelper } = require('../../utils/response');
-const logger = require('../utils/logger');
+const logger = require('../../utils/logger');
 
 const router = express.Router();
 const analyticsService = new AdvancedAnalyticsService();

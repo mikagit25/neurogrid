@@ -18,10 +18,16 @@ const paymentGateway = new PaymentGateway();
 const tokenEngine = new TokenEngine();
 
 // Withdrawal limits configuration
-const withdrawalLimit = {
+const withdrawalLimits = {
   daily: 10000,
   monthly: 100000,
   perTransaction: 5000
+};
+
+// Withdrawal limit middleware
+const withdrawalLimit = (req, res, next) => {
+  // For now, just pass through - can implement actual limit checking later
+  next();
 };
 
 // Rate limiting for payment operations

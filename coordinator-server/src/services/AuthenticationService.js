@@ -7,9 +7,25 @@ const logger = require('../utils/logger');
 const User = require('../models/User');
 
 class AuthenticationService {
-  constructor(config) {
+  constructor(config = {}) {
     this.config = config;
-    this.authConfig = config.getAuthConfig();
+
+    // Handle config - support both config objects and config managers
+    if (typeof config.getAuthConfig === 'function') {
+      this.authConfig = config.getAuthConfig();
+    } else if (config.auth) {
+      this.authConfig = config.auth;
+    } else {
+      // Default auth configuration
+      this.authConfig = {
+        jwtSecret: process.env.JWT_SECRET || 'test-jwt-secret',
+        jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
+        maxLoginAttempts: 5,
+        lockoutDuration: 15 * 60 * 1000, // 15 minutes
+        ...config
+      };
+    }
+
     this.loginAttempts = new Map(); // In-memory store for login attempts
     this.suspiciousActivity = new Map(); // Track suspicious activities
 

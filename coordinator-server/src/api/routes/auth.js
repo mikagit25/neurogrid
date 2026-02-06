@@ -164,7 +164,7 @@ router.post('/logout',
   authenticate(),
   async (req, res) => {
     try {
-      const { refreshToken } = req.body;
+      const { refreshToken: _refreshToken } = req.body;
 
       // In production, you would invalidate the tokens in your token store
       // For now, we'll just log the logout

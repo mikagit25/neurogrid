@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid System Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-success { color: #10b981; }
+        .test-fail { color: #ef4444; }
+        .test-pending { color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-4xl mx-auto p-6">
+        <h1 class="text-3xl font-bold text-center mb-8">🔧 NeuroGrid System Test</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🌐 Environment Configuration</h2>
+            <div id="environmentInfo" class="space-y-2">
+                <div>Current Environment: <span id="currentEnv" class="font-mono"></span></div>
+                <div>API Base URL: <span id="apiBaseUrl" class="font-mono"></span></div>
+                <div>Web Base URL: <span id="webBaseUrl" class="font-mono"></span></div>
+                <div>WebSocket URL: <span id="wsUrl" class="font-mono"></span></div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🧪 API Tests</h2>
+            <div id="apiTests" class="space-y-2">
+                <!-- Tests will be populated here -->
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📄 Page Access Tests</h2>
+            <div id="pageTests" class="space-y-2">
+                <!-- Page tests will be populated here -->
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">📊 Test Summary</h2>
+            <div id="testSummary" class="text-lg">
+                <div>Total Tests: <span id="totalTests" class="font-bold">0</span></div>
+                <div>Passed: <span id="passedTests" class="font-bold test-success">0</span></div>
+                <div>Failed: <span id="failedTests" class="font-bold test-fail">0</span></div>
+                <div>Pending: <span id="pendingTests" class="font-bold test-pending">0</span></div>
+            </div>
+        </div>
+
+        <div class="text-center mt-6">
+            <button id="runTests" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                🚀 Run All Tests
+            </button>
+        </div>
+    </div>
+
+    <script src="/src/config/production-config.js"></script>
+    <script>
+        // Configuration
+        const config = new NeuroGridConfig();
+        
+        // Update environment info
+        document.getElementById('currentEnv').textContent = config.environment;
+        document.getElementById('apiBaseUrl').textContent = config.getApiUrl('/');
+        document.getElementById('webBaseUrl').textContent = config.getWebUrl();
+        document.getElementById('wsUrl').textContent = config.getWebSocketUrl('/ws');
+
+        // Test cases
+        const apiTests = [
+            { name: 'Health Check', url: '/api/health', method: 'GET' },
+            { name: 'Network Status', url: '/api/network/status', method: 'GET' },
+            { name: 'Nodes Stats', url: '/api/nodes/stats', method: 'GET' },
+            { name: 'Nodes List', url: '/api/nodes', method: 'GET' },
+            { name: 'Tasks List', url: '/api/tasks', method: 'GET' }
+        ];
+
+        const pageTests = [
+            { name: 'Main Page', url: '/' },
+            { name: 'Web Interface', url: '/web-interface/' },
+            { name: 'Analytics', url: '/analytics.html' },
+            { name: 'Support', url: '/support.html' },
+            { name: 'API Docs', url: '/api-docs.html' },
+            { name: 'Node Monitoring', url: '/node-monitoring.html' }
+        ];
+
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+        let pendingTests = 0;
+
+        function updateSummary() {
+            document.getElementById('totalTests').textContent = totalTests;
+            document.getElementById('passedTests').textContent = passedTests;
+            document.getElementById('failedTests').textContent = failedTests;
+            document.getElementById('pendingTests').textContent = pendingTests;
+        }
+
+        function addTestResult(container, name, status, details = '') {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'flex justify-between items-center p-2 border-b';
+            
+            const statusClass = status === 'pass' ? 'test-success' : status === 'fail' ? 'test-fail' : 'test-pending';
+            const statusIcon = status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳';
+            
+            testDiv.innerHTML = `
+                <span>${name}</span>
+                <span class="${statusClass}">${statusIcon} ${status.toUpperCase()} ${details}</span>
+            `;
+            
+            document.getElementById(container).appendChild(testDiv);
+            
+            if (status === 'pass') passedTests++;
+            else if (status === 'fail') failedTests++;
+            else pendingTests++;
+            
+            totalTests++;
+            updateSummary();
+        }
+
+        async function runApiTest(test) {
+            try {
+                const url = config.getApiUrl('') + test.url;
+                const response = await fetch(url, { method: test.method });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addTestResult('apiTests', test.name, 'pass', `(${response.status})`);
+                } else {
+                    addTestResult('apiTests', test.name, 'fail', `(${response.status})`);
+                }
+            } catch (error) {
+                addTestResult('apiTests', test.name, 'fail', `(${error.message})`);
+            }
+        }
+
+        async function runPageTest(test) {
+            try {
+                const url = config.getWebUrl() + test.url;
+                const response = await fetch(url, { method: 'GET' });
+                
+                if (response.ok) {
+                    addTestResult('pageTests', test.name, 'pass', `(${response.status})`);
+                } else {
+                    addTestResult('pageTests', test.name, 'fail', `(${response.status})`);
+                }
+            } catch (error) {
+                addTestResult('pageTests', test.name, 'fail', `(${error.message})`);
+            }
+        }
+
+        async function runAllTests() {
+            // Clear previous results
+            document.getElementById('apiTests').innerHTML = '';
+            document.getElementById('pageTests').innerHTML = '';
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+            pendingTests = 0;
+            updateSummary();
+
+            // Disable button
+            const button = document.getElementById('runTests');
+            button.disabled = true;
+            button.textContent = '🔄 Running Tests...';
+
+            // Run API tests
+            for (const test of apiTests) {
+                await runApiTest(test);
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+            }
+
+            // Run page tests
+            for (const test of pageTests) {
+                await runPageTest(test);
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+            }
+
+            // Re-enable button
+            button.disabled = false;
+            button.textContent = '🚀 Run All Tests';
+        }
+
+        // Initialize
+        document.getElementById('runTests').addEventListener('click', runAllTests);
+
+        // Auto-run tests on page load
+        setTimeout(runAllTests, 1000);
+    </script>
+</body>
+</html>

@@ -1,11 +1,16 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
-const { auth, adminAuth } = require('../middleware/auth');
+const { auth: _auth, adminAuth } = require('../middleware/auth');
 
 // Service instances (injected from main app)
-let nodeManager = null;
-let taskDispatcher = null;
-let tokenEngine = null;
+const _nodeManager = null;
+const _taskDispatcher = null;
+const _tokenEngine = null;
+
+// Getter functions for services (to be injected by main app)
+let getNodeManager = () => _nodeManager;
+const _getTaskDispatcher = () => _taskDispatcher;
+const _getTokenEngine = () => _tokenEngine;
 
 const router = express.Router();
 
@@ -49,6 +54,7 @@ router.post('/register', [
       requestId: req.requestId
     };
 
+    const nodeManager = getNodeManager();
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
@@ -125,6 +131,7 @@ router.post('/:id/heartbeat', [
       metrics
     } = req.body;
 
+    const nodeManager = getNodeManager();
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
@@ -197,6 +204,7 @@ router.get('/', [
     if (model_type) filters.modelType = model_type;
     if (min_rating) filters.minRating = parseFloat(min_rating);
 
+    const nodeManager = getNodeManager();
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
@@ -260,6 +268,7 @@ router.get('/:id', [
     }
 
     const nodeId = req.params.id;
+    const nodeManager = getNodeManager();
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
@@ -328,6 +337,7 @@ router.get('/:id/metrics', [
 
     const nodeId = req.params.id;
     const { period = '24h', metric } = req.query;
+    const nodeManager = getNodeManager();
 
     if (!nodeManager) {
       return res.status(503).json({
@@ -380,6 +390,7 @@ router.post('/:id/command', adminAuth, [
 
     const nodeId = req.params.id;
     const { command, parameters = {} } = req.body;
+    const nodeManager = getNodeManager();
 
     if (!nodeManager) {
       return res.status(503).json({
@@ -430,6 +441,7 @@ router.delete('/:id', [
     const nodeId = req.params.id;
 
     // TODO: Add authentication check - only admin or the node itself can deregister
+    const nodeManager = getNodeManager();
 
     if (!nodeManager) {
       return res.status(503).json({
@@ -466,6 +478,7 @@ router.delete('/:id', [
  */
 router.get('/stats', async (req, res) => {
   try {
+    const nodeManager = getNodeManager();
     if (!nodeManager) {
       return res.status(503).json({
         success: false,
@@ -503,9 +516,8 @@ router.get('/stats', async (req, res) => {
 
 // Initialize services
 const initializeServices = (services) => {
-  nodeManager = services.nodeManager;
-  taskDispatcher = services.taskDispatcher;
-  tokenEngine = services.tokenEngine;
+  getNodeManager = () => services.nodeManager;
+  // _getTaskDispatcher and _getTokenEngine are reserved for future use
 };
 
 module.exports = { router, initializeServices };

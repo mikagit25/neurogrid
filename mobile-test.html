@@ -52,14 +52,14 @@
         <div>
             <div class="device-name">📱 iPhone (375×667)</div>
             <div class="test-frame">
-                <iframe src="http://localhost:3000" class="frame-content"></iframe>
+                <iframe src="/" class="frame-content"></iframe>
             </div>
         </div>
         
         <div>
             <div class="device-name">📱 Android (360×640)</div>
             <div class="test-frame" style="width: 360px; height: 640px;">
-                <iframe src="http://localhost:3000" class="frame-content"></iframe>
+                <iframe src="/" class="frame-content"></iframe>
             </div>
         </div>
     </div>
@@ -77,9 +77,27 @@
     
     <div style="text-align: center; margin: 20px 0;">
         <p><strong>Ссылки для тестирования:</strong></p>
-        <a href="http://localhost:3000" target="_blank" style="margin: 0 10px; color: #2563eb;">Главная</a>
-        <a href="http://localhost:3000/dashboard" target="_blank" style="margin: 0 10px; color: #2563eb;">Dashboard</a>
-        <a href="http://localhost:8080/health" target="_blank" style="margin: 0 10px; color: #2563eb;">API Status</a>
+        <a href="/" target="_blank" style="margin: 0 10px; color: #2563eb;">Главная</a>
+        <a href="/dashboard" target="_blank" style="margin: 0 10px; color: #2563eb;">Dashboard</a>
+        <a href="/api/health" target="_blank" style="margin: 0 10px; color: #2563eb;">API Status</a>
     </div>
+    
+    <script src="/src/config/production-config.js"></script>
+    <script>
+        // Update iframes and links based on current environment
+        const config = new NeuroGridConfig();
+        const WEB_BASE_URL = config.getWebUrl();
+        
+        // Update iframe sources
+        document.querySelectorAll('iframe').forEach(iframe => {
+            iframe.src = WEB_BASE_URL;
+        });
+        
+        // Update test links
+        const links = document.querySelectorAll('a[target="_blank"]');
+        links[0].href = WEB_BASE_URL;
+        links[1].href = WEB_BASE_URL + '/dashboard';
+        links[2].href = config.getApiUrl('/api/health');
+    </script>
 </body>
 </html>

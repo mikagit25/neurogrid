@@ -367,7 +367,10 @@ curl -X GET "https://api.neurogrid.io/v1/nodes" \
     </footer>
 
     <!-- JavaScript -->
+    <script src="/src/config/production-config.js"></script>
     <script>
+        const config = new NeuroGridConfig();
+        
         // Swagger API specification
         const apiSpec = {
             openapi: '3.0.0',
@@ -382,7 +385,7 @@ curl -X GET "https://api.neurogrid.io/v1/nodes" \
             },
             servers: [
                 {
-                    url: window.API_BASE_URL || 'http://localhost:8080/api',
+                    url: config.getApiUrl('/api'),
                     description: 'Development server'
                 },
                 {

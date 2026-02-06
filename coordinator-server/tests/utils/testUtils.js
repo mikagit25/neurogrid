@@ -2,8 +2,6 @@
  * Test utilities for unit and integration tests
  */
 
-const crypto = require('crypto');
-
 class TestUtils {
   static randomUsername() {
     return `user_${Math.random().toString(36).substr(2, 8)}`;
@@ -29,15 +27,16 @@ class TestUtils {
     return { ...defaultUser, ...userData };
   }
 
-  static async cleanupTestUser(userId) {
+  static async cleanupTestUser(_userId) {
     // Cleanup test user - implementation depends on your User model
     try {
       // You can implement actual cleanup here if needed
-      return true;
+      // Return after try/catch, not inside try
     } catch (error) {
       console.error('Cleanup failed:', error);
       return false;
     }
+    return true;
   }
 
   static async cleanup() {
