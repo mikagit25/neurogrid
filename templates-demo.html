@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid Prompt Templates Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto py-8 px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h1 class="text-3xl font-bold text-center mb-2">🚀 NeuroGrid Prompt Templates</h1>
+                <p class="text-center text-gray-600 mb-4">Ready-to-use prompts inspired by higgsfield.ai</p>
+                
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                🎯 <strong>Key Features:</strong>
+                                <br>• Ready-made prompts with variables
+                                <br>• Multiple AI providers (Google Gemini + HuggingFace)  
+                                <br>• Cost estimation and model recommendations
+                                <br>• Preview before generating
+                                <br>• Easy customization with your own data
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Examples -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- Text Templates -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center">
+                        📝 Text Templates
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-blue-700">💼 Business Plan Generator</h3>
+                                <span class="text-xs bg-blue-100 px-2 py-1 rounded">~800 tokens</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Create comprehensive business plans</p>
+                            <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                                Preview: "Professional business plan for [BUSINESS_TYPE] targeting [TARGET_MARKET]"
+                            </div>
+                            <div class="text-xs text-green-600 mt-2">
+                                Variables: BUSINESS_TYPE, TARGET_MARKET
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-purple-700">✨ Creative Story Generator</h3>
+                                <span class="text-xs bg-purple-100 px-2 py-1 rounded">~600 tokens</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Write engaging stories with your characters</p>
+                            <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                                Preview: "Creative story about [CHARACTER] in [SETTING] facing [CONFLICT]"
+                            </div>
+                            <div class="text-xs text-green-600 mt-2">
+                                Variables: GENRE, CHARACTER, SETTING, CONFLICT, TONE, LENGTH
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-orange-700">⚡ Code Documentation</h3>
+                                <span class="text-xs bg-orange-100 px-2 py-1 rounded">~400 tokens</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Explain and document code in detail</p>
+                            <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                                Preview: "Clear explanation of [LANGUAGE] code functionality"
+                            </div>
+                            <div class="text-xs text-green-600 mt-2">
+                                Variables: LANGUAGE, CODE, AUDIENCE_LEVEL
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Templates -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center">
+                        🎨 Image Templates
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-pink-700">🎨 Artistic Portrait</h3>
+                                <span class="text-xs bg-pink-100 px-2 py-1 rounded">~$0.30</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Create stunning artistic portraits</p>
+                            <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                                Preview: "Artistic portrait of [SUBJECT] in [STYLE] with [MOOD]"
+                            </div>
+                            <div class="text-xs text-green-600 mt-2">
+                                Variables: SUBJECT, DESCRIPTION, STYLE, MOOD, LIGHTING
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-blue-700">📸 Product Photography</h3>
+                                <span class="text-xs bg-blue-100 px-2 py-1 rounded">~$0.30</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Professional product photos for marketing</p>
+                            <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                                Preview: "Professional photo of [PRODUCT] with [BACKGROUND]"
+                            </div>
+                            <div class="text-xs text-green-600 mt-2">
+                                Variables: PRODUCT, BACKGROUND, LIGHTING
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Flow -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">🔄 How It Works</h2>
+                
+                <div class="grid md:grid-cols-4 gap-4 text-center">
+                    <div class="p-4">
+                        <div class="text-3xl mb-2">1️⃣</div>
+                        <h3 class="font-semibold text-blue-700 mb-2">Choose Template</h3>
+                        <p class="text-sm text-gray-600">Browse templates by category and select one that fits your needs</p>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="text-3xl mb-2">2️⃣</div>
+                        <h3 class="font-semibold text-green-700 mb-2">Fill Variables</h3>
+                        <p class="text-sm text-gray-600">Customize the template by filling in your specific details</p>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="text-3xl mb-2">3️⃣</div>
+                        <h3 class="font-semibold text-purple-700 mb-2">Preview & Adjust</h3>
+                        <p class="text-sm text-gray-600">See the final prompt and make any last-minute changes</p>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="text-3xl mb-2">4️⃣</div>  
+                        <h3 class="font-semibold text-orange-700 mb-2">Generate Result</h3>
+                        <p class="text-sm text-gray-600">Let AI create amazing content based on your customized prompt</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provider Comparison -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">⚡ AI Provider Comparison</h2>
+                
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="border rounded-lg p-4 bg-blue-50">
+                        <h3 class="font-semibold text-blue-700 mb-2 flex items-center">
+                            🧠 Google Gemini
+                        </h3>
+                        <ul class="text-sm text-gray-700 space-y-1">
+                            <li>✅ Fast response time</li>
+                            <li>💰 Cost-effective: $0.0005/1k tokens</li>
+                            <li>🎯 Great for business & creative content</li>
+                            <li>🔥 Advanced reasoning capabilities</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border rounded-lg p-4 bg-orange-50">
+                        <h3 class="font-semibold text-orange-700 mb-2 flex items-center">
+                            🤗 Hugging Face
+                        </h3>
+                        <ul class="text-sm text-gray-700 space-y-1">
+                            <li>✅ Open source models</li>
+                            <li>🎨 Excellent for image generation</li>
+                            <li>⚡ Specialized models (Code, Mistral)</li>
+                            <li>🔧 Customizable and flexible</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-lg p-6 text-center text-white">
+                <h2 class="text-2xl font-bold mb-2">Ready to Try NeuroGrid Templates?</h2>
+                <p class="mb-4 opacity-90">Start creating amazing AI content with our ready-made prompts</p>
+                <a href="/ai-chat.html" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition inline-block">
+                    🚀 Launch AI Chat Interface
+                </a>
+            </div>
+
+            <!-- Footer Stats -->
+            <div class="text-center mt-6 text-gray-500 text-sm">
+                <p>🎯 Currently available: <strong>6+ text templates</strong> and <strong>4+ image templates</strong></p>
+                <p>💰 Starting from <strong>$0.0005/1k tokens</strong> with Google Gemini</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

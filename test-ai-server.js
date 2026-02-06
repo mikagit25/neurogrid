@@ -32,7 +32,8 @@ app.get('/', (req, res) => {
     <p>HuggingFace: ${stats['huggingface'].configured ? '✅ Configured' : '❌ Missing (using mocks)'}</p>
     <p>Configured Providers: ${aiManager.getConfiguredProviders().join(', ') || 'none (using mocks)'}</p>
     <h3>🔗 Test Links:</h3>
-    <p><a href="/ai-chat.html">🤖 Test AI Chat</a></p>
+    <p><a href="/ai-chat.html">🤖 Test AI Chat with Templates</a></p>
+    <p><a href="/templates-demo.html">⭐ Templates Demo & Documentation</a></p>
     <p><a href="/test-api">🔧 Test API Endpoint</a></p>
     <p><a href="/models">📋 Available Models</a></p>
   `);
