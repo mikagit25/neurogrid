@@ -13,18 +13,18 @@ class SocialManager {
         this.galleryFile = path.join(__dirname, '../data/image-gallery.json');
         this.profilesFile = path.join(__dirname, '../data/user-profiles.json');
         this.communitiesFile = path.join(__dirname, '../data/communities.json');
-        
+
         // In-memory storage
         this.publicChats = new Map(); // chatId -> chat data
         this.imageGallery = []; // Array of shared images
         this.userProfiles = new Map(); // userId -> profile data
         this.communities = new Map(); // communityId -> community data
         this.chatParticipants = new Map(); // chatId -> Set of userIds
-        
+
         console.log('👥 Social Manager initialized');
         this.ensureDirectories();
         this.loadSocialData();
-        
+
         // Start periodic cleanup
         this.cleanupInterval = setInterval(() => this.cleanupOldData(), 300000); // Every 5 minutes
     }
@@ -286,7 +286,7 @@ class SocialManager {
      */
     createPublicChat(data) {
         const chatId = 'chat_' + crypto.randomBytes(8).toString('hex');
-        
+
         const chat = {
             id: chatId,
             title: data.title || 'Untitled Chat',
@@ -304,7 +304,7 @@ class SocialManager {
         this.saveSocialData();
 
         console.log(`💬 Created public chat: ${chat.title} (${chatId})`);
-        
+
         return {
             success: true,
             chat_id: chatId,
@@ -325,7 +325,7 @@ class SocialManager {
         }
 
         const messageId = 'msg_' + crypto.randomBytes(8).toString('hex');
-        
+
         const message = {
             id: messageId,
             user_id: messageData.user_id || 'anonymous',
@@ -339,7 +339,7 @@ class SocialManager {
         };
 
         chat.messages.push(message);
-        
+
         // Update participant count (rough estimate)
         if (!this.chatParticipants.has(chatId)) {
             this.chatParticipants.set(chatId, new Set());
@@ -363,14 +363,14 @@ class SocialManager {
      */
     getPublicChats(options = {}) {
         const { limit = 10, offset = 0, tag, creator, sortBy = 'created_at' } = options;
-        
+
         let chats = Array.from(this.publicChats.values()).filter(chat => chat.is_public);
 
         // Apply filters
         if (tag) {
             chats = chats.filter(chat => chat.tags.includes(tag));
         }
-        
+
         if (creator) {
             chats = chats.filter(chat => chat.creator === creator);
         }
@@ -410,7 +410,7 @@ class SocialManager {
      */
     addToGallery(imageData) {
         const imageId = 'img_' + crypto.randomBytes(8).toString('hex');
-        
+
         const image = {
             id: imageId,
             title: imageData.title || 'Untitled',
@@ -445,14 +445,14 @@ class SocialManager {
      */
     getImageGallery(options = {}) {
         const { limit = 20, offset = 0, tag, featured, sortBy = 'created_at' } = options;
-        
+
         let images = [...this.imageGallery];
 
         // Apply filters
         if (tag) {
             images = images.filter(img => img.tags.includes(tag));
         }
-        
+
         if (featured !== undefined) {
             images = images.filter(img => img.is_featured === featured);
         }
@@ -527,7 +527,7 @@ class SocialManager {
      */
     updateUserProfile(userId, profileData) {
         const existingProfile = this.userProfiles.get(userId) || {};
-        
+
         const profile = {
             ...existingProfile,
             user_id: userId,
@@ -560,7 +560,7 @@ class SocialManager {
     getSocialStats() {
         const totalMessages = Array.from(this.publicChats.values())
             .reduce((sum, chat) => sum + chat.messages.length, 0);
-        
+
         const totalLikes = this.imageGallery.reduce((sum, img) => sum + img.likes, 0) +
             Array.from(this.publicChats.values())
                 .reduce((sum, chat) => sum + chat.messages.reduce((msgSum, msg) => msgSum + (msg.likes || 0), 0), 0);

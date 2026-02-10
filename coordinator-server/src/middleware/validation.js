@@ -405,8 +405,8 @@ class InputValidator {
 
   validatePassword(password) {
     return password.length >= 8 &&
-               password.length <= 128 &&
-               /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])/.test(password);
+      password.length <= 128 &&
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])/.test(password);
   }
 
   validateUrl(url) {
@@ -508,13 +508,13 @@ class InputValidator {
 function validateRequest(requiredFields) {
   return (req, res, next) => {
     const missingFields = [];
-    
+
     for (const field of requiredFields) {
       if (!req.body[field] && req.body[field] !== 0 && req.body[field] !== false) {
         missingFields.push(field);
       }
     }
-    
+
     if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
@@ -522,7 +522,7 @@ function validateRequest(requiredFields) {
         code: 'VALIDATION_ERROR'
       });
     }
-    
+
     next();
   };
 }

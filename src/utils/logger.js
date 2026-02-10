@@ -54,14 +54,14 @@ const fileFormat = winston.format.combine(
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     levels,
-    
+
     transports: [
         // Console transport for development
         new winston.transports.Console({
             level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
             format: consoleFormat,
         }),
-        
+
         // File transport for errors
         new winston.transports.File({
             filename: path.join(logsDir, 'error.log'),
@@ -70,7 +70,7 @@ const logger = winston.createLogger({
             maxsize: 5242880, // 5MB
             maxFiles: 5,
         }),
-        
+
         // File transport for all logs
         new winston.transports.File({
             filename: path.join(logsDir, 'combined.log'),
@@ -78,7 +78,7 @@ const logger = winston.createLogger({
             maxsize: 5242880, // 5MB
             maxFiles: 5,
         }),
-        
+
         // Separate file for HTTP requests
         new winston.transports.File({
             filename: path.join(logsDir, 'http.log'),
@@ -88,7 +88,7 @@ const logger = winston.createLogger({
             maxFiles: 3,
         }),
     ],
-    
+
     // Handle exceptions and rejections
     exceptionHandlers: [
         new winston.transports.File({
@@ -96,7 +96,7 @@ const logger = winston.createLogger({
             format: fileFormat,
         }),
     ],
-    
+
     rejectionHandlers: [
         new winston.transports.File({
             filename: path.join(logsDir, 'rejections.log'),
@@ -108,7 +108,7 @@ const logger = winston.createLogger({
 // HTTP Request logging middleware
 const httpLogger = (req, res, next) => {
     const start = Date.now();
-    
+
     res.on('finish', () => {
         const duration = Date.now() - start;
         const logData = {
@@ -120,10 +120,10 @@ const httpLogger = (req, res, next) => {
             ip: req.ip || req.connection.remoteAddress,
             contentLength: res.get('Content-Length') || '0',
         };
-        
+
         logger.http('HTTP Request', logData);
     });
-    
+
     next();
 };
 
@@ -138,7 +138,7 @@ const logAITask = (task, model, duration, status, error = null) => {
         inputLength: task.input ? task.input.length : 0,
         timestamp: new Date().toISOString(),
     };
-    
+
     if (error) {
         logData.error = error.message;
         logger.error('AI Task Failed', logData);
@@ -172,7 +172,7 @@ module.exports = {
     logAITask,
     logPerformance,
     logWebSocket,
-    
+
     // Convenience methods
     error: (message, meta = {}) => logger.error(message, meta),
     warn: (message, meta = {}) => logger.warn(message, meta),

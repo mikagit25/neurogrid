@@ -274,6 +274,8 @@ const logUserAction = (action) => {
 
 module.exports = {
   authenticateToken,
+  authenticate: authenticateToken, // Alias for compatibility
+  authorize: requireRole, // Alias for compatibility
   requireRole,
   requireAdmin,
   requireOperator,

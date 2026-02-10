@@ -65,7 +65,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",
-    "migration": "node src/utils/migrate.js",
+    "migration": "node src/utils/migrate-cli.js",
+    "migration:create": "node src/utils/migrate-cli.js create",
+    "migration:status": "node src/utils/migrate-cli.js status",
+    "migration:up": "node src/utils/migrate-cli.js migrate",
+    "migration:down": "node src/utils/migrate-cli.js rollback",
     "audit": "npm audit && cd coordinator-server && npm audit && cd ../web-interface && npm audit"
   },
   "engines": {
@@ -76,8 +80,13 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.1.5",
+    "ioredis": "^5.3.2",
+    "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
     "pg": "^8.18.0",
+    "prom-client": "^15.1.0",
+    "rate-limit-redis": "^4.3.1",
     "ws": "^8.18.3"
   },
   "devDependencies": {

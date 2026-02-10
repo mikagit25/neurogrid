@@ -31,7 +31,7 @@ router.post('/supply', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
@@ -59,7 +59,7 @@ router.post('/withdraw', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
@@ -87,19 +87,19 @@ router.post('/borrow', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
 
-        const result = await aaveManager.borrow({ 
-            asset, 
-            amount, 
-            user, 
-            interestRateMode, 
-            onBehalfOf 
+        const result = await aaveManager.borrow({
+            asset,
+            amount,
+            user,
+            interestRateMode,
+            onBehalfOf
         });
-        
+
         apiResponse(res, true, result, `Successfully borrowed ${amount} ${asset}`);
 
     } catch (error) {
@@ -122,7 +122,7 @@ router.post('/repay', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
@@ -146,7 +146,7 @@ router.get('/health-factor/:user', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
@@ -170,7 +170,7 @@ router.get('/positions/:user', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
@@ -192,13 +192,13 @@ router.get('/analytics', async (req, res) => {
     try {
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
 
         const status = aaveManager.getStatus();
-        
+
         // Enhanced analytics
         const analytics = {
             protocol_overview: {
@@ -247,7 +247,7 @@ router.get('/supported-assets', async (req, res) => {
     try {
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
@@ -255,10 +255,10 @@ router.get('/supported-assets', async (req, res) => {
         const supported = aaveManager.manager.config.supported_assets;
         const assets = Object.keys(supported).map(symbol => ({
             symbol,
-            name: symbol === 'WBTC' ? 'Wrapped Bitcoin' : 
-                  symbol === 'ETH' ? 'Ethereum' :
-                  symbol === 'USDC' ? 'USD Coin' :
-                  symbol === 'USDT' ? 'Tether USD' : symbol,
+            name: symbol === 'WBTC' ? 'Wrapped Bitcoin' :
+                symbol === 'ETH' ? 'Ethereum' :
+                    symbol === 'USDC' ? 'USD Coin' :
+                        symbol === 'USDT' ? 'Tether USD' : symbol,
             ...supported[symbol],
             current_supply_apy: aaveManager.manager.calculateSupplyAPY(symbol),
             current_borrow_rate: aaveManager.manager.calculateBorrowRate(symbol, 2)
@@ -283,14 +283,14 @@ router.get('/rates', async (req, res) => {
     try {
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
 
         const rates = {};
         const assets = Object.keys(aaveManager.manager.config.supported_assets);
-        
+
         for (const asset of assets) {
             rates[asset] = {
                 supply_apy: aaveManager.manager.calculateSupplyAPY(asset),
@@ -326,7 +326,7 @@ router.post('/simulate', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const aaveManager = phase4Manager?.protocolManagers.get('aave_v3');
-        
+
         if (!aaveManager) {
             return apiResponse(res, false, null, '', 'Aave V3 manager not available');
         }
@@ -349,7 +349,7 @@ router.post('/simulate', async (req, res) => {
                 asset,
                 amount: parseFloat(amount)
             });
-            
+
             simulation.interest_rate = aaveManager.calculateBorrowRate(asset, interestRateMode || 2);
             simulation.yearly_interest_cost = parseFloat(amount) * simulation.interest_rate;
             simulation.current_health_factor = currentHealthFactor.health_factor;

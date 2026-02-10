@@ -9,16 +9,16 @@ const EventEmitter = require('events');
 class AaveV3Manager extends EventEmitter {
     constructor(config = {}) {
         super();
-        
+
         this.managerId = 'aave_v3_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-        
+
         // Aave V3 Configuration
         this.config = {
             // Contract Addresses (Ethereum Mainnet)
             pool: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2',
             poolDataProvider: '0x7B4EB56E7CD4b454BA8ff71E4518426369a138a3',
             priceOracle: '0x54586bE62E3c3580375aE3723C145253060Ca0C2',
-            
+
             // Supported Assets
             supported_assets: {
                 ETH: {
@@ -54,19 +54,19 @@ class AaveV3Manager extends EventEmitter {
                     stable_rate_enabled: false
                 }
             },
-            
+
             // Risk Parameters
             min_health_factor: 1.5,
             critical_health_factor: 1.2,
             liquidation_threshold: 1.1,
             max_ltv: 0.8,
             flash_loan_fee: 0.0009, // 0.09%
-            
+
             // Rate Modes
             STABLE_RATE: 1,
             VARIABLE_RATE: 2
         };
-        
+
         // Apply external config without overriding supported_assets
         if (config && typeof config === 'object') {
             const { supported_assets, ...otherConfig } = config;
@@ -79,7 +79,7 @@ class AaveV3Manager extends EventEmitter {
         this.borrowingPositions = new Map();
         this.healthFactors = new Map();
         this.liquidationWarnings = new Map();
-        
+
         // Analytics
         this.analytics = {
             total_supplied: 0,
@@ -99,14 +99,14 @@ class AaveV3Manager extends EventEmitter {
      */
     async supply(params) {
         const { asset, amount, user, onBehalfOf } = params;
-        
+
         console.log(`🔄 Supplying ${amount} ${asset} to Aave V3 for user ${user}`);
 
         try {
             // Validate parameters
             this.validateAsset(asset);
             this.validateAmount(amount);
-            
+
             // Check asset configuration
             const assetConfig = this.config.supported_assets[asset];
             if (!assetConfig) {
@@ -115,7 +115,7 @@ class AaveV3Manager extends EventEmitter {
 
             // Create supply position
             const positionId = `aave_supply_${asset}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-            
+
             const position = {
                 id: positionId,
                 type: 'supply',
@@ -132,7 +132,7 @@ class AaveV3Manager extends EventEmitter {
 
             // Store position
             this.lendingPositions.set(positionId, position);
-            
+
             // Update user positions
             if (!this.userPositions.has(user)) {
                 this.userPositions.set(user, {
@@ -143,17 +143,17 @@ class AaveV3Manager extends EventEmitter {
                     total_debt_usd: 0
                 });
             }
-            
+
             const userPosition = this.userPositions.get(user);
             userPosition.supplies.set(positionId, position);
-            
+
             // Update analytics
             this.analytics.total_supplied += parseFloat(amount);
             this.analytics.active_users = this.userPositions.size;
-            
+
             // Calculate updated health factor
             await this.updateHealthFactor(user);
-            
+
             // Start monitoring
             this.startPositionMonitoring(positionId);
 
@@ -187,7 +187,7 @@ class AaveV3Manager extends EventEmitter {
      */
     async withdraw(params) {
         const { asset, amount, user, to } = params;
-        
+
         console.log(`🔄 Withdrawing ${amount} ${asset} from Aave V3 for user ${user}`);
 
         try {
@@ -199,7 +199,7 @@ class AaveV3Manager extends EventEmitter {
 
             let totalAvailable = 0;
             const assetSupplies = [];
-            
+
             for (const [posId, position] of userPosition.supplies) {
                 if (position.asset === asset) {
                     totalAvailable += position.underlying_balance;
@@ -208,7 +208,7 @@ class AaveV3Manager extends EventEmitter {
             }
 
             const withdrawAmount = amount === 'max' ? totalAvailable : parseFloat(amount);
-            
+
             if (withdrawAmount > totalAvailable) {
                 throw new Error(`Insufficient balance. Available: ${totalAvailable}, Requested: ${withdrawAmount}`);
             }
@@ -230,11 +230,11 @@ class AaveV3Manager extends EventEmitter {
 
             for (const position of assetSupplies) {
                 if (remainingToWithdraw <= 0) break;
-                
+
                 const withdrawFromThis = Math.min(remainingToWithdraw, position.underlying_balance);
                 position.underlying_balance -= withdrawFromThis;
                 remainingToWithdraw -= withdrawFromThis;
-                
+
                 withdrawnFromPositions.push({
                     positionId: position.id,
                     amount: withdrawFromThis
@@ -250,7 +250,7 @@ class AaveV3Manager extends EventEmitter {
 
             // Update analytics
             this.analytics.total_supplied -= withdrawAmount;
-            
+
             // Update health factor
             await this.updateHealthFactor(user);
 
@@ -284,14 +284,14 @@ class AaveV3Manager extends EventEmitter {
      */
     async borrow(params) {
         const { asset, amount, user, interestRateMode = 2, onBehalfOf } = params;
-        
+
         console.log(`🔄 Borrowing ${amount} ${asset} from Aave V3 for user ${user}`);
 
         try {
             // Validate parameters
             this.validateAsset(asset);
             this.validateAmount(amount);
-            
+
             const userPosition = this.userPositions.get(user);
             if (!userPosition) {
                 throw new Error(`User ${user} has no collateral positions`);
@@ -300,7 +300,7 @@ class AaveV3Manager extends EventEmitter {
             // Check borrowing capacity
             const borrowingPower = await this.calculateBorrowingPower(user);
             const borrowAmountUSD = parseFloat(amount) * this.getAssetPrice(asset);
-            
+
             if (borrowAmountUSD > borrowingPower.available_usd) {
                 throw new Error(`Insufficient borrowing power. Available: $${borrowingPower.available_usd.toFixed(2)}, Requested: $${borrowAmountUSD.toFixed(2)}`);
             }
@@ -318,9 +318,9 @@ class AaveV3Manager extends EventEmitter {
 
             // Create borrow position
             const positionId = `aave_borrow_${asset}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-            
+
             const borrowRate = this.calculateBorrowRate(asset, interestRateMode);
-            
+
             const position = {
                 id: positionId,
                 type: 'borrow',
@@ -339,13 +339,13 @@ class AaveV3Manager extends EventEmitter {
             // Store position
             this.borrowingPositions.set(positionId, position);
             userPosition.borrows.set(positionId, position);
-            
+
             // Update analytics
             this.analytics.total_borrowed += parseFloat(amount);
-            
+
             // Update health factor
             await this.updateHealthFactor(user);
-            
+
             // Start monitoring
             this.startPositionMonitoring(positionId);
 
@@ -381,7 +381,7 @@ class AaveV3Manager extends EventEmitter {
      */
     async repay(params) {
         const { asset, amount, user, rateMode, onBehalfOf } = params;
-        
+
         console.log(`🔄 Repaying ${amount} ${asset} to Aave V3 for user ${user}`);
 
         try {
@@ -393,7 +393,7 @@ class AaveV3Manager extends EventEmitter {
             // Find user's borrow positions for this asset
             let totalOwed = 0;
             const assetBorrows = [];
-            
+
             for (const [posId, position] of userPosition.borrows) {
                 if (position.asset === asset) {
                     const owedAmount = position.amount + position.accrued_interest;
@@ -407,7 +407,7 @@ class AaveV3Manager extends EventEmitter {
             }
 
             const repayAmount = amount === 'max' ? totalOwed : parseFloat(amount);
-            
+
             if (repayAmount > totalOwed) {
                 console.log(`⚠️ Repay amount ${repayAmount} exceeds debt ${totalOwed}, will repay maximum`);
             }
@@ -418,15 +418,15 @@ class AaveV3Manager extends EventEmitter {
 
             for (const position of assetBorrows) {
                 if (remainingToRepay <= 0) break;
-                
+
                 const repayFromThis = Math.min(remainingToRepay, position.total_owed);
                 const interestPaid = Math.min(repayFromThis, position.accrued_interest);
                 const principalPaid = repayFromThis - interestPaid;
-                
+
                 position.accrued_interest -= interestPaid;
                 position.amount -= principalPaid;
                 remainingToRepay -= repayFromThis;
-                
+
                 repaidPositions.push({
                     positionId: position.id,
                     amount_repaid: repayFromThis,
@@ -443,11 +443,11 @@ class AaveV3Manager extends EventEmitter {
             }
 
             const totalRepaid = Math.min(repayAmount, totalOwed);
-            
+
             // Update analytics
             this.analytics.total_borrowed -= (totalRepaid - repaidPositions.reduce((sum, p) => sum + p.interest_paid, 0));
             this.analytics.total_paid_interest += repaidPositions.reduce((sum, p) => sum + p.interest_paid, 0);
-            
+
             // Update health factor
             await this.updateHealthFactor(user);
 
@@ -486,7 +486,7 @@ class AaveV3Manager extends EventEmitter {
         }
 
         await this.updateHealthFactor(user);
-        
+
         return {
             health_factor: userPosition.health_factor,
             status: this.getHealthFactorStatus(userPosition.health_factor),
@@ -529,7 +529,7 @@ class AaveV3Manager extends EventEmitter {
         userPosition.health_factor = healthFactor;
         userPosition.total_collateral_usd = totalCollateralUSD;
         userPosition.total_debt_usd = totalDebtUSD;
-        
+
         this.healthFactors.set(user, healthFactor);
 
         // Check for liquidation warnings
@@ -539,7 +539,7 @@ class AaveV3Manager extends EventEmitter {
                 warning_time: Date.now(),
                 status: 'critical'
             });
-            
+
             this.emit('liquidation:warning', {
                 user,
                 health_factor: healthFactor,
@@ -632,7 +632,7 @@ class AaveV3Manager extends EventEmitter {
 
         let collateralUSD = userPosition.total_collateral_usd;
         let debtUSD = userPosition.total_debt_usd;
-        
+
         const assetPrice = this.getAssetPrice(operation.asset);
         const assetConfig = this.config.supported_assets[operation.asset];
 

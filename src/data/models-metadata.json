@@ -489,7 +489,7 @@
   },
   {
     "id": "free-controlnet-canny",
-    "name": "ControlNet Canny (FREE)", 
+    "name": "ControlNet Canny (FREE)",
     "description": "Бесплатный контроль генерации изображений по контурам",
     "type": "image",
     "author": "lllyasviel (Community)",

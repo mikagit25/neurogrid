@@ -12,17 +12,17 @@ class AnalyticsManager {
         this.reviewManager = reviewManager;
         this.socialManager = socialManager;
         this.neuroEconomy = neuroEconomy;
-        
+
         this.analyticsFile = path.join(__dirname, '../data/analytics.json');
-        
+
         // In-memory analytics cache
         this.trends = new Map(); // trend_name -> data
         this.leaderboards = new Map(); // category -> rankings
         this.insights = new Map(); // insight_type -> data
-        
+
         console.log('📊 Analytics Manager initialized');
         this.initializeAnalytics();
-        
+
         // Update analytics every 5 minutes
         this.analyticsInterval = setInterval(() => this.updateAnalytics(), 300000);
     }
@@ -44,7 +44,7 @@ class AnalyticsManager {
             this.analyzeUserTrends();
             this.calculateCommunityInsights();
             this.generatePopularityTrends();
-            
+
             console.log('📊 Analytics updated successfully');
         } catch (error) {
             console.error('❌ Analytics update error:', error);
@@ -57,23 +57,23 @@ class AnalyticsManager {
     generateModelLeaderboard() {
         console.log('🔍 Debug: Starting generateModelLeaderboard...');
         console.log('🔍 Debug: modelManager type:', typeof this.modelManager);
-        
+
         const modelsData = this.modelManager.getModels({ limit: 100 });
         console.log('🔍 Debug: modelsData type:', typeof modelsData);
         console.log('🔍 Debug: modelsData isArray:', Array.isArray(modelsData));
         console.log('🔍 Debug: modelsData first 200 chars:', JSON.stringify(modelsData).substring(0, 200));
-        
+
         // Check if modelsData is directly the array or has a data property
         const models = Array.isArray(modelsData) ? modelsData : (modelsData && modelsData.data) ? modelsData.data : [];
         console.log('🔍 Debug: models array length:', models.length);
         console.log('🔍 Debug: models isArray:', Array.isArray(models));
         console.log('🔍 Debug: first model:', models[0] ? JSON.stringify(models[0], null, 2).substring(0, 200) : 'none');
-        
+
         if (models.length === 0) {
             console.log('📊 No models found for leaderboard generation');
             return;
         }
-        
+
         // Income leaderboard
         const incomeLeaderboard = models
             .map(model => ({
@@ -145,10 +145,10 @@ class AnalyticsManager {
         // Mock trend calculation - in real system would use transaction history
         const recentTransactions = this.neuroEconomy.getUserTransactions('system', 100)
             .filter(tx => tx.model_id === modelId && tx.type === 'model_usage');
-        
+
         const today = new Date();
         const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-        
+
         const todayUsage = recentTransactions.filter(tx => new Date(tx.timestamp) > yesterday).length;
         const yesterdayUsage = recentTransactions.filter(tx => {
             const txDate = new Date(tx.timestamp);
@@ -156,7 +156,7 @@ class AnalyticsManager {
         }).length;
 
         if (yesterdayUsage === 0) return todayUsage > 0 ? 'up' : 'stable';
-        
+
         const trend = (todayUsage - yesterdayUsage) / yesterdayUsage;
         return trend > 0.1 ? 'up' : trend < -0.1 ? 'down' : 'stable';
     }
@@ -167,7 +167,7 @@ class AnalyticsManager {
     analyzeUserTrends() {
         const economyStats = this.neuroEconomy.getEconomyStats();
         const socialStats = this.socialManager.getSocialStats();
-        
+
         const userTrends = {
             total_users: economyStats.total_users,
             active_social_users: socialStats.active_users,
@@ -193,7 +193,7 @@ class AnalyticsManager {
      */
     calculateSocialEngagement() {
         const socialStats = this.socialManager.getSocialStats();
-        
+
         return {
             engagement_rate: Math.round((socialStats.total_messages / Math.max(socialStats.active_users, 1)) * 100) / 100,
             average_likes_per_content: Math.round((socialStats.total_likes / Math.max(socialStats.gallery_images + socialStats.total_messages, 1)) * 100) / 100,
@@ -207,10 +207,10 @@ class AnalyticsManager {
     calculateCommunityInsights() {
         const chats = this.socialManager.getPublicChats({ limit: 50 });
         const gallery = this.socialManager.getImageGallery({ limit: 100 });
-        
+
         // Trending topics analysis
         const trendingTags = new Map();
-        
+
         // Analyze chat tags
         chats.chats.forEach(chat => {
             chat.tags.forEach(tag => {
@@ -233,7 +233,7 @@ class AnalyticsManager {
         // Content insights
         const contentInsights = {
             trending_tags: topTags,
-            most_active_chat: chats.chats.reduce((max, chat) => 
+            most_active_chat: chats.chats.reduce((max, chat) =>
                 chat.participants > (max.participants || 0) ? chat : max, {}),
             content_diversity: this.calculateContentDiversity(chats.chats, gallery.images),
             community_health: this.calculateCommunityHealth()
@@ -251,10 +251,10 @@ class AnalyticsManager {
      */
     calculateContentDiversity(chats, images) {
         const allTags = new Set();
-        
+
         chats.forEach(chat => chat.tags.forEach(tag => allTags.add(tag)));
         images.forEach(image => image.tags.forEach(tag => allTags.add(tag)));
-        
+
         return {
             unique_tags: allTags.size,
             content_types: chats.length + images.length,
@@ -268,15 +268,15 @@ class AnalyticsManager {
     calculateCommunityHealth() {
         const socialStats = this.socialManager.getSocialStats();
         const economyStats = this.neuroEconomy.getEconomyStats();
-        
+
         // Health factors (0-100)
         const contentActivity = Math.min(100, socialStats.total_messages * 2); // 50 messages = 100%
         const economicActivity = Math.min(100, economyStats.total_transactions * 5); // 20 transactions = 100%  
         const userEngagement = Math.min(100, socialStats.total_likes * 1.3); // 77 likes ≈ 100%
         const platformUsage = Math.min(100, economyStats.staking_participation.replace('%', '') * 5); // 20% = 100%
-        
+
         const overallHealth = Math.round((contentActivity + economicActivity + userEngagement + parseFloat(platformUsage)) / 4);
-        
+
         return {
             overall_score: overallHealth,
             content_activity: Math.round(contentActivity),
@@ -326,7 +326,7 @@ class AnalyticsManager {
      */
     getTrendingCategories(models) {
         const categories = new Map();
-        
+
         models.forEach(model => {
             const category = model.type || 'other';
             categories.set(category, (categories.get(category) || 0) + model.downloads);
@@ -376,7 +376,7 @@ class AnalyticsManager {
      */
     generateUserAchievements(userId) {
         const achievements = [];
-        
+
         // Check staking achievements
         const stakingInfo = this.neuroEconomy.getUserStaking(userId);
         if (stakingInfo.total_staked > 50) {
@@ -394,11 +394,11 @@ class AnalyticsManager {
         if (transactions.length > 10) {
             achievements.push({
                 id: 'active_trader',
-                title: 'Active Trader', 
+                title: 'Active Trader',
                 description: 'Completed more than 10 transactions',
                 icon: '💰',
                 earned_at: new Date().toISOString()
-            });  
+            });
         }
 
         return achievements;

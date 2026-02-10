@@ -9,17 +9,17 @@ class SmartModelRouter {
   constructor() {
     // Initialize external API manager
     this.externalAPI = new ExternalAPIManager();
-    
+
     // Инициализация статистики
     this.stats = {
       requests: 0,
       successful: 0,
       failed: 0
     };
-    
+
     console.log('🔗 External API Manager initialized');
     console.log('📡 Available APIs:', this.externalAPI.getAvailableAPIs());
-    
+
     // Конфигурация РЕАЛЬНЫХ доступных координаторов
     this.coordinators = {
       // === БЕСПЛАТНЫЕ МОДЕЛИ ===
@@ -36,7 +36,7 @@ class SmartModelRouter {
       },
       'free-stable-diffusion-xl': {
         name: 'Stable Diffusion XL (FREE)',
-        type: 'local', 
+        type: 'local',
         endpoint: 'diffusion-inference',
         capabilities: ['image-generation', 'art', 'creative'],
         cost: 0.000, // БЕСПЛАТНО!
@@ -103,7 +103,7 @@ class SmartModelRouter {
       'free-controlnet-canny': {
         name: 'ControlNet Canny (FREE)',
         type: 'local',
-        endpoint: 'controlnet-inference', 
+        endpoint: 'controlnet-inference',
         capabilities: ['image-conditioning', 'edge-detection', 'precise-control'],
         cost: 0.000, // БЕСПЛАТНО!
         latency: 12000,
@@ -111,7 +111,7 @@ class SmartModelRouter {
         available: true,
         huggingface_id: 'lllyasviel/control_v11p_sd15_canny'
       },
-      
+
       // === PREMIUM МОДЕЛИ ===
       'premium-gpt4-turbo': {
         name: 'GPT-4 Turbo (Premium)',
@@ -160,7 +160,7 @@ class SmartModelRouter {
         type: 'external',
         endpoint: 'https://api.openai.com/v1/chat/completions',
         capabilities: ['text', 'code', 'analysis', 'reasoning', 'planning'],
-        cost: 0.03, 
+        cost: 0.03,
         latency: 1200,
         reliability: 0.98,
         available: this.externalAPI.getAvailableAPIs().openai
@@ -177,7 +177,7 @@ class SmartModelRouter {
       },
       'anthropic-claude': {
         name: 'Anthropic Claude',
-        type: 'external', 
+        type: 'external',
         endpoint: 'https://api.anthropic.com/v1/messages',
         capabilities: ['text', 'analysis', 'reasoning', 'long-context'],
         cost: 0.015,
@@ -211,33 +211,33 @@ class SmartModelRouter {
     this.specialists = {
       // Текстовые задачи - включаем БЕСПЛАТНЫЕ модели для демо
       'text-generation': ['free-llama2-7b-chat', 'free-falcon-7b', 'free-bloom-7b', 'google-gemini', 'openai-gpt3.5', 'anthropic-claude'],
-      
+
       // Программирование - включаем БЕСПЛАТНЫЙ CodeLlama
       'code-generation': ['free-codellama-7b', 'huggingface-codellama', 'openai-gpt4', 'premium-gpt4-turbo'],
-      
+
       // Генерация изображений - множество БЕСПЛАТНЫХ вариантов
       'image-generation': ['free-stable-diffusion-xl', 'free-controlnet-canny', 'premium-midjourney-v6'],
-      
+
       // Аудио задачи - БЕСПЛАТНЫЕ модели
       'speech-to-text': ['free-whisper-large'],
       'music-generation': ['free-musicgen-small'],
-      
+
       // Анализ и рассуждения - премиум и стандарт
       'analysis': ['premium-claude-3-opus', 'anthropic-claude', 'openai-gpt4', 'free-llama2-7b-chat'],
       'reasoning': ['premium-claude-3-opus', 'premium-gpt4-turbo', 'anthropic-claude', 'openai-gpt4'],
-      
+
       // Простые задачи - приоритет БЕСПЛАТНЫМ
       'simple-tasks': ['free-llama2-7b-chat', 'free-falcon-7b', 'google-gemini', 'openai-gpt3.5'],
-      
+
       // Сложные задачи - премиум модели
       'complex-tasks': ['premium-gpt4-turbo', 'premium-claude-3-opus', 'openai-gpt4', 'anthropic-claude', 'neurogrid-swarm'],
-      
+
       // Многоязычные задачи  
       'multilingual': ['free-bloom-7b', 'free-whisper-large', 'premium-claude-3-opus'],
-      
+
       // Чат и диалог - акцент на бесплатные
       'chat': ['free-llama2-7b-chat', 'free-falcon-7b', 'google-gemini', 'openai-gpt3.5'],
-      
+
       // Креативные задачи
       'creative': ['free-stable-diffusion-xl', 'free-musicgen-small', 'premium-midjourney-v6', 'anthropic-claude']
     };
@@ -255,16 +255,16 @@ class SmartModelRouter {
    */
   selectCoordinator(task, preferences = {}) {
     const { type, complexity, priority, budget } = task;
-    const userPrefs = { 
-      preferLocal: true, 
+    const userPrefs = {
+      preferLocal: true,
       maxCost: 0.01,
       maxLatency: 10000,
-      ...preferences 
+      ...preferences
     };
 
     // Получаем подходящих кандидатов
     const candidates = this.specialists[type] || ['neurogrid-swarm'];
-    
+
     // Фильтруем доступных
     const available = candidates.filter(id => {
       const coordinator = this.coordinators[id];
@@ -289,9 +289,9 @@ class SmartModelRouter {
     scored.sort((a, b) => b.score - a.score);
 
     const selected = scored[0];
-    
+
     console.log(`📋 Task type: ${type} | Selected: ${selected.coordinator.name} | Score: ${selected.score.toFixed(2)}`);
-    
+
     return {
       coordinatorId: selected.id,
       coordinator: selected.coordinator,
@@ -359,7 +359,7 @@ class SmartModelRouter {
   async processTask(task, preferences = {}) {
     const startTime = Date.now();
     this.stats.requests++;
-    
+
     try {
       const selection = this.selectCoordinator(task, preferences);
       const { coordinatorId, coordinator } = selection;
@@ -384,17 +384,17 @@ class SmartModelRouter {
       // Обновляем статистику
       this.stats.successful++;
       const processingTime = Date.now() - startTime;
-      
+
       // Обновляем статистику координатора
       if (!this.coordinators[coordinatorId].stats) {
         this.coordinators[coordinatorId].stats = 0;
         this.coordinators[coordinatorId].totalCost = 0;
         this.coordinators[coordinatorId].avgResponseTime = 0;
       }
-      
+
       this.coordinators[coordinatorId].stats++;
       this.coordinators[coordinatorId].totalCost += result.cost || 0;
-      this.coordinators[coordinatorId].avgResponseTime = 
+      this.coordinators[coordinatorId].avgResponseTime =
         (this.coordinators[coordinatorId].avgResponseTime + processingTime) / 2;
 
       return result;
@@ -402,18 +402,18 @@ class SmartModelRouter {
     } catch (error) {
       console.error('Task processing failed:', error);
       this.stats.failed++;
-      
+
       // Fallback к локальной модели
       console.log('🔄 Falling back to local processing...');
       const fallbackResult = await this.processLocal(task, this.coordinators['local-llama2']);
-      
+
       // Обновляем статистику для fallback
       this.stats.successful++;
       if (!this.coordinators['local-llama2'].stats) {
         this.coordinators['local-llama2'].stats = 0;
       }
       this.coordinators['local-llama2'].stats++;
-      
+
       return fallbackResult;
     }
   }
@@ -423,10 +423,10 @@ class SmartModelRouter {
    */
   async processExternalAPI(task, coordinator) {
     let provider = null;
-    
+
     // Определяем провайдера по имени или структуре coordinator
     const coordinatorName = coordinator.name || coordinator.id || '';
-    
+
     if (coordinatorName.includes('GitHub Copilot') || coordinatorName.includes('github-copilot')) {
       provider = 'github-copilot';
     } else if (coordinatorName.includes('Anthropic') || coordinatorName.includes('anthropic')) {
@@ -434,15 +434,15 @@ class SmartModelRouter {
     } else if (coordinatorName.includes('OpenAI') || coordinatorName.includes('openai')) {
       provider = 'openai';
     }
-    
+
     if (!provider) {
       throw new Error(`Unknown external provider for ${coordinatorName}`);
     }
 
     try {
       const result = await this.externalAPI.processWithFallback(
-        task.prompt, 
-        provider, 
+        task.prompt,
+        provider,
         {
           maxTokens: 2000,
           temperature: 0.7
@@ -471,7 +471,7 @@ class SmartModelRouter {
   async processLocal(task, coordinator) {
     // Имитация обработки локальной моделью
     await new Promise(resolve => setTimeout(resolve, coordinator.latency));
-    
+
     return {
       success: true,
       result: this.generateMockResponse(task),
@@ -506,7 +506,7 @@ class SmartModelRouter {
       'chat': `I understand you're asking about: "${task.prompt}"\n\nI'm responding via NeuroGrid's smart model router, which automatically selected the best available AI model for your request.`,
       'complex-task': `Complex analysis of: "${task.prompt}"\n\nThis task was processed by NeuroGrid's multi-agent system, coordinating multiple specialized AI models for optimal results.`
     };
-    
+
     return responses[task.type] || `Processed: ${task.prompt}`;
   }
 
@@ -532,14 +532,14 @@ class SmartModelRouter {
   toggleCoordinator(id, enabled, apiKey = null) {
     if (this.coordinators[id]) {
       this.coordinators[id].available = enabled;
-      
+
       // Если это внешний API и предоставлен ключ
       if (apiKey && (id.includes('openai') || id.includes('anthropic'))) {
         const provider = id.includes('openai') ? 'openai' : 'anthropic';
         this.externalAPI.setAPIKey(provider, apiKey);
         this.coordinators[id].available = true;
       }
-      
+
       console.log(`${enabled ? '✅' : '❌'} ${this.coordinators[id].name} ${enabled ? 'enabled' : 'disabled'}`);
     }
   }
@@ -549,7 +549,7 @@ class SmartModelRouter {
    */
   configureAPIKey(provider, apiKey) {
     const success = this.externalAPI.setAPIKey(provider, apiKey);
-    
+
     if (success) {
       // Активируем соответствующих координаторов
       Object.keys(this.coordinators).forEach(id => {
@@ -558,7 +558,7 @@ class SmartModelRouter {
         }
       });
     }
-    
+
     return success;
   }
 
@@ -567,7 +567,7 @@ class SmartModelRouter {
    */
   async testExternalAPIs() {
     const results = {};
-    
+
     for (const provider of ['openai', 'anthropic']) {
       if (this.externalAPI.getAvailableAPIs()[provider]) {
         try {
@@ -581,7 +581,7 @@ class SmartModelRouter {
         }
       }
     }
-    
+
     return results;
   }
 
@@ -593,7 +593,7 @@ class SmartModelRouter {
     const modelUsage = {};
     let totalResponseTime = 0;
     let totalCost = 0;
-    
+
     // Подсчет использования моделей
     Object.keys(this.coordinators).forEach(id => {
       const coordinator = this.coordinators[id];
@@ -645,7 +645,7 @@ class SmartModelRouter {
 
   async debugTask(taskType = 'code-generation', complexity = 'medium') {
     console.log(`\n🧪 Testing ${taskType} task with ${complexity} complexity...`);
-    
+
     const testTask = {
       prompt: `Debug test: ${taskType} task`,
       type: taskType,
@@ -671,16 +671,16 @@ class SmartModelRouter {
 if (require.main === module) {
   console.log('🚀 SmartModelRouter Debug Mode');
   const router = new SmartModelRouter();
-  
+
   if (process.argv.includes('--debug')) {
     router.debugMode();
-    
+
     // Run test tasks
     (async () => {
       await router.debugTask('code-generation', 'low');
-      await router.debugTask('explanation', 'medium'); 
+      await router.debugTask('explanation', 'medium');
       await router.debugTask('complex-analysis', 'high');
-      
+
       console.log('\n📊 Final Statistics:', router.getStatistics());
       console.log('🔧 Debug session complete!');
     })();

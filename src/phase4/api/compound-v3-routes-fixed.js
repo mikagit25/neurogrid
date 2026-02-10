@@ -16,7 +16,7 @@ function getCompoundManager(req) {
 router.post('/supply', async (req, res) => {
     try {
         const { market, amount, user } = req.body;
-        
+
         if (!market || !amount || !user) {
             return res.status(400).json({
                 success: false,
@@ -59,7 +59,7 @@ router.post('/supply', async (req, res) => {
 router.post('/withdraw', async (req, res) => {
     try {
         const { market, amount, user } = req.body;
-        
+
         if (!market || !amount || !user) {
             return res.status(400).json({
                 success: false,
@@ -102,7 +102,7 @@ router.post('/withdraw', async (req, res) => {
 router.post('/claim-rewards/:user', async (req, res) => {
     try {
         const { user } = req.params;
-        
+
         if (!user) {
             return res.status(400).json({
                 success: false,
@@ -123,7 +123,7 @@ router.post('/claim-rewards/:user', async (req, res) => {
         res.json({
             success: true,
             data: result,
-            message: result.comp_rewards_claimed > 0 
+            message: result.comp_rewards_claimed > 0
                 ? `Successfully claimed ${result.comp_rewards_claimed} COMP rewards`
                 : 'No rewards available to claim',
             timestamp: new Date().toISOString()
@@ -143,7 +143,7 @@ router.post('/claim-rewards/:user', async (req, res) => {
 router.get('/positions/:user', async (req, res) => {
     try {
         const { user } = req.params;
-        
+
         if (!user) {
             return res.status(400).json({
                 success: false,
@@ -190,7 +190,7 @@ router.get('/markets', async (req, res) => {
         }
 
         const status = compoundManager.getStatus();
-        
+
         const markets = {};
         for (const [market, config] of Object.entries(compoundManager.config.supported_markets)) {
             markets[market] = {
@@ -239,7 +239,7 @@ router.get('/analytics', async (req, res) => {
         }
 
         const status = compoundManager.getStatus();
-        
+
         res.json({
             success: true,
             data: {
@@ -270,7 +270,7 @@ router.get('/analytics', async (req, res) => {
 router.get('/simulate-supply', async (req, res) => {
     try {
         const { market, amount } = req.query;
-        
+
         if (!market || !amount) {
             return res.status(400).json({
                 success: false,
@@ -289,23 +289,23 @@ router.get('/simulate-supply', async (req, res) => {
         const supplyAPY = compoundManager.calculateSupplyAPY(market);
         const compRewardAPY = compoundManager.calculateCOMPRewardAPY(market);
         const totalAPY = supplyAPY + compRewardAPY;
-        
+
         const supplyAmount = parseFloat(amount);
         const assetPrice = compoundManager.getAssetPrice(market);
         const compPrice = compoundManager.getCOMPPrice();
-        
+
         const projections = {
             '30_days': {
-                interest_earned: supplyAmount * supplyAPY * (30/365),
-                comp_rewards: (supplyAmount * compRewardAPY * (30/365)),
-                total_earned: supplyAmount * totalAPY * (30/365),
-                total_value: supplyAmount + (supplyAmount * totalAPY * (30/365))
+                interest_earned: supplyAmount * supplyAPY * (30 / 365),
+                comp_rewards: (supplyAmount * compRewardAPY * (30 / 365)),
+                total_earned: supplyAmount * totalAPY * (30 / 365),
+                total_value: supplyAmount + (supplyAmount * totalAPY * (30 / 365))
             },
             '90_days': {
-                interest_earned: supplyAmount * supplyAPY * (90/365),
-                comp_rewards: (supplyAmount * compRewardAPY * (90/365)),
-                total_earned: supplyAmount * totalAPY * (90/365),
-                total_value: supplyAmount + (supplyAmount * totalAPY * (90/365))
+                interest_earned: supplyAmount * supplyAPY * (90 / 365),
+                comp_rewards: (supplyAmount * compRewardAPY * (90 / 365)),
+                total_earned: supplyAmount * totalAPY * (90 / 365),
+                total_value: supplyAmount + (supplyAmount * totalAPY * (90 / 365))
             },
             '365_days': {
                 interest_earned: supplyAmount * supplyAPY,

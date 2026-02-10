@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,39 +11,49 @@
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+
         .model-card {
             transition: all 0.3s ease;
             cursor: pointer;
         }
+
         .model-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
+
         .model-card.featured {
             border: 2px solid #ffd700;
             background: linear-gradient(45deg, #fff9e5, #ffffff);
         }
+
         .stars {
             color: #ffd700;
         }
+
         .badge {
             background: linear-gradient(45deg, #4facfe, #00f2fe);
             color: white;
         }
+
         .upload-zone {
             border: 2px dashed #cbd5e0;
             transition: all 0.3s ease;
         }
-        .upload-zone:hover, .upload-zone.drag-over {
+
+        .upload-zone:hover,
+        .upload-zone.drag-over {
             border-color: #667eea;
             background-color: #f7fafc;
         }
+
         .tag {
             background: linear-gradient(45deg, #a8edea, #fed6e3);
             color: #2d3748;
         }
     </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
     <!-- Navigation -->
     <nav class="gradient-bg shadow-lg">
@@ -62,10 +73,12 @@
                         <span class="text-sm opacity-75">NEURO Balance:</span>
                         <span id="userBalance" class="font-bold">--</span>
                     </div>
-                    <a href="ai-chat.html" class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+                    <a href="ai-chat.html"
+                        class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
                         <i class="fas fa-comment-alt mr-2"></i>AI Chat
                     </a>
-                    <button id="uploadBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition">
+                    <button id="uploadBtn"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition">
                         <i class="fas fa-upload mr-2"></i>Upload Model
                     </button>
                 </div>
@@ -106,8 +119,8 @@
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Search Models</label>
                         <div class="relative">
-                            <input type="text" id="searchInput" placeholder="Search by name, tag, or author" 
-                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" id="searchInput" placeholder="Search by name, tag, or author"
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                         </div>
                     </div>
@@ -115,7 +128,8 @@
                     <!-- Category Filter -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                        <select id="categoryFilter" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select id="categoryFilter"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                             <option value="all">All Categories</option>
                             <option value="text">Text Generation</option>
                             <option value="image">Image Generation</option>
@@ -130,7 +144,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Provider</label>
                         <div class="space-y-2">
                             <label class="flex items-center">
-                                <input type="checkbox" class="provider-filter rounded" data-provider="huggingface" checked>
+                                <input type="checkbox" class="provider-filter rounded" data-provider="huggingface"
+                                    checked>
                                 <span class="ml-2 text-sm">🤗 HuggingFace</span>
                             </label>
                             <label class="flex items-center">
@@ -138,7 +153,8 @@
                                 <span class="ml-2 text-sm">🧠 Google</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" class="provider-filter rounded" data-provider="community" checked>
+                                <input type="checkbox" class="provider-filter rounded" data-provider="community"
+                                    checked>
                                 <span class="ml-2 text-sm">👥 Community</span>
                             </label>
                             <label class="flex items-center">
@@ -152,28 +168,29 @@
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
                         <div class="flex items-center space-x-2">
-                            <input type="range" id="ratingFilter" min="0" max="5" step="0.5" value="0" 
-                                   class="flex-1">
+                            <input type="range" id="ratingFilter" min="0" max="5" step="0.5" value="0" class="flex-1">
                             <span id="ratingValue" class="text-sm font-medium">0+</span>
                         </div>
                     </div>
 
                     <!-- Price Filter -->
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Price Range (NEURO/1k tokens)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price Range (NEURO/1k
+                            tokens)</label>
                         <div class="flex items-center space-x-2">
-                            <input type="number" id="minPrice" placeholder="Min" 
-                                   class="w-20 p-2 border border-gray-300 rounded text-sm">
+                            <input type="number" id="minPrice" placeholder="Min"
+                                class="w-20 p-2 border border-gray-300 rounded text-sm">
                             <span>-</span>
-                            <input type="number" id="maxPrice" placeholder="Max" 
-                                   class="w-20 p-2 border border-gray-300 rounded text-sm">
+                            <input type="number" id="maxPrice" placeholder="Max"
+                                class="w-20 p-2 border border-gray-300 rounded text-sm">
                         </div>
                     </div>
 
                     <!-- Sort Options -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                        <select id="sortBy" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select id="sortBy"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                             <option value="rating">Highest Rated</option>
                             <option value="downloads">Most Downloaded</option>
                             <option value="newest">Newest First</option>
@@ -183,7 +200,8 @@
                         </select>
                     </div>
 
-                    <button id="clearFilters" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition">
+                    <button id="clearFilters"
+                        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition">
                         Clear All Filters
                     </button>
                 </div>
@@ -217,7 +235,9 @@
 
                 <!-- Loading Indicator -->
                 <div id="loadingIndicator" class="text-center py-12">
-                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                    <div
+                        class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4">
+                    </div>
                     <p class="text-gray-600">Loading models...</p>
                 </div>
 
@@ -228,7 +248,8 @@
 
                 <!-- Load More Button -->
                 <div class="text-center mt-8">
-                    <button id="loadMoreBtn" class="hidden bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition">
+                    <button id="loadMoreBtn"
+                        class="hidden bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition">
                         Load More Models
                     </button>
                 </div>
@@ -242,7 +263,8 @@
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold">Upload New AI Model</h3>
-                    <button id="closeUploadModal" class="text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
+                    <button id="closeUploadModal"
+                        class="text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
                 </div>
 
                 <form id="uploadForm">
@@ -250,13 +272,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Model Name *</label>
-                            <input type="text" id="modelName" required 
-                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="modelName" required
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                            <select id="modelCategory" required 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <select id="modelCategory" required
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="">Select category</option>
                                 <option value="text">Text Generation</option>
                                 <option value="image">Image Generation</option>
@@ -271,22 +293,23 @@
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
                         <textarea id="modelDescription" required rows="4"
-                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                  placeholder="Describe what your model does, its capabilities, and use cases..."></textarea>
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="Describe what your model does, its capabilities, and use cases..."></textarea>
                     </div>
 
                     <!-- Pricing -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Price per 1k tokens (NEURO) *</label>
-                            <input type="number" id="modelPrice" required step="0.001" min="0" 
-                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Price per 1k tokens (NEURO)
+                                *</label>
+                            <input type="number" id="modelPrice" required step="0.001" min="0"
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-                            <input type="text" id="modelTags" 
-                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                   placeholder="ai, nlp, generation (comma separated)">
+                            <input type="text" id="modelTags"
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                placeholder="ai, nlp, generation (comma separated)">
                         </div>
                     </div>
 
@@ -297,10 +320,12 @@
                             <div id="uploadContent">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
                                 <p class="text-gray-600 mb-2">Drag and drop your model file here, or</p>
-                                <button type="button" id="selectFileBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                <button type="button" id="selectFileBtn"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
                                     Select File
                                 </button>
-                                <p class="text-xs text-gray-500 mt-2">Supported formats: .safetensors, .bin, .onnx (max 2GB)</p>
+                                <p class="text-xs text-gray-500 mt-2">Supported formats: .safetensors, .bin, .onnx (max
+                                    2GB)</p>
                             </div>
                             <div id="uploadProgress" class="hidden">
                                 <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
@@ -321,7 +346,8 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">License</label>
-                                    <select id="modelLicense" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                                    <select id="modelLicense"
+                                        class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
                                         <option value="mit">MIT</option>
                                         <option value="apache-2.0">Apache 2.0</option>
                                         <option value="gpl-3.0">GPL 3.0</option>
@@ -330,9 +356,9 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Model Size</label>
-                                    <input type="text" id="modelSize" 
-                                           class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                           placeholder="e.g., 7B, 13B, 70B">
+                                    <input type="text" id="modelSize"
+                                        class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                        placeholder="e.g., 7B, 13B, 70B">
                                 </div>
                             </div>
                         </div>
@@ -340,10 +366,12 @@
 
                     <!-- Submit Buttons -->
                     <div class="flex justify-end space-x-4">
-                        <button type="button" id="cancelUpload" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                        <button type="button" id="cancelUpload"
+                            class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                             Cancel
                         </button>
-                        <button type="submit" id="submitUpload" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
+                        <button type="submit" id="submitUpload"
+                            class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
                             Upload Model
                         </button>
                     </div>
@@ -370,7 +398,7 @@
                 this.currentPage = 1;
                 this.modelsPerPage = 12;
                 this.apiUrl = this.getApiUrl();
-                
+
                 this.init();
                 this.loadModels();
                 this.loadStats();
@@ -389,7 +417,7 @@
                 document.getElementById('categoryFilter').addEventListener('change', () => this.applyFilters());
                 document.getElementById('sortBy').addEventListener('change', () => this.applyFilters());
                 document.getElementById('featuredOnly').addEventListener('change', () => this.applyFilters());
-                
+
                 // Provider filters
                 document.querySelectorAll('.provider-filter').forEach(checkbox => {
                     checkbox.addEventListener('change', () => this.applyFilters());
@@ -416,7 +444,7 @@
                 document.getElementById('uploadBtn').addEventListener('click', () => this.openUploadModal());
                 document.getElementById('closeUploadModal').addEventListener('click', () => this.closeUploadModal());
                 document.getElementById('cancelUpload').addEventListener('click', () => this.closeUploadModal());
-                
+
                 // Upload form
                 document.getElementById('uploadForm').addEventListener('submit', (e) => this.handleUpload(e));
                 document.getElementById('selectFileBtn').addEventListener('click', () => {
@@ -447,7 +475,7 @@
             async loadModels() {
                 try {
                     document.getElementById('loadingIndicator').classList.remove('hidden');
-                    
+
                     const response = await axios.get(`${this.apiUrl}/models`);
                     if (response.data.success) {
                         this.models = response.data.data;
@@ -688,10 +716,10 @@
 
             createModelCard(model) {
                 const starsHtml = this.generateStars(model.rating);
-                const tagsHtml = model.tags.map(tag => 
+                const tagsHtml = model.tags.map(tag =>
                     `<span class="tag text-xs px-2 py-1 rounded-full">${tag}</span>`
                 ).join('');
-                
+
                 return `
                     <div class="model-card bg-white rounded-lg shadow-md p-6 ${model.featured ? 'featured' : ''}" 
                          data-model-id="${model.id}">
@@ -754,7 +782,7 @@
                 for (let i = 0; i < emptyStars; i++) {
                     html += '<i class="far fa-star text-gray-300 text-xs"></i>';
                 }
-                
+
                 return html;
             }
 
@@ -771,7 +799,7 @@
                 document.getElementById('maxPrice').value = '';
                 document.getElementById('featuredOnly').checked = false;
                 document.getElementById('sortBy').value = 'rating';
-                
+
                 document.querySelectorAll('.provider-filter').forEach(checkbox => {
                     checkbox.checked = true;
                 });
@@ -786,11 +814,11 @@
                     document.getElementById('listView').className = 'p-2 bg-gray-200 text-gray-600 rounded hover:bg-gray-300';
                     document.getElementById('modelsContainer').className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
                 } else {
-                    document.getElementById('listView').className = 'p-2 bg-blue-500 text-white rounded hover:bg-blue-600'; 
+                    document.getElementById('listView').className = 'p-2 bg-blue-500 text-white rounded hover:bg-blue-600';
                     document.getElementById('gridView').className = 'p-2 bg-gray-200 text-gray-600 rounded hover:bg-gray-300';
                     document.getElementById('modelsContainer').className = 'space-y-4';
                 }
-                
+
                 this.renderModels();
             }
 
@@ -816,7 +844,7 @@
             toggleAdvancedOptions() {
                 const advanced = document.getElementById('advancedOptions');
                 const icon = document.querySelector('#toggleAdvanced i');
-                
+
                 if (advanced.classList.contains('hidden')) {
                     advanced.classList.remove('hidden');
                     icon.className = 'fas fa-chevron-up mr-1';
@@ -839,7 +867,7 @@
 
             async handleUpload(e) {
                 e.preventDefault();
-                
+
                 const modelData = {
                     name: document.getElementById('modelName').value,
                     type: document.getElementById('modelCategory').value,
@@ -864,7 +892,7 @@
 
                 try {
                     this.showUploadProgress();
-                    
+
                     const response = await axios.post(`${this.apiUrl}/models`, modelData, {
                         headers: {
                             'Content-Type': 'application/json',
@@ -909,7 +937,7 @@
                     </button>
                     <p class="text-xs text-gray-500 mt-2">Supported formats: .safetensors, .bin, .onnx (max 2GB)</p>
                 `;
-                
+
                 // Re-attach event listener
                 document.getElementById('selectFileBtn').addEventListener('click', () => {
                     document.getElementById('modelFile').click();
@@ -926,12 +954,11 @@
 
             showNotification(message, type = 'info') {
                 const notification = document.createElement('div');
-                notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${
-                    type === 'error' ? 'bg-red-500' : 
-                    type === 'success' ? 'bg-green-500' : 'bg-blue-500'
-                }`;
+                notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${type === 'error' ? 'bg-red-500' :
+                        type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+                    }`;
                 notification.textContent = message;
-                
+
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 3000);
             }
@@ -943,4 +970,5 @@
         });
     </script>
 </body>
+
 </html>

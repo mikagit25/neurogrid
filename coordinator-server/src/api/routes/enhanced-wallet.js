@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticate, requireRole } = require('../../middleware/auth');
 const logger = require('../../utils/logger');
 
 const router = express.Router();

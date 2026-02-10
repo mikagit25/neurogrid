@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,27 +34,51 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .modal-backdrop { backdrop-filter: blur(4px); }
-        .gradient-bg { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); }
-        .glass-effect { 
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+        }
+
+        .glass-effect {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
         .balance-card {
             background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         }
-        .node-status-active { 
+
+        .node-status-active {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <!-- Navigation -->
     <nav class="bg-white shadow-lg border-b border-gray-200">
@@ -69,15 +94,18 @@
                         </a>
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="#" class="border-neurogrid-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        <a href="#"
+                            class="border-neurogrid-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             <i class="fas fa-tachometer-alt mr-2"></i>
                             Дашборд
                         </a>
-                        <a href="node-monitoring.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        <a href="node-monitoring.html"
+                            class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             <i class="fas fa-server mr-2"></i>
                             Узлы
                         </a>
-                        <a href="analytics.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        <a href="analytics.html"
+                            class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             <i class="fas fa-chart-bar mr-2"></i>
                             Аналитика
                         </a>
@@ -86,22 +114,27 @@
                 <div class="flex items-center space-x-4">
                     <!-- User Menu -->
                     <div class="relative">
-                        <button id="userMenuButton" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
+                        <button id="userMenuButton"
+                            class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-neurogrid-500">
                             <div class="w-8 h-8 bg-neurogrid-100 rounded-full flex items-center justify-center">
                                 <i class="fas fa-user text-neurogrid-600"></i>
                             </div>
                             <span class="ml-2 text-gray-700 font-medium" id="userName">Пользователь</span>
                             <i class="fas fa-chevron-down ml-2 text-gray-400"></i>
                         </button>
-                        <div id="userMenu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                        <div id="userMenu"
+                            class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                             <div class="py-1">
-                                <a href="#" onclick="showProfileModal()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <a href="#" onclick="showProfileModal()"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-user-circle mr-2"></i>Профиль
                                 </a>
-                                <a href="#" onclick="showWalletModal()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <a href="#" onclick="showWalletModal()"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-wallet mr-2"></i>Кошелек
                                 </a>
-                                <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <a href="#" onclick="logout()"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-sign-out-alt mr-2"></i>Выйти
                                 </a>
                             </div>
@@ -116,10 +149,12 @@
         <!-- User Type Selector -->
         <div class="mb-8">
             <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
-                <button id="clientModeBtn" onclick="switchMode('client')" class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-neurogrid-600 shadow-sm">
+                <button id="clientModeBtn" onclick="switchMode('client')"
+                    class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-neurogrid-600 shadow-sm">
                     <i class="fas fa-user mr-2"></i>Заказчик задач
                 </button>
-                <button id="nodeModeBtn" onclick="switchMode('node')" class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900">
+                <button id="nodeModeBtn" onclick="switchMode('node')"
+                    class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900">
                     <i class="fas fa-server mr-2"></i>Оператор узла
                 </button>
             </div>
@@ -190,7 +225,8 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-900">Последние задачи</h3>
-                            <button onclick="showNewTaskModal()" class="bg-neurogrid-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-neurogrid-700 transition-colors">
+                            <button onclick="showNewTaskModal()"
+                                class="bg-neurogrid-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-neurogrid-700 transition-colors">
                                 <i class="fas fa-plus mr-2"></i>Новая задача
                             </button>
                         </div>
@@ -213,13 +249,16 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Управление балансом</h3>
                         <div class="space-y-3">
-                            <button onclick="showDepositModal()" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                            <button onclick="showDepositModal()"
+                                class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
                                 <i class="fas fa-plus-circle mr-2"></i>Пополнить баланс
                             </button>
-                            <button onclick="showWithdrawModal()" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+                            <button onclick="showWithdrawModal()"
+                                class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors">
                                 <i class="fas fa-minus-circle mr-2"></i>Вывести средства
                             </button>
-                            <button onclick="showTransactionHistory()" class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                            <button onclick="showTransactionHistory()"
+                                class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-history mr-2"></i>История транзакций
                             </button>
                         </div>
@@ -273,12 +312,14 @@
                         <div>
                             <p class="text-gray-600 text-sm">Статус узла</p>
                             <p class="text-lg font-bold" id="nodeStatus">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                     Не подключен
                                 </span>
                             </p>
                         </div>
-                        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center" id="nodeStatusIcon">
+                        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center"
+                            id="nodeStatusIcon">
                             <i class="fas fa-server text-gray-600 text-xl"></i>
                         </div>
                     </div>
@@ -329,13 +370,16 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Управление узлом</h3>
                         <div class="space-y-3">
-                            <button onclick="showNodeSetup()" class="w-full bg-neurogrid-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
+                            <button onclick="showNodeSetup()"
+                                class="w-full bg-neurogrid-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-neurogrid-700 transition-colors">
                                 <i class="fas fa-cog mr-2"></i>Настроить узел
                             </button>
-                            <button onclick="toggleNode()" id="nodeToggleBtn" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                            <button onclick="toggleNode()" id="nodeToggleBtn"
+                                class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
                                 <i class="fas fa-play mr-2"></i>Запустить узел
                             </button>
-                            <button onclick="showNodeLogs()" class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                            <button onclick="showNodeLogs()"
+                                class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-file-alt mr-2"></i>Логи узла
                             </button>
                         </div>
@@ -345,10 +389,12 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Управление доходами</h3>
                         <div class="space-y-3">
-                            <button onclick="showWithdrawModal()" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                            <button onclick="showWithdrawModal()"
+                                class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
                                 <i class="fas fa-money-bill-wave mr-2"></i>Вывести доходы
                             </button>
-                            <button onclick="showEarningsHistory()" class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                            <button onclick="showEarningsHistory()"
+                                class="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-chart-line mr-2"></i>История доходов
                             </button>
                         </div>
@@ -386,7 +432,8 @@
     <div id="profileModal" class="hidden fixed inset-0 z-50 modal-backdrop">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-medium text-gray-900">Профиль пользователя</h3>
@@ -397,20 +444,26 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Email</label>
-                            <input type="email" id="profileEmail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" readonly>
+                            <input type="email" id="profileEmail"
+                                class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" readonly>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">ID пользователя</label>
-                            <input type="text" id="profileUserId" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50" readonly>
+                            <input type="text" id="profileUserId"
+                                class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+                                readonly>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Дата регистрации</label>
-                            <input type="text" id="profileCreatedAt" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50" readonly>
+                            <input type="text" id="profileCreatedAt"
+                                class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+                                readonly>
                         </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button onclick="closeModal('profileModal')" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:ml-3 sm:w-auto">
+                    <button onclick="closeModal('profileModal')"
+                        class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:ml-3 sm:w-auto">
                         Закрыть
                     </button>
                 </div>
@@ -422,7 +475,8 @@
     <div id="walletModal" class="hidden fixed inset-0 z-50 modal-backdrop">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-medium text-gray-900">Управление кошельком</h3>
@@ -430,20 +484,24 @@
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    
+
                     <!-- Wallet Tabs -->
                     <div class="border-b border-gray-200 mb-4">
                         <nav class="-mb-px flex space-x-8">
-                            <button onclick="switchWalletTab('balance')" id="balanceTab" class="wallet-tab border-b-2 border-neurogrid-500 text-neurogrid-600 py-2 px-1 text-sm font-medium">
+                            <button onclick="switchWalletTab('balance')" id="balanceTab"
+                                class="wallet-tab border-b-2 border-neurogrid-500 text-neurogrid-600 py-2 px-1 text-sm font-medium">
                                 Баланс
                             </button>
-                            <button onclick="switchWalletTab('deposit')" id="depositTab" class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+                            <button onclick="switchWalletTab('deposit')" id="depositTab"
+                                class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
                                 Пополнение
                             </button>
-                            <button onclick="switchWalletTab('withdraw')" id="withdrawTab" class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+                            <button onclick="switchWalletTab('withdraw')" id="withdrawTab"
+                                class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
                                 Вывод
                             </button>
-                            <button onclick="switchWalletTab('history')" id="historyTab" class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+                            <button onclick="switchWalletTab('history')" id="historyTab"
+                                class="wallet-tab border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
                                 История
                             </button>
                         </nav>
@@ -468,18 +526,18 @@
         let performanceChart = null;
 
         // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initializeDashboard();
             loadUserData();
-            
+
             // Setup user menu toggle
-            document.getElementById('userMenuButton').addEventListener('click', function() {
+            document.getElementById('userMenuButton').addEventListener('click', function () {
                 const menu = document.getElementById('userMenu');
                 menu.classList.toggle('hidden');
             });
 
             // Close user menu when clicking outside
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 const menu = document.getElementById('userMenu');
                 const button = document.getElementById('userMenuButton');
                 if (!button.contains(event.target) && !menu.contains(event.target)) {
@@ -501,7 +559,7 @@
                 // Load dashboard data
                 await loadUserProfile();
                 await loadDashboardData();
-                
+
             } catch (error) {
                 console.error('Dashboard initialization error:', error);
                 showNotification('Ошибка инициализации дашборда', 'error');
@@ -588,26 +646,26 @@
         // Switch between client and node mode
         function switchMode(mode) {
             currentMode = mode;
-            
+
             // Update buttons
             const clientBtn = document.getElementById('clientModeBtn');
             const nodeBtn = document.getElementById('nodeModeBtn');
-            
+
             if (mode === 'client') {
                 clientBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-neurogrid-600 shadow-sm';
                 nodeBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900';
-                
+
                 document.getElementById('clientDashboard').classList.remove('hidden');
                 document.getElementById('nodeDashboard').classList.add('hidden');
-                
+
                 loadClientData();
             } else {
                 nodeBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-white text-neurogrid-600 shadow-sm';
                 clientBtn.className = 'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-600 hover:text-gray-900';
-                
+
                 document.getElementById('nodeDashboard').classList.remove('hidden');
                 document.getElementById('clientDashboard').classList.add('hidden');
-                
+
                 loadNodeData();
             }
         }
@@ -615,7 +673,7 @@
         // Load client tasks (mock data)
         function loadClientTasks() {
             const tasksContainer = document.getElementById('clientTasksList');
-            
+
             // Mock tasks data
             const mockTasks = [
                 { id: 1, model: 'GPT-4', status: 'completed', prompt: 'Analyze market data...', cost: 2.5, createdAt: new Date(Date.now() - 3600000) },
@@ -697,7 +755,7 @@
 
             const statusElement = document.getElementById('nodeStatus');
             const statusIcon = document.getElementById('nodeStatusIcon');
-            
+
             if (nodeData.status === 'active') {
                 statusElement.innerHTML = `
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 node-status-active">
@@ -726,7 +784,7 @@
         // Initialize performance chart
         function initializePerformanceChart() {
             const ctx = document.getElementById('nodePerformanceChart').getContext('2d');
-            
+
             if (performanceChart) {
                 performanceChart.destroy();
             }
@@ -789,7 +847,7 @@
 
             // Load content
             const content = document.getElementById('walletContent');
-            switch(tab) {
+            switch (tab) {
                 case 'balance':
                     loadWalletBalance(content);
                     break;
@@ -824,7 +882,7 @@
                     </div>
                 </div>
             `;
-            
+
             // Load actual balance
             loadModalBalance();
         }
@@ -938,11 +996,11 @@
                     </div>
                 </form>
             `;
-            
+
             // Initialize payment method UI
             updatePaymentMethodUI();
             updateDepositPreview();
-            
+
             // Initialize Stripe Elements if card is selected
             if (window.paymentService) {
                 setTimeout(() => {
@@ -1035,7 +1093,7 @@
                     </div>
                 </form>
             `;
-            
+
             updateWithdrawMethodUI();
             updateWithdrawPreview();
         }
@@ -1078,7 +1136,7 @@
         // Payment handlers
         async function handleDeposit(event) {
             event.preventDefault();
-            
+
             const form = event.target;
             const formData = new FormData(form);
             const depositData = {
@@ -1090,9 +1148,9 @@
 
             try {
                 showNotification('Создание платежа...', 'info');
-                
+
                 const paymentIntent = await paymentService.createDeposit(depositData);
-                
+
                 if (depositData.paymentMethod === 'card') {
                     await processCardPayment(paymentIntent);
                 } else if (depositData.paymentMethod === 'crypto') {
@@ -1110,21 +1168,21 @@
 
         async function handleWithdraw(event) {
             event.preventDefault();
-            
+
             const form = event.target;
             const formData = new FormData(form);
-            
+
             // Get destination based on withdrawal method
             const withdrawalMethod = formData.get('withdrawalMethod');
             const destinationValue = formData.get('destination');
-            
+
             let destination = {};
             if (withdrawalMethod === 'paypal') {
                 destination.email = destinationValue;
             } else if (withdrawalMethod === 'bank') {
                 destination.bankAccount = destinationValue;
             }
-            
+
             const withdrawalData = {
                 tokenAmount: parseFloat(formData.get('tokenAmount')),
                 currency: formData.get('currency'),
@@ -1134,9 +1192,9 @@
 
             try {
                 showNotification('Создание запроса на вывод...', 'info');
-                
+
                 const withdrawalRequest = await paymentService.createWithdrawal(withdrawalData);
-                
+
                 showNotification('Запрос на вывод создан! ID: ' + withdrawalRequest.id, 'success');
                 closeModal('walletModal');
                 loadModalBalance(); // Refresh balance
@@ -1190,14 +1248,14 @@
         function showNotification(message, type = 'info') {
             const container = document.getElementById('notificationContainer');
             const notification = document.createElement('div');
-            
+
             const typeClasses = {
                 'success': 'bg-green-500',
                 'error': 'bg-red-500',
                 'warning': 'bg-yellow-500',
                 'info': 'bg-blue-500'
             };
-            
+
             notification.className = `${typeClasses[type]} text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
             notification.innerHTML = `
                 <div class="flex items-center justify-between">
@@ -1207,14 +1265,14 @@
                     </button>
                 </div>
             `;
-            
+
             container.appendChild(notification);
-            
+
             // Animate in
             setTimeout(() => {
                 notification.classList.remove('translate-x-full');
             }, 100);
-            
+
             // Auto remove after 5 seconds
             setTimeout(() => {
                 notification.classList.add('translate-x-full');
@@ -1235,7 +1293,7 @@
             const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
             const cardSection = document.getElementById('cardInputSection');
             const cryptoSection = document.getElementById('cryptoInputSection');
-            
+
             if (cardSection && cryptoSection) {
                 if (selectedMethod === 'card') {
                     cardSection.classList.remove('hidden');
@@ -1248,7 +1306,7 @@
                     cryptoSection.classList.add('hidden');
                 }
             }
-            
+
             // Update selected visual state
             document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
                 const label = radio.closest('label');
@@ -1264,22 +1322,22 @@
 
         function updateDepositPreview() {
             if (!paymentService) return;
-            
+
             const amountInput = document.querySelector('input[name="amount"]');
             const currencySelect = document.querySelector('select[name="currency"]');
             const paymentMethodRadio = document.querySelector('input[name="paymentMethod"]:checked');
-            
+
             if (amountInput && currencySelect && paymentMethodRadio) {
                 const amount = parseFloat(amountInput.value) || 0;
                 const currency = currencySelect.value;
                 const paymentMethod = paymentMethodRadio.value;
-                
+
                 const neuroAmount = paymentService.convertToNeuro(amount, currency);
                 const fees = paymentService.calculateFees(amount, currency, paymentMethod);
-                
+
                 const neuroAmountEl = document.getElementById('neuroAmount');
                 const feeAmountEl = document.getElementById('feeAmount');
-                
+
                 if (neuroAmountEl) {
                     neuroAmountEl.textContent = neuroAmount.toFixed(4);
                 }
@@ -1292,13 +1350,13 @@
         function initializeStripeElements() {
             const cardElement = document.getElementById('card-element');
             if (!cardElement || !window.Stripe) return;
-            
+
             // Initialize Stripe with test key (should be from environment)
             const publishableKey = 'pk_test_51234567890abcdef'; // This should come from backend
-            
+
             try {
                 stripeElements = paymentService.initStripeElements('#card-element', publishableKey);
-                
+
                 if (stripeElements && stripeElements.cardElement) {
                     stripeElements.cardElement.on('change', (event) => {
                         const errorElement = document.getElementById('card-errors');
@@ -1324,11 +1382,11 @@
             if (!stripeElements || !stripeElements.cardElement) {
                 throw new Error('Stripe не инициализирован');
             }
-            
+
             try {
                 showNotification('Обработка платежа...', 'info');
                 const result = await paymentService.processStripePayment(paymentIntent, stripeElements.cardElement);
-                
+
                 if (result.status === 'succeeded') {
                     showNotification('Платеж успешно выполнен!', 'success');
                     closeModal('walletModal');
@@ -1344,10 +1402,10 @@
 
         function showCryptoPayment(paymentIntent) {
             const cryptoInfo = paymentService.displayCryptoPayment(paymentIntent);
-            
+
             // Close the wallet modal and show crypto payment modal
             closeModal('walletModal');
-            
+
             // Create and show crypto payment modal
             const modalHtml = `
                 <div id="cryptoPaymentModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center z-50">
@@ -1407,7 +1465,7 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
@@ -1421,21 +1479,21 @@
 
         function updateWithdrawPreview() {
             if (!paymentService) return;
-            
+
             const tokenAmountInput = document.querySelector('input[name="tokenAmount"]');
             const currencySelect = document.querySelector('select[name="currency"]');
-            
+
             if (tokenAmountInput && currencySelect) {
                 const tokenAmount = parseFloat(tokenAmountInput.value) || 0;
                 const currency = currencySelect.value;
-                
+
                 const fiatAmount = paymentService.convertFromNeuro(tokenAmount, currency);
                 const fee = fiatAmount * 0.02; // 2% fee
                 const netAmount = fiatAmount - fee;
-                
+
                 const withdrawFiatAmountEl = document.getElementById('withdrawFiatAmount');
                 const withdrawFeeAmountEl = document.getElementById('withdrawFeeAmount');
-                
+
                 if (withdrawFiatAmountEl) {
                     withdrawFiatAmountEl.textContent = paymentService.formatAmount(netAmount, currency);
                 }
@@ -1449,7 +1507,7 @@
             const selectedMethod = document.querySelector('input[name="withdrawalMethod"]:checked')?.value;
             const paypalDestination = document.getElementById('paypalDestination');
             const bankDestination = document.getElementById('bankDestination');
-            
+
             if (paypalDestination && bankDestination) {
                 if (selectedMethod === 'paypal') {
                     paypalDestination.classList.remove('hidden');
@@ -1463,7 +1521,7 @@
                     bankDestination.querySelector('textarea').required = true;
                 }
             }
-            
+
             // Update selected visual state
             document.querySelectorAll('input[name="withdrawalMethod"]').forEach(radio => {
                 const label = radio.closest('label');
@@ -1487,11 +1545,11 @@
                 }
             }, 1000);
         }
-        
+
         // Initialize payment service when page loads
         document.addEventListener('DOMContentLoaded', () => {
             paymentService = new PaymentService();
-            
+
             // Add event listeners for live updates
             document.addEventListener('input', (e) => {
                 if (e.target.name === 'amount') {
@@ -1500,7 +1558,7 @@
                     updateWithdrawPreview();
                 }
             });
-            
+
             document.addEventListener('change', (e) => {
                 if (e.target.name === 'currency' || e.target.name === 'paymentMethod') {
                     updateDepositPreview();
@@ -1511,4 +1569,5 @@
         });
     </script>
 </body>
+
 </html>

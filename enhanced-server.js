@@ -60,6 +60,13 @@ const Phase3Manager = require('./src/phase3/Phase3Manager');
 // Import Phase 4 DeFi Manager
 const Phase4DeFiManager = require('./src/phase4/Phase4DeFiManager');
 
+// Import Advanced Production Components
+const { getRateLimiter } = require('./src/middleware/advancedRateLimiter');
+const { createWebSocketManager } = require('./src/websocket/taskUpdates');
+const { createMonitoringDashboard } = require('./src/monitoring/dashboard');
+const { createCacheManager } = require('./src/cache/manager');
+const { DatabaseMigrator } = require('./src/database/migrator');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -153,6 +160,19 @@ const phase3Manager = new Phase3Manager();
 // Initialize Phase 4 DeFi Manager
 const phase4Manager = new Phase4DeFiManager();
 
+// Initialize Advanced Production Components
+const rateLimiter = getRateLimiter();
+const cacheManager = createCacheManager();
+const wsManager = createWebSocketManager();
+const monitoringDashboard = createMonitoringDashboard();
+const dbMigrator = new DatabaseMigrator();
+
+console.log('🛡️ Advanced rate limiter initialized');
+console.log('📡 Real-time WebSocket manager initialized'); 
+console.log('📊 Monitoring dashboard initialized');
+console.log('💾 Cache manager initialized');
+console.log('🗄️ Database migrator initialized');
+
 console.log('🤖 Smart Model Router initialized');
 console.log('📊 Available coordinators:', modelRouter.getCoordinatorStats().length);
 
@@ -160,14 +180,33 @@ console.log('📊 Available coordinators:', modelRouter.getCoordinatorStats().le
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Performance monitoring middleware
+// Initialize advanced WebSocket manager
+wsManager.initialize(server);
+
+// Advanced rate limiting middleware (before other middleware)
+app.use(rateLimiter.middleware);
+
+// Monitoring dashboard routes
+app.use('/api/monitoring', monitoringDashboard.getRouter());
+
+// Enhanced performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = perfMonitor.recordRequestStart();
 
   // Override res.end to capture response time
   const originalEnd = res.end;
   res.end = function (...args) {
+    const duration = Date.now() - req.startTime;
     const responseTime = perfMonitor.recordRequestEnd(req.startTime, res.statusCode < 400);
+    
+    // Record metrics in monitoring dashboard
+    monitoringDashboard.recordHttpRequest(
+      req.method,
+      req.route?.path || req.path,
+      res.statusCode,
+      duration
+    );
+    
     console.log(`📊 ${req.method} ${req.path} - ${res.statusCode} (${responseTime}ms)`);
     originalEnd.apply(this, args);
   };
@@ -456,6 +495,75 @@ app.get('/api/nodes/stats', (req, res) => {
     success: true,
     data: mockStats
   });
+});
+
+// Enhanced tasks endpoint with caching and monitoring
+app.get('/api/tasks/:taskId?', async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    
+    if (taskId) {
+      // Get specific task
+      const cacheKey = `task:${taskId}`;
+      let task = await cacheManager.get(cacheKey, { tier: 'warm' });
+      
+      if (!task) {
+        // Mock task data (in production, this would come from database)
+        task = {
+          id: taskId,
+          status: 'completed', // or 'pending', 'processing', 'failed'
+          result: 'This is a mock task result',
+          createdAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          processingTime: 1500,
+          model: 'gpt-3.5-turbo'
+        };
+        
+        // Cache the task for future requests
+        await cacheManager.set(cacheKey, task, { tier: 'warm', ttl: 300 });
+      }
+      
+      res.json({
+        success: true,
+        task
+      });
+    } else {
+      // Get tasks list with caching
+      const { status, limit = 20, offset = 0 } = req.query;
+      const listCacheKey = `tasks:list:${status || 'all'}:${limit}:${offset}`;
+      
+      let tasks = await cacheManager.get(listCacheKey, { tier: 'cold' });
+      
+      if (!tasks) {
+        // Mock tasks list (in production, this would come from database)
+        tasks = Array.from({ length: parseInt(limit) }, (_, i) => ({
+          id: `task-${Date.now() - i * 1000}`,
+          status: 'completed',
+          type: 'text-generation',
+          createdAt: new Date(Date.now() - i * 60000).toISOString(),
+          processingTime: Math.floor(Math.random() * 5000) + 500
+        }));
+        
+        // Cache the list
+        await cacheManager.set(listCacheKey, tasks, { tier: 'cold', ttl: 120 });
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          tasks,
+          total: tasks.length
+        }
+      });
+    }
+    
+  } catch (error) {
+    console.error('Get tasks error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch tasks'
+    });
+  }
 });
 
 // Real tasks endpoints with authentication - TEMPORARILY DISABLED
@@ -2950,19 +3058,61 @@ app.get('/api/auth/profile', authenticateToken, async (req, res) => {
 */
 
 app.post('/api/tasks', async (req, res) => {
+  const startTime = Date.now();
+  
   try {
-    const { model, input, priority = 5, type = 'text-generation', title } = req.body;
+    const { model, input, priority = 5, type = 'text-generation', title, metadata } = req.body;
 
     if (!input) {
+      monitoringDashboard.recordTaskMetrics('failed', 'unknown', 0);
       return res.status(400).json({
         success: false,
         error: 'Input is required'
       });
     }
 
-    // Mock task processing without database
     const taskId = `task-${Date.now()}`;
     
+    // Check cache for identical requests
+    const inputHash = require('crypto').createHash('sha256').update(input).digest('hex').substring(0, 16);
+    const cachedResult = await cacheManager.getCachedModelResult(model || 'auto', inputHash);
+    
+    if (cachedResult) {
+      console.log(`💾 Cache hit for task ${taskId}`);
+      
+      // Notify via WebSocket (if the user is connected)
+      wsManager.notifyTaskUpdate(taskId, {
+        status: 'completed',
+        result: cachedResult.result,
+        cached: true,
+        processingTime: 0
+      });
+      
+      monitoringDashboard.recordTaskMetrics('completed', model || 'auto', 0);
+      
+      return res.json({
+        success: true,
+        taskId,
+        task: {
+          id: taskId,
+          status: 'completed',
+          result: cachedResult.result,
+          processingTime: 0,
+          cached: true,
+          model: model || 'auto',
+          createdAt: new Date().toISOString(),
+          completedAt: new Date().toISOString()
+        }
+      });
+    }
+
+    // Notify start of processing
+    wsManager.notifyTaskUpdate(taskId, {
+      status: 'processing',
+      model: model || 'auto',
+      startedAt: new Date().toISOString()
+    });
+
     // If using smart router, process immediately
     if (!model || model === 'auto' || model === 'smart') {
       try {
@@ -2970,40 +3120,87 @@ app.post('/api/tasks', async (req, res) => {
           prompt: input,
           type,
           complexity: 'medium',
-          priority: priority || 'normal'
+          priority: priority || 'normal',
+          metadata
         };
 
         const result = await modelRouter.processTask(task);
+        const processingTime = Date.now() - startTime;
+        
+        // Cache the result
+        await cacheManager.cacheModelResult(model || 'auto', inputHash, result.result, {
+          tier: 'hot',
+          ttl: 300 // 5 minutes for AI results
+        });
+        
+        // Notify completion via WebSocket
+        wsManager.notifyTaskUpdate(taskId, {
+          status: 'completed',
+          result: result.result,
+          processingTime,
+          cost: result.cost,
+          model: result.coordinator,
+          completedAt: new Date().toISOString()
+        });
+        
+        // Record metrics
+        monitoringDashboard.recordTaskMetrics('completed', result.coordinator, processingTime);
         
         return res.json({
           success: true,
+          taskId,
           task: {
             id: taskId,
             status: 'completed',
             result: result.result,
-            processingTime: result.processingTime,
+            processingTime: processingTime,
             cost: result.cost,
-            model: result.coordinator
+            model: result.coordinator,
+            createdAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            metadata
           }
         });
       } catch (processingError) {
         console.error('Task processing failed:', processingError);
         
+        const processingTime = Date.now() - startTime;
+        
+        // Notify failure via WebSocket
+        wsManager.notifyTaskUpdate(taskId, {
+          status: 'failed',
+          error: processingError.message,
+          processingTime,
+          failedAt: new Date().toISOString()
+        });
+        
+        // Record failure metrics
+        monitoringDashboard.recordTaskMetrics('failed', model || 'auto', processingTime);
+        
         return res.status(500).json({
           success: false,
           error: 'Task processing failed',
-          taskId: taskId
+          taskId: taskId,
+          details: processingError.message
         });
       }
     } else {
-      // Queue task for processing
+      // Queue task for processing (mock implementation)
+      wsManager.notifyTaskUpdate(taskId, {
+        status: 'pending',
+        model: model,
+        queuedAt: new Date().toISOString()
+      });
+      
       return res.json({
         success: true,
+        taskId,
         task: {
           id: taskId,
           status: 'pending',
           model: model,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          metadata
         }
       });
     }
@@ -3680,7 +3877,7 @@ async function handleStreamingImageRequest(ws, data) {
 }
 
 // Graceful shutdown handlers
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n🛑 Received SIGINT. Gracefully shutting down...');
   
   // Save economy data before shutdown
@@ -3688,19 +3885,31 @@ process.on('SIGINT', () => {
   socialManager.destroy();
   analyticsManager.destroy();
   
+  // Shutdown advanced components
+  if (cacheManager) await cacheManager.shutdown();
+  if (wsManager) await wsManager.shutdown();
+  if (monitoringDashboard) monitoringDashboard.shutdown();
+  if (dbMigrator) await dbMigrator.shutdown();
+  
   server.close(() => {
-    console.log('💰 Economy data saved. Server stopped.');
+    console.log('💰 Economy data saved. All advanced components shutdown. Server stopped.');
     process.exit(0);
   });
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('\n🛑 Received SIGTERM. Gracefully shutting down...');
   
   // Save economy data before shutdown
   neuroEconomy.destroy();
   socialManager.destroy();
   analyticsManager.destroy();
+  
+  // Shutdown advanced components
+  if (cacheManager) await cacheManager.shutdown();
+  if (wsManager) await wsManager.shutdown();
+  if (monitoringDashboard) monitoringDashboard.shutdown();
+  if (dbMigrator) await dbMigrator.shutdown();
   
   server.close(() => {
     console.log('💰 Economy data saved. Server stopped.');

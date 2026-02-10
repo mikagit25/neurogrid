@@ -12,13 +12,13 @@ class NEUROEconomyManager {
         this.balancesFile = path.join(__dirname, '../data/neuro-balances.json');
         this.transactionsFile = path.join(__dirname, '../data/neuro-transactions.json');
         this.stakingFile = path.join(__dirname, '../data/neuro-staking.json');
-        
+
         // In-memory storage
         this.balances = new Map(); // userAddress -> balance
         this.transactions = [];
         this.stakingPools = new Map(); // modelId -> staking info
         this.rewards = new Map(); // userAddress -> pending rewards
-        
+
         // Economy settings
         this.settings = {
             initial_balance: 100.0, // New users get 100 NEURO
@@ -34,7 +34,7 @@ class NEUROEconomyManager {
         console.log('💰 NEURO Economy Manager initialized');
         this.ensureDirectories();
         this.loadEconomyData();
-        
+
         // Start periodic reward distribution
         this.rewardInterval = setInterval(() => this.distributeStakingRewards(), 60000); // Every minute
     }
@@ -158,7 +158,7 @@ class NEUROEconomyManager {
     createUser(userAddress) {
         if (!this.balances.has(userAddress)) {
             this.balances.set(userAddress, this.settings.initial_balance);
-            
+
             // Record initial grant transaction
             const transaction = {
                 id: this.generateTransactionId(),
@@ -170,12 +170,12 @@ class NEUROEconomyManager {
                 timestamp: new Date().toISOString(),
                 status: 'completed'
             };
-            
+
             this.transactions.push(transaction);
             this.saveEconomyData();
-            
+
             console.log(`💰 Created new user with ${this.settings.initial_balance} NEURO: ${userAddress.substring(0, 10)}...`);
-            
+
             return {
                 success: true,
                 balance: this.settings.initial_balance,
@@ -366,7 +366,7 @@ class NEUROEconomyManager {
             this.balances.set(userAddress, userBalance + amount);
             pool.total_staked -= amount;
             pool.stakers.set(userAddress, userStake - amount);
-            
+
             // Remove if 0
             if (pool.stakers.get(userAddress) === 0) {
                 pool.stakers.delete(userAddress);
@@ -420,10 +420,10 @@ class NEUROEconomyManager {
                     // Calculate rewards based on staked amount and time
                     const annualRate = this.settings.staking_reward_rate;
                     const minuteRate = annualRate / (365 * 24 * 60); // Per minute rate
-                    
+
                     for (const [userAddress, stakedAmount] of pool.stakers.entries()) {
                         const reward = stakedAmount * minuteRate;
-                        
+
                         if (reward > 0) {
                             // Add to pending rewards
                             const pendingRewards = this.rewards.get(userAddress) || 0;
@@ -448,15 +448,15 @@ class NEUROEconomyManager {
      */
     claimRewards(userAddress) {
         const pendingRewards = this.rewards.get(userAddress) || 0;
-        
+
         if (pendingRewards > 0) {
             // Add to balance
             const currentBalance = this.getBalance(userAddress);
             this.balances.set(userAddress, currentBalance + pendingRewards);
-            
+
             // Clear pending rewards
             this.rewards.set(userAddress, 0);
-            
+
             // Record transaction
             const transaction = {
                 id: this.generateTransactionId(),
@@ -468,12 +468,12 @@ class NEUROEconomyManager {
                 timestamp: new Date().toISOString(),
                 status: 'completed'
             };
-            
+
             this.transactions.push(transaction);
             this.saveEconomyData();
-            
+
             console.log(`🎁 Claimed ${pendingRewards.toFixed(4)} NEURO rewards for ${userAddress.substring(0, 10)}...`);
-            
+
             return {
                 success: true,
                 claimed_amount: pendingRewards,
@@ -481,7 +481,7 @@ class NEUROEconomyManager {
                 transaction_id: transaction.id
             };
         }
-        
+
         return {
             success: false,
             error: 'No rewards to claim',
@@ -495,7 +495,7 @@ class NEUROEconomyManager {
     getUserStaking(userAddress) {
         const stakes = [];
         let totalStaked = 0;
-        
+
         for (const [modelId, pool] of this.stakingPools.entries()) {
             const userStake = pool.stakers.get(userAddress) || 0;
             if (userStake > 0) {
@@ -508,7 +508,7 @@ class NEUROEconomyManager {
                 totalStaked += userStake;
             }
         }
-        
+
         return {
             total_staked: totalStaked,
             pending_rewards: this.rewards.get(userAddress) || 0,
@@ -544,7 +544,7 @@ class NEUROEconomyManager {
         const totalSupply = Array.from(this.balances.values()).reduce((sum, balance) => sum + balance, 0);
         const totalStaked = Array.from(this.stakingPools.values()).reduce((sum, pool) => sum + pool.total_staked, 0);
         const totalRewards = Array.from(this.rewards.values()).reduce((sum, reward) => sum + reward, 0);
-        
+
         return {
             total_supply: Math.round(totalSupply * 1000) / 1000,
             circulating_supply: Math.round((totalSupply - totalStaked) * 1000) / 1000,

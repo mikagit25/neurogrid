@@ -32,7 +32,7 @@ global.testUtils = {
         headers: {},
         ...options
     }),
-    
+
     createMockRes: () => {
         const res = {};
         res.status = jest.fn().mockReturnValue(res);

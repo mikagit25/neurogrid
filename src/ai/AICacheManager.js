@@ -16,9 +16,9 @@ class AICacheManager {
             saves: 0,
             evictions: 0
         };
-        
+
         console.log(`🧠 AI Cache Manager initialized: maxSize=${maxSize}, TTL=${ttlHours}h`);
-        
+
         // Cleanup expired entries every hour
         this.cleanupInterval = setInterval(() => this.cleanup(), 60 * 60 * 1000);
     }
@@ -40,7 +40,7 @@ class AICacheManager {
                 guidance: options.guidance || 7.5
             }
         };
-        
+
         const serialized = JSON.stringify(data);
         return crypto.createHash('sha256').update(serialized).digest('hex').substring(0, 16);
     }
@@ -50,7 +50,7 @@ class AICacheManager {
      */
     get(key) {
         const entry = this.cache.get(key);
-        
+
         if (!entry) {
             this.stats.misses++;
             return null;
@@ -65,7 +65,7 @@ class AICacheManager {
 
         this.stats.hits++;
         console.log(`💾 Cache HIT for key: ${key} (age: ${Math.round((Date.now() - entry.timestamp) / 1000 / 60)}min)`);
-        
+
         return {
             ...entry.data,
             cached: true,
@@ -99,7 +99,7 @@ class AICacheManager {
 
         this.cache.set(key, entry);
         this.stats.saves++;
-        
+
         console.log(`💾 Cached ${type} result for key: ${key} (cache size: ${this.cache.size})`);
         return true;
     }
@@ -116,7 +116,7 @@ class AICacheManager {
         // Don't cache inputs with time-sensitive queries
         const timeKeywords = ['today', 'now', 'current', 'latest', 'recent', 'this week', 'this month', '2026'];
         const lowerInput = input.toLowerCase();
-        
+
         if (timeKeywords.some(keyword => lowerInput.includes(keyword))) {
             return false;
         }
@@ -165,7 +165,7 @@ class AICacheManager {
         }
 
         expired.forEach(key => this.cache.delete(key));
-        
+
         if (expired.length > 0) {
             console.log(`🧹 Cleaned up ${expired.length} expired cache entries`);
         }
@@ -178,7 +178,7 @@ class AICacheManager {
      */
     getStats() {
         const hitRate = this.stats.hits / (this.stats.hits + this.stats.misses) * 100;
-        
+
         return {
             size: this.cache.size,
             maxSize: this.maxSize,
@@ -193,13 +193,13 @@ class AICacheManager {
      */
     estimateMemoryUsage() {
         let totalSize = 0;
-        
+
         for (const [key, entry] of this.cache.entries()) {
             // Approximate size calculation
             totalSize += key.length * 2; // UTF-16
             totalSize += JSON.stringify(entry).length * 2;
         }
-        
+
         return Math.round(totalSize / 1024); // Return in KB
     }
 
@@ -215,7 +215,7 @@ class AICacheManager {
             saves: 0,
             evictions: 0
         };
-        
+
         console.log(`🧹 Cache cleared: removed ${size} entries`);
         return size;
     }
@@ -225,7 +225,7 @@ class AICacheManager {
      */
     getEntriesForModel(model) {
         const entries = [];
-        
+
         for (const [key, entry] of this.cache.entries()) {
             const age = Math.round((Date.now() - entry.timestamp) / 1000 / 60);
             entries.push({
@@ -236,7 +236,7 @@ class AICacheManager {
                 size_kb: Math.round(JSON.stringify(entry).length / 1024)
             });
         }
-        
+
         return entries.sort((a, b) => b.age_minutes - a.age_minutes);
     }
 

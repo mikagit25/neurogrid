@@ -338,7 +338,7 @@ class ModelManager {
 
         if (filters.search) {
             const search = filters.search.toLowerCase();
-            models = models.filter(m => 
+            models = models.filter(m =>
                 m.name.toLowerCase().includes(search) ||
                 m.description.toLowerCase().includes(search) ||
                 m.tags.some(tag => tag.toLowerCase().includes(search))
@@ -380,7 +380,7 @@ class ModelManager {
      */
     async updateModel(modelId, updates, authorAddress) {
         const model = this.models.get(modelId);
-        
+
         if (!model) {
             return {
                 success: false,
@@ -431,7 +431,7 @@ class ModelManager {
      */
     async deleteModel(modelId, authorAddress) {
         const model = this.models.get(modelId);
-        
+
         if (!model) {
             return {
                 success: false,
@@ -475,7 +475,7 @@ class ModelManager {
      */
     getMarketplaceStats() {
         const models = Array.from(this.models.values());
-        
+
         return {
             total_models: models.length,
             total_downloads: models.reduce((sum, m) => sum + (m.downloads || 0), 0),
@@ -495,7 +495,7 @@ class ModelManager {
      */
     getTopAuthors(models) {
         const authors = {};
-        
+
         models.forEach(model => {
             const address = model.author_address;
             if (!authors[address]) {
@@ -507,7 +507,7 @@ class ModelManager {
                     avg_rating: 0
                 };
             }
-            
+
             authors[address].models_count++;
             authors[address].total_downloads += model.downloads || 0;
         });

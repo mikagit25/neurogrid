@@ -9,16 +9,16 @@ const EventEmitter = require('events');
 class CompoundV3Manager extends EventEmitter {
     constructor(config = {}) {
         super();
-        
+
         this.managerId = 'compound_v3_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-        
+
         // Compound V3 Configuration
         this.config = {
             // Contract Addresses (Ethereum Mainnet)
             comet_usdc: '0xc3d688B66703497DAA19ca5c9b45b73b58d8B9EC',
             comet_eth: '0xA17581A9E3356d9A858b789D68B4d866e593aE94',
             rewards: '0x1B0e765F6224C21223AeA2af16c1C46E38885a40',
-            
+
             supported_markets: ['USDC', 'ETH'],
             market_configs: {
                 USDC: {
@@ -46,19 +46,19 @@ class CompoundV3Manager extends EventEmitter {
                     }
                 }
             },
-            
+
             // Governance & Rewards
             comp_token: {
                 address: '0xc00e94Cb662C3520282E6f5717214004A7f26888',
                 decimals: 18,
                 reward_rate: 0.05 // 5% APY in COMP
             },
-            
+
             // Protocol Parameters
             liquidation_factor: 0.95,
             close_factor: 0.5,
             reserve_factor: 0.1,
-            
+
             ...config
         };
 
@@ -66,7 +66,7 @@ class CompoundV3Manager extends EventEmitter {
         this.userPositions = new Map();
         this.supplyPositions = new Map();
         this.rewardsEarned = new Map();
-        
+
         // Analytics
         this.analytics = {
             total_supplied_usdc: 0,
@@ -85,7 +85,7 @@ class CompoundV3Manager extends EventEmitter {
      */
     async supply(params) {
         const { market, amount, user } = params;
-        
+
         console.log(`🔄 Supplying ${amount} to ${market} market for user ${user}`);
 
         try {
@@ -95,13 +95,13 @@ class CompoundV3Manager extends EventEmitter {
             }
 
             const marketConfig = this.config.market_configs[market];
-            
+
             // Create supply position
             const positionId = `compound_supply_${market}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-            
+
             const supplyAPY = this.calculateSupplyAPY(market);
             const compRewardAPY = this.calculateCOMPRewardAPY(market);
-            
+
             const position = {
                 id: positionId,
                 market,
@@ -118,7 +118,7 @@ class CompoundV3Manager extends EventEmitter {
 
             // Store position
             this.supplyPositions.set(positionId, position);
-            
+
             // Update user positions
             if (!this.userPositions.has(user)) {
                 this.userPositions.set(user, {
@@ -127,19 +127,19 @@ class CompoundV3Manager extends EventEmitter {
                     comp_rewards: 0
                 });
             }
-            
+
             const userPosition = this.userPositions.get(user);
             userPosition.supplies.set(positionId, position);
-            
+
             // Update analytics
             if (market === 'USDC') {
                 this.analytics.total_supplied_usdc += parseFloat(amount);
             } else if (market === 'ETH') {
                 this.analytics.total_supplied_eth += parseFloat(amount);
             }
-            
+
             this.analytics.active_suppliers = this.userPositions.size;
-            
+
             // Start monitoring for rewards
             this.startRewardTracking(positionId);
 
@@ -178,7 +178,7 @@ class CompoundV3Manager extends EventEmitter {
      */
     async withdraw(params) {
         const { market, amount, user } = params;
-        
+
         console.log(`🔄 Withdrawing ${amount} ${market} for user ${user}`);
 
         try {
@@ -189,17 +189,17 @@ class CompoundV3Manager extends EventEmitter {
 
             let totalAvailable = 0;
             const marketSupplies = [];
-            
+
             for (const [posId, position] of userPosition.supplies) {
                 if (position.market === market) {
                     const availableAmount = position.amount + position.accrued_interest;
                     totalAvailable += availableAmount;
-                    marketSupplies.push({...position, available_amount: availableAmount});
+                    marketSupplies.push({ ...position, available_amount: availableAmount });
                 }
             }
 
             const withdrawAmount = amount === 'max' ? totalAvailable : parseFloat(amount);
-            
+
             if (withdrawAmount > totalAvailable) {
                 throw new Error(`Insufficient balance. Available: ${totalAvailable}, Requested: ${withdrawAmount}`);
             }
@@ -211,16 +211,16 @@ class CompoundV3Manager extends EventEmitter {
 
             for (const position of marketSupplies) {
                 if (remainingToWithdraw <= 0) break;
-                
+
                 const withdrawFromThis = Math.min(remainingToWithdraw, position.available_amount);
                 const interestWithdrawn = Math.min(withdrawFromThis, position.accrued_interest);
                 const principalWithdrawn = withdrawFromThis - interestWithdrawn;
-                
+
                 position.amount -= principalWithdrawn;
                 position.accrued_interest -= interestWithdrawn;
                 remainingToWithdraw -= withdrawFromThis;
                 totalCompRewards += position.comp_rewards_earned;
-                
+
                 withdrawnFromPositions.push({
                     positionId: position.id,
                     amount: withdrawFromThis,
@@ -292,7 +292,7 @@ class CompoundV3Manager extends EventEmitter {
                         positionId: posId,
                         rewards_claimed: position.comp_rewards_earned
                     });
-                    
+
                     // Reset rewards after claiming
                     position.comp_rewards_earned = 0;
                 }

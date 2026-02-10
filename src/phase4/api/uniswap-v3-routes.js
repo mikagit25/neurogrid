@@ -80,7 +80,7 @@ router.delete('/positions/:positionId', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }
@@ -109,7 +109,7 @@ router.post('/positions/:positionId/rebalance', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }
@@ -137,7 +137,7 @@ router.post('/positions/:positionId/collect-fees', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }
@@ -161,7 +161,7 @@ router.get('/positions/:positionId/performance', async (req, res) => {
 
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }
@@ -183,7 +183,7 @@ router.get('/positions', async (req, res) => {
     try {
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }
@@ -209,7 +209,7 @@ router.post('/auto-rebalance', async (req, res) => {
     try {
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }
@@ -231,14 +231,14 @@ router.get('/analytics', async (req, res) => {
     try {
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }
 
         const status = uniswapManager.getStatus();
         const positions = uniswapManager.getAllPositions();
-        
+
         // Calculate additional analytics
         const analytics = {
             overview: {
@@ -250,7 +250,7 @@ router.get('/analytics', async (req, res) => {
             performance: {
                 positions_in_range: positions.filter(p => p.in_range).length,
                 positions_out_of_range: positions.filter(p => !p.in_range).length,
-                average_fees_apy: positions.length > 0 
+                average_fees_apy: positions.length > 0
                     ? positions.reduce((sum, p) => sum + (p.fees_earned.token0 + p.fees_earned.token1), 0) / positions.length
                     : 0,
                 total_impermanent_loss: positions.reduce((sum, p) => sum + (p.impermanent_loss || 0), 0)
@@ -268,7 +268,7 @@ router.get('/analytics', async (req, res) => {
             positions_summary: positions.map(p => ({
                 id: p.id,
                 pair: `${p.tokenA}/${p.tokenB}`,
-                fee_tier: `${p.fee/100}bps`,
+                fee_tier: `${p.fee / 100}bps`,
                 in_range: p.in_range,
                 fees_earned_usd: p.fees_earned.token0 + p.fees_earned.token1,
                 duration_hours: (Date.now() - p.created_at) / (1000 * 60 * 60)
@@ -289,7 +289,7 @@ router.get('/fee-tiers', async (req, res) => {
     try {
         const phase4Manager = req.app.get('phase4Manager');
         const uniswapManager = phase4Manager?.protocolManagers.get('uniswap_v3');
-        
+
         if (!uniswapManager) {
             return apiResponse(res, false, null, '', 'Uniswap V3 manager not available');
         }

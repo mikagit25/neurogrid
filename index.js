@@ -28,7 +28,7 @@ switch (mode.toLowerCase()) {
         console.log('🧠 Launching Enhanced Smart Router Server...');
         require('./enhanced-server.js');
         break;
-        
+
     case 'coordinator':
         console.log('🎯 Launching Coordinator Server...');
         if (fs.existsSync('./coordinator-server/src/app.js')) {
@@ -38,7 +38,7 @@ switch (mode.toLowerCase()) {
             process.exit(1);
         }
         break;
-        
+
     case 'node-client':
         console.log('💻 Launching GPU Node Client...');
         const { spawn } = require('child_process');
@@ -46,19 +46,19 @@ switch (mode.toLowerCase()) {
             stdio: 'inherit',
             cwd: process.cwd()
         });
-        
+
         pythonProcess.on('error', (error) => {
             console.error('❌ Failed to start GPU node client:', error);
             process.exit(1);
         });
         break;
-        
+
     case 'help':
     case '--help':
     case '-h':
         displayHelp();
         break;
-        
+
     default:
         console.error(`❌ Unknown mode: ${mode}`);
         console.log('💡 Use "node index.js help" to see available options');

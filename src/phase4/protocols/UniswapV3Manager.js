@@ -10,16 +10,16 @@ const EventEmitter = require('events');
 class UniswapV3Manager extends EventEmitter {
     constructor(config = {}) {
         super();
-        
+
         this.managerId = 'uniswap_v3_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-        
+
         // Uniswap V3 Configuration
         this.config = {
             // Contract Addresses (Ethereum Mainnet)
             factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
             router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
             quoter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
-            
+
             // Fee Tiers (in basis points)
             fee_tiers: {
                 STABLE: 100,    // 0.01% - стейблкоины
@@ -27,7 +27,7 @@ class UniswapV3Manager extends EventEmitter {
                 MEDIUM: 3000,   // 0.30% - стандартные пары
                 HIGH: 10000     // 1.00% - экзотические пары
             },
-            
+
             // Position Management
             tick_spacing: {
                 100: 1,
@@ -35,13 +35,13 @@ class UniswapV3Manager extends EventEmitter {
                 3000: 60,
                 10000: 200
             },
-            
+
             // Risk Parameters
             max_price_impact: 0.005,  // 0.5%
             min_liquidity: 10000,     // $10k minimum
             rebalance_threshold: 0.1,  // 10% price move
             fee_collection_threshold: 100, // $100 in fees
-            
+
             ...config
         };
 
@@ -50,7 +50,7 @@ class UniswapV3Manager extends EventEmitter {
         this.priceFeeds = new Map();
         this.feeCollections = new Map();
         this.rebalanceQueue = [];
-        
+
         // Analytics
         this.analytics = {
             total_positions: 0,
@@ -79,17 +79,17 @@ class UniswapV3Manager extends EventEmitter {
             slippage = 0.005
         } = params;
 
-        console.log(`🔄 Creating Uniswap V3 position: ${tokenA}/${tokenB} (${fee/10000}%)`);
+        console.log(`🔄 Creating Uniswap V3 position: ${tokenA}/${tokenB} (${fee / 10000}%)`);
 
         try {
             // Validate parameters
             this.validatePositionParams(params);
-            
+
             // Calculate optimal tick range
             const { optimizedTickLower, optimizedTickUpper } = await this.calculateOptimalTicks(
                 tokenA, tokenB, fee, tickLower, tickUpper
             );
-            
+
             // Check price impact
             const priceImpact = await this.calculatePriceImpact(tokenA, tokenB, amount0, amount1);
             if (priceImpact > this.config.max_price_impact) {
@@ -118,7 +118,7 @@ class UniswapV3Manager extends EventEmitter {
 
             // Simulate liquidity calculation
             position.liquidity = this.calculateLiquidity(amount0, amount1, optimizedTickLower, optimizedTickUpper);
-            
+
             // Store position
             this.activePositions.set(positionId, position);
             this.analytics.total_positions++;
@@ -183,10 +183,10 @@ class UniswapV3Manager extends EventEmitter {
         try {
             // Calculate final performance
             const performance = await this.calculatePositionPerformance(position);
-            
+
             // Collect unclaimed fees
             const feesCollected = await this.collectFees(positionId);
-            
+
             // Remove from active positions
             this.activePositions.delete(positionId);
             this.analytics.active_liquidity -= position.liquidity;
@@ -233,7 +233,7 @@ class UniswapV3Manager extends EventEmitter {
         try {
             // Remove old position
             const oldPosition = await this.removePosition(positionId);
-            
+
             // Create new position with adjusted range
             const newPosition = await this.createPosition({
                 tokenA: position.tokenA,
@@ -314,21 +314,21 @@ class UniswapV3Manager extends EventEmitter {
         console.log('🔄 Running auto-rebalance check...');
 
         let rebalanced = 0;
-        
+
         for (const [positionId, position] of this.activePositions) {
             const currentPrice = await this.getCurrentPrice(position.tokenA, position.tokenB);
             const priceChange = Math.abs(currentPrice - position.price_at_creation) / position.price_at_creation;
-            
+
             // Check if position is out of range or needs rebalancing
             const needsRebalance = priceChange > this.config.rebalance_threshold;
             const isOutOfRange = !this.isPriceInRange(currentPrice, position.tickLower, position.tickUpper);
-            
+
             if (needsRebalance || isOutOfRange) {
                 console.log(`🎯 Auto-rebalancing position ${positionId} (price change: ${(priceChange * 100).toFixed(2)}%)`);
-                
+
                 // Calculate new optimal range
                 const newRange = await this.calculateOptimalRebalanceRange(position, currentPrice);
-                
+
                 try {
                     await this.rebalancePosition(positionId, newRange);
                     rebalanced++;
@@ -349,7 +349,7 @@ class UniswapV3Manager extends EventEmitter {
         // Simplified liquidity calculation
         const price0 = this.tickToPrice(tickLower);
         const price1 = this.tickToPrice(tickUpper);
-        
+
         // Mock calculation - in real implementation would use Uniswap V3 math
         return Math.sqrt(amount0 * amount1) * (price1 - price0) * 1000;
     }
@@ -387,7 +387,7 @@ class UniswapV3Manager extends EventEmitter {
     async calculateOptimalRebalanceRange(position, currentPrice) {
         const tick = this.priceToTick(currentPrice);
         const spread = 0.1; // 10% range around current price
-        
+
         return {
             lower: Math.floor(tick * (1 - spread)),
             upper: Math.floor(tick * (1 + spread))
@@ -402,10 +402,10 @@ class UniswapV3Manager extends EventEmitter {
     async calculatePositionPerformance(position) {
         const currentPrice = await this.getCurrentPrice(position.tokenA, position.tokenB);
         const priceChange = (currentPrice - position.price_at_creation) / position.price_at_creation;
-        
+
         // Simplified IL calculation
         const impermanent_loss = Math.max(0, Math.abs(priceChange) * 0.5);
-        
+
         return {
             position_id: position.id,
             current_price: currentPrice,
@@ -449,7 +449,7 @@ class UniswapV3Manager extends EventEmitter {
                 }
 
                 const performance = await this.calculatePositionPerformance(position);
-                
+
                 // Check if fees should be collected
                 if (performance.fees_earned_usd > this.config.fee_collection_threshold) {
                     await this.collectFees(positionId);

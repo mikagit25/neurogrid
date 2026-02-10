@@ -17,23 +17,23 @@ class NeuroGridConfig {
         if (process.env.NODE_ENV === 'production') return 'production';
         if (process.env.NODE_ENV === 'staging') return 'staging';
         if (process.env.NODE_ENV === 'development') return 'development';
-        
+
         // Определяем по hostname
         const hostname = this.getHostname();
-        
+
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return 'development';
         }
-        
+
         if (hostname.includes('staging') || hostname.includes('test')) {
             return 'staging';
         }
-        
+
         // Если есть доменное имя - считаем production
         if (hostname.includes('.')) {
             return 'production';
         }
-        
+
         return 'development';
     }
 
@@ -44,20 +44,20 @@ class NeuroGridConfig {
         if (typeof window !== 'undefined') {
             return window.location.hostname;
         }
-        
-        return process.env.DOMAIN || 
-               process.env.HOST || 
-               process.env.HOSTNAME || 
-               'localhost';
+
+        return process.env.DOMAIN ||
+            process.env.HOST ||
+            process.env.HOSTNAME ||
+            'localhost';
     }
 
     /**
      * Получить порт из переменных окружения
      */
     getPort() {
-        return process.env.PORT || 
-               process.env.API_PORT || 
-               (this.environment === 'development' ? 3001 : 80);
+        return process.env.PORT ||
+            process.env.API_PORT ||
+            (this.environment === 'development' ? 3001 : 80);
     }
 
     /**
@@ -67,7 +67,7 @@ class NeuroGridConfig {
         const hostname = this.getHostname();
         const port = this.getPort();
         const protocol = this.getProtocol();
-        
+
         const baseConfig = {
             hostname,
             port,
@@ -88,7 +88,7 @@ class NeuroGridConfig {
                     enableSSL: false,
                     corsOrigins: ['http://localhost:3000', 'http://localhost:8080', 'http://127.0.0.1:8080']
                 };
-                
+
             case 'staging':
                 return {
                     ...baseConfig,
@@ -101,7 +101,7 @@ class NeuroGridConfig {
                     enableSSL: true,
                     corsOrigins: [`https://${hostname}`, `http://${hostname}`]
                 };
-                
+
             case 'production':
             default:
                 const productionDomain = hostname === 'localhost' ? 'neurogrid.network' : hostname;
@@ -127,11 +127,11 @@ class NeuroGridConfig {
         if (this.environment === 'development') {
             return 'http';
         }
-        
+
         if (typeof window !== 'undefined') {
             return window.location.protocol.replace(':', '');
         }
-        
+
         return process.env.USE_HTTPS === 'true' || this.environment === 'production' ? 'https' : 'http';
     }
 
@@ -160,9 +160,9 @@ class NeuroGridConfig {
      * Проверить, является ли окружение локальным
      */
     isLocal() {
-        return this.environment === 'development' || 
-               this.config.hostname === 'localhost' ||
-               this.config.hostname === '127.0.0.1';
+        return this.environment === 'development' ||
+            this.config.hostname === 'localhost' ||
+            this.config.hostname === '127.0.0.1';
     }
 
     /**

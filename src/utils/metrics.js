@@ -115,21 +115,21 @@ register.registerMetric(userBalances);
 // HTTP Request metrics middleware
 const metricsMiddleware = (req, res, next) => {
     const start = process.hrtime.bigint();
-    
+
     res.on('finish', () => {
         const end = process.hrtime.bigint();
         const duration = Number(end - start) / 1e9; // Convert to seconds
-        
+
         const labels = {
             method: req.method,
             route: req.route?.path || req.path,
             status_code: res.statusCode
         };
-        
+
         httpRequestDuration.labels(labels).observe(duration);
         httpRequestsTotal.labels(labels).inc();
     });
-    
+
     next();
 };
 
@@ -138,10 +138,10 @@ const metricsMiddleware = (req, res, next) => {
 // Record AI task metrics
 const recordAITask = (model, taskType, duration, status) => {
     const labels = { model, task_type: taskType };
-    
+
     taskDuration.labels(labels).observe(duration / 1000); // Convert ms to seconds
     tasksProcessed.labels({ ...labels, status }).inc();
-    
+
     logger.debug('AI Task Metrics Recorded', {
         model,
         taskType,
@@ -155,7 +155,7 @@ const updateSystemMetrics = () => {
     const memUsage = process.memoryUsage();
     systemMemoryUsage.set(memUsage.heapUsed);
     systemUptime.set(process.uptime());
-    
+
     // Update active models count
     // This would be populated by the actual model manager
     logger.debug('System Metrics Updated', {
@@ -176,7 +176,7 @@ const setActiveConnections = (count) => {
 // Record error metrics
 const recordError = (errorType, component, error = null) => {
     errorRate.labels({ error_type: errorType, component }).inc();
-    
+
     logger.error(`Error recorded in ${component}`, {
         errorType,
         component,
@@ -188,7 +188,7 @@ const recordError = (errorType, component, error = null) => {
 // Record NEURO token distribution
 const recordTokenDistribution = (amount, rewardType) => {
     neuroTokensDistributed.labels({ reward_type: rewardType }).inc(amount);
-    
+
     logger.info('NEURO Tokens Distributed', {
         amount,
         rewardType,
@@ -201,7 +201,7 @@ const startPeriodicMetrics = () => {
     setInterval(() => {
         updateSystemMetrics();
     }, 30000); // Update every 30 seconds
-    
+
     logger.info('Periodic metrics collection started');
 };
 
@@ -215,7 +215,7 @@ module.exports = {
     recordError,
     recordTokenDistribution,
     startPeriodicMetrics,
-    
+
     // Direct access to specific metrics
     metrics: {
         httpRequestDuration,

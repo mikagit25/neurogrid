@@ -14,7 +14,7 @@ class ReviewManager {
         this.reviewsFile = path.join(__dirname, '../data/reviews.json');
         this.reviews = new Map(); // modelId -> reviews[]
         this.userRatings = new Map(); // userId+modelId -> rating
-        
+
         console.log('⭐ Review Manager initialized');
         this.ensureDirectories();
         this.loadReviews();
@@ -40,7 +40,7 @@ class ReviewManager {
         try {
             if (fs.existsSync(this.reviewsFile)) {
                 const data = JSON.parse(fs.readFileSync(this.reviewsFile, 'utf8'));
-                
+
                 // Initialize reviews map
                 data.reviews.forEach(review => {
                     if (!this.reviews.has(review.model_id)) {
@@ -298,11 +298,11 @@ class ReviewManager {
      */
     getModelReviews(modelId, options = {}) {
         const reviews = this.reviews.get(modelId) || [];
-        
+
         // Apply sorting
         const sortBy = options.sortBy || 'created_at';
         const order = options.order || 'desc';
-        
+
         let sorted = [...reviews];
         sorted.sort((a, b) => {
             let aVal = a[sortBy];
@@ -325,7 +325,7 @@ class ReviewManager {
         const limit = parseInt(options.limit) || 10;
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
-        
+
         return {
             reviews: sorted.slice(startIndex, endIndex),
             total: reviews.length,
@@ -340,7 +340,7 @@ class ReviewManager {
      */
     getModelReviewStats(modelId) {
         const reviews = this.reviews.get(modelId) || [];
-        
+
         if (reviews.length === 0) {
             return {
                 total_reviews: 0,
@@ -351,7 +351,7 @@ class ReviewManager {
 
         const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
         const ratingDistribution = [0, 0, 0, 0, 0];
-        
+
         reviews.forEach(review => {
             ratingDistribution[review.rating - 1]++;
         });
@@ -374,7 +374,7 @@ class ReviewManager {
             if (reviews.length > 0) {
                 const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
                 const model = this.modelManager.getModel(modelId);
-                
+
                 if (model) {
                     model.rating = Math.round(avgRating * 10) / 10;
                     model.reviews_count = reviews.length;
@@ -382,7 +382,7 @@ class ReviewManager {
                 }
             }
         }
-        
+
         // Save updated model data
         this.modelManager.saveModelsMetadata();
     }
@@ -397,14 +397,14 @@ class ReviewManager {
                 // In a real app, track who marked it helpful to prevent duplicates
                 review.helpful_count = (review.helpful_count || 0) + 1;
                 this.saveReviews();
-                
+
                 return {
                     success: true,
                     new_helpful_count: review.helpful_count
                 };
             }
         }
-        
+
         return {
             success: false,
             error: 'Review not found'
@@ -425,9 +425,9 @@ class ReviewManager {
                         message: response,
                         created_at: new Date().toISOString()
                     };
-                    
+
                     this.saveReviews();
-                    
+
                     return {
                         success: true,
                         message: 'Response added successfully'
@@ -440,7 +440,7 @@ class ReviewManager {
                 }
             }
         }
-        
+
         return {
             success: false,
             error: 'Review not found'
@@ -492,11 +492,11 @@ class ReviewManager {
      */
     getUserReviews(userId) {
         const userReviews = [];
-        
+
         for (const reviews of this.reviews.values()) {
             userReviews.push(...reviews.filter(r => r.user_id === userId));
         }
-        
+
         return userReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
 
@@ -529,11 +529,11 @@ class ReviewManager {
      */
     getRecentReviews(limit = 10) {
         const allReviews = [];
-        
+
         for (const reviews of this.reviews.values()) {
             allReviews.push(...reviews);
         }
-        
+
         return allReviews
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .slice(0, limit);
