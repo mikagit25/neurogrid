@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ProofOfComputeConsensus = require('../consensus/ProofOfComputeConsensus');
-const { authenticate } = require('../middleware/auth');
+const { authenticateToken: authenticate } = require('../middleware/auth');
 const { validateRequest } = require('../middleware/validation');
 const logger = require('../utils/logger');
 

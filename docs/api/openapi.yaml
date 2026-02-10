@@ -2,35 +2,52 @@ openapi: 3.0.3
 info:
   title: NeuroGrid API
   description: |
-    NeuroGrid is a distributed AI computing platform that enables secure and efficient deployment of AI models across a decentralized network.
+    # NeuroGrid Decentralized AI Computing Platform API
     
-    ## Features
-    - Text generation with LLaMA models
-    - Image generation with Stable Diffusion
-    - Audio transcription with Whisper
-    - Real-time task monitoring
-    - Secure authentication and authorization
+    NeuroGrid is a decentralized AI computing platform that connects GPU providers with AI users through a smart routing system. This API provides access to:
     
-    ## Base URLs
-    - Production: `https://api.neurogrid.io`
-    - Development: `https://api-dev.neurogrid.io`
+    - **AI Task Processing**: Submit and manage AI inference tasks
+    - **Model Management**: Access to 15+ AI models (text, code, image generation)
+    - **User Authentication**: Secure user registration and login
+    - **Real-time Statistics**: Platform metrics and performance data
+    - **Economic System**: NEURO token rewards and staking
     
-  version: 1.0.0
+    ## Getting Started
+    
+    1. Register an account via `/api/auth/register`
+    2. Login to get access token via `/api/auth/login`
+    3. Submit AI tasks via `/api/tasks`
+    4. Monitor task progress via WebSocket connection
+    
+    ## Rate Limits
+    
+    - Authentication endpoints: 5 requests per 15 minutes
+    - API endpoints: 100 requests per minute
+    - Task submission: 10 requests per minute
+    
+    ## WebSocket Connection
+    
+    Connect to `ws://localhost:3001/ws` for real-time updates on:
+    - Task completion notifications  
+    - Platform statistics
+    - NEURO token rewards
+    
+  version: 2.0.0
   contact:
-    name: NeuroGrid Support
-    url: https://neurogrid.io/support
-    email: support@neurogrid.io
+    name: NeuroGrid Team
+    email: team@neurogrid.network
+    url: https://neurogrid.network
   license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-
+    name: MIT License
+    url: https://github.com/mikagit25/neurogrid/blob/main/LICENSE
+  
 servers:
-  - url: https://api.neurogrid.io/api/v1
-    description: Production server
-  - url: https://api-dev.neurogrid.io/api/v1
+  - url: http://localhost:3001
     description: Development server
-  - url: http://localhost:3001/api/v1
-    description: Local development server
+  - url: https://api.neurogrid.network
+    description: Production server
+  - url: https://staging-api.neurogrid.network
+    description: Staging server
 
 security:
   - BearerAuth: []

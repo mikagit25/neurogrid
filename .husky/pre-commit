@@ -1,0 +1,94 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Starting pre-commit checks for NeuroGrid..."
+
+# Check for staged files
+STAGED_JS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts)$' || true)
+STAGED_JSON_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.json$' || true)
+STAGED_MD_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.md$' || true)
+
+# Exit early if no relevant files
+if [ -z "$STAGED_JS_FILES" ] && [ -z "$STAGED_JSON_FILES" ] && [ -z "$STAGED_MD_FILES" ]; then
+  echo "✅ No relevant files to check"
+  exit 0
+fi
+
+echo "📦 Installing dependencies if needed..."
+if [ ! -d "node_modules" ]; then
+  npm install --silent
+fi
+
+# ESLint check for JavaScript/TypeScript files
+if [ ! -z "$STAGED_JS_FILES" ]; then
+  echo "🔍 Running ESLint on JavaScript/TypeScript files..."
+  npx eslint $STAGED_JS_FILES --fix --max-warnings 0
+  if [ $? -ne 0 ]; then
+    echo "❌ ESLint failed. Please fix the errors and try again."
+    exit 1
+  fi
+  echo "✅ ESLint passed"
+fi
+
+# Prettier check for all staged files
+echo "🎨 Running Prettier formatting..."
+if [ ! -z "$STAGED_JS_FILES" ] || [ ! -z "$STAGED_JSON_FILES" ] || [ ! -z "$STAGED_MD_FILES" ]; then
+  npx prettier --write $STAGED_JS_FILES $STAGED_JSON_FILES $STAGED_MD_FILES
+  if [ $? -ne 0 ]; then
+    echo "❌ Prettier formatting failed"
+    exit 1
+  fi
+  echo "✅ Prettier formatting complete"
+fi
+
+# Run tests on changed files
+if [ ! -z "$STAGED_JS_FILES" ]; then
+  echo "🧪 Running tests..."
+  npm test -- --passWithNoTests --findRelatedTests $STAGED_JS_FILES
+  if [ $? -ne 0 ]; then
+    echo "❌ Tests failed. Please fix and try again."
+    exit 1
+  fi
+  echo "✅ Tests passed"
+fi
+
+# Security audit
+echo "🔒 Running security audit..."
+npm audit --audit-level high --production
+if [ $? -ne 0 ]; then
+  echo "⚠️  High-severity vulnerabilities found. Please review and fix."
+  echo "Run 'npm audit fix' to attempt automatic fixes"
+  exit 1
+fi
+echo "✅ Security audit passed"
+
+# Check for TODO/FIXME comments in committed code
+echo "📝 Checking for TODO/FIXME comments..."
+if git diff --cached | grep -E '^\+.*\b(TODO|FIXME|XXX|HACK)\b' > /dev/null; then
+  echo "⚠️  Found TODO/FIXME comments in staged changes:"
+  git diff --cached | grep -E '^\+.*\b(TODO|FIXME|XXX|HACK)\b' --color=always
+  echo ""
+  echo "Consider addressing these before committing, or add them to your task tracker."
+  # Don't fail here, just warn
+fi
+
+# Check for large files
+echo "📏 Checking for large files..."
+git diff --cached --name-only | while read file; do
+  if [ -f "$file" ]; then
+    size=$(wc -c < "$file")
+    if [ $size -gt 1048576 ]; then  # 1MB
+      echo "❌ Large file detected: $file ($(($size / 1024))KB)"
+      echo "Please consider using Git LFS for large files"
+      exit 1
+    fi
+  fi
+done
+
+# Add formatted files back to staging
+if [ ! -z "$STAGED_JS_FILES" ] || [ ! -z "$STAGED_JSON_FILES" ] || [ ! -z "$STAGED_MD_FILES" ]; then
+  git add $STAGED_JS_FILES $STAGED_JSON_FILES $STAGED_MD_FILES
+fi
+
+echo "🎉 All pre-commit checks passed! Ready to commit."
+exit 0npx lint-staged

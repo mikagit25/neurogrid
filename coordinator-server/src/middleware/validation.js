@@ -500,4 +500,36 @@ class InputValidator {
   }
 }
 
-module.exports = new InputValidator();
+/**
+ * Express middleware for validating required request fields
+ * @param {Array<string>} requiredFields - Array of required field names
+ * @returns {Function} Express middleware function
+ */
+function validateRequest(requiredFields) {
+  return (req, res, next) => {
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (!req.body[field] && req.body[field] !== 0 && req.body[field] !== false) {
+        missingFields.push(field);
+      }
+    }
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    next();
+  };
+}
+
+const validatorInstance = new InputValidator();
+
+module.exports = {
+  validator: validatorInstance,
+  validateRequest
+};

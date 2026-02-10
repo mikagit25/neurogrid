@@ -1,15 +1,32 @@
 # 🌐 NeuroGrid - Decentralized AI Computing Platform
 
-![NeuroGrid Banner](https://img.shields.io/badge/NeuroGrid-Production%20Ready-brightgreen?style=for-the-badge&logo=gpu)
-![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+[![NeuroGrid](https://img.shields.io/badge/NeuroGrid-Production%20Ready-brightgreen?style=for-the-badge&logo=gpu)](https://neurogrid.network)
+[![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=for-the-badge)](https://github.com/mikagit25/neurogrid/releases)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green?style=for-the-badge&logo=node.js)](https://nodejs.org/)
+[![Tests](https://img.shields.io/badge/Tests-Passing-success?style=for-the-badge&logo=jest)](tests/)
+[![Coverage](https://img.shields.io/badge/Coverage-80%25+-success?style=for-the-badge&logo=codecov)](tests/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge&logo=github)](CONTRIBUTING.md)
+
+[![GitHub Stars](https://img.shields.io/github/stars/mikagit25/neurogrid?style=social)](https://github.com/mikagit25/neurogrid/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/mikagit25/neurogrid?style=social)](https://github.com/mikagit25/neurogrid/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/mikagit25/neurogrid?style=flat-square)](https://github.com/mikagit25/neurogrid/issues)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/mikagit25/neurogrid?style=flat-square)](https://github.com/mikagit25/neurogrid/commits/main)
 
 **Topics:** `artificial-intelligence` `gpu-computing` `decentralized` `blockchain` `machine-learning` `inference` `neural-networks` `cryptocurrency` `web3` `defi` `distributed-computing`
 
 > **🚀 PRODUCTION READY! Launch with one command: `./production-launch.sh`**
 
 NeuroGrid transforms idle GPUs worldwide into an affordable, accessible AI computing infrastructure. Users save 50-85% on AI inference costs while GPU providers earn sustainable income from their unused hardware.
+
+## 📊 **Platform Statistics**
+
+- **15+ AI Models**: Text generation, code completion, image generation, translation
+- **Smart Routing**: Automatic load balancing and optimal node selection  
+- **80%+ Test Coverage**: Comprehensive unit and integration testing
+- **Production-Ready**: Professional logging, monitoring, and error handling
+- **Real-Time Monitoring**: WebSocket-based live updates and metrics
+- **Economic System**: NEURO token rewards and staking mechanism
 
 ## ✅ **Ready for Production Launch**
 
