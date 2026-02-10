@@ -8,7 +8,7 @@ class MetricsCollector extends EventEmitter {
     super();
     this.config = config;
     this.metricsEnabled = config.metricsEnabled !== false; // Default to enabled unless explicitly disabled
-    
+
     if (!this.metricsEnabled) {
       logger.info('Metrics collection is disabled');
       this.initializeMockMetrics();
@@ -277,7 +277,7 @@ class MetricsCollector extends EventEmitter {
       logger.debug('Skipping metrics collection intervals (disabled or test env)');
       return;
     }
-    
+
     const interval = this.config?.get?.('METRICS_INTERVAL') || 60000; // 1 minute default
     this.intervals = []; // Store intervals for cleanup
 
@@ -481,7 +481,7 @@ class MetricsCollector extends EventEmitter {
     if (!this.metricsEnabled || !this.register) {
       return '# Prometheus metrics\n# Metrics collection is disabled\n';
     }
-    
+
     try {
       return await this.register.metrics();
     } catch (error) {
@@ -619,12 +619,12 @@ class MetricsCollector extends EventEmitter {
    */
   initializeMockMetrics() {
     logger.info('Initializing mock metrics (metrics collection disabled)');
-    
+
     // Check if we're in a Jest testing environment
     const isJestEnvironment = typeof jest !== 'undefined' && typeof expect !== 'undefined';
-    
+
     let mockCounter, mockHistogram, mockGauge;
-    
+
     if (isJestEnvironment) {
       // Create Jest mocks for testing
       mockCounter = {
@@ -633,14 +633,14 @@ class MetricsCollector extends EventEmitter {
         reset: jest.fn(),
         get: jest.fn(() => ({ name: 'mock', help: 'mock', type: 'counter', values: [] }))
       };
-      
+
       mockHistogram = {
         observe: jest.fn(),
         labels: jest.fn(() => ({ observe: jest.fn() })),
         reset: jest.fn(),
         get: jest.fn(() => ({ name: 'mock', help: 'mock', type: 'histogram', values: [] }))
       };
-      
+
       mockGauge = {
         set: jest.fn(),
         inc: jest.fn(),
@@ -658,14 +658,14 @@ class MetricsCollector extends EventEmitter {
         reset: noOp,
         get: () => ({ name: 'mock', help: 'mock', type: 'counter', values: [] })
       };
-      
+
       mockHistogram = {
         observe: noOp,
         labels: () => ({ observe: noOp }),
         reset: noOp,
         get: () => ({ name: 'mock', help: 'mock', type: 'histogram', values: [] })
       };
-      
+
       mockGauge = {
         set: noOp,
         inc: noOp,
@@ -680,7 +680,7 @@ class MetricsCollector extends EventEmitter {
     this.httpRequestsTotal = { ...mockCounter };
     this.httpRequestDuration = { ...mockHistogram };
     this.activeConnections = { ...mockGauge };
-    
+
     // Database metrics
     this.databaseQueryDuration = { ...mockHistogram };
     this.dbQueriesTotal = { ...mockCounter };
@@ -688,23 +688,23 @@ class MetricsCollector extends EventEmitter {
     this.databaseConnectionsActive = { ...mockGauge };
     this.databaseConnectionsIdle = { ...mockGauge };
     this.databaseConnectionsWaiting = { ...mockGauge };
-    
+
     // Auth metrics
     this.authEventsTotal = { ...mockCounter };
     this.twoFactorUsage = { ...mockCounter };
-    
+
     // Security metrics
     this.securityEventsTotal = { ...mockCounter };
     this.rateLimitHits = { ...mockCounter };
     this.bruteForceAttempts = { ...mockCounter };
-    
+
     // Business metrics
     this.businessMetrics = { ...mockCounter };
     this.tasksTotal = { ...mockCounter };
     this.paymentsTotal = { ...mockCounter };
     this.paymentAmountTotal = { ...mockCounter };
     this.nodesTotal = { ...mockCounter };
-    
+
     // System metrics
     this.systemCpuUsage = { ...mockGauge };
     this.systemMemoryUsage = { ...mockGauge };
@@ -727,12 +727,12 @@ class MetricsCollector extends EventEmitter {
       this.intervals.forEach(interval => clearInterval(interval));
       this.intervals = [];
     }
-    
+
     // Clear metrics registry
     if (this.register && typeof this.register.clear === 'function') {
       this.register.clear();
     }
-    
+
     this.removeAllListeners();
     logger.info('MetricsCollector shutdown complete');
   }

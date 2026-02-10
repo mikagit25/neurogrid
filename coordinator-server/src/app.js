@@ -58,6 +58,7 @@ const EnhancedWebSocketManager = require('./websocket/enhanced-manager');
 const { MonitoringService } = require('./services/MonitoringService');
 const WalletModel = require('./models/WalletModel');
 const { initializeWebSocketRoutes } = require('./api/routes/websocket');
+const AIIntegrationService = require('./services/AIIntegrationService');
 
 // Import security infrastructure
 const { AuthenticationManagerSingleton } = require('./security/AuthenticationManager');
@@ -109,6 +110,7 @@ class CoordinatorServer {
     this.taskDispatcher = new TaskDispatcher();
     this.nodeManager = new NodeManager();
     this.tokenEngine = new TokenEngine();
+    this.aiIntegrationService = AIIntegrationService;
 
     // Initialize new services
     this.paymentGateway = new PaymentGateway();
@@ -431,7 +433,8 @@ class CoordinatorServer {
       paymentGateway: this.paymentGateway,
       walletModel: this.walletModel,
       wsManager: this.wsManager,
-      monitoringService: this.monitoringService
+      monitoringService: this.monitoringService,
+      aiIntegrationService: this.aiIntegrationService
     };
 
     // API Documentation
@@ -469,6 +472,7 @@ class CoordinatorServer {
     this.app.use('/api/agents', agentsRoutes);
     this.app.use('/api/crypto', cryptoRoutes);
     this.app.use('/api/deployment', deploymentRoutes);
+    this.app.use('/api/ai', require('./api/routes/ai'));
 
     // Cache demo routes (for testing and demonstration)
     const cacheDemo = require('./api/routes/cache-demo');
@@ -650,6 +654,10 @@ class CoordinatorServer {
       // await this.taskDispatcher.initialize();
       // await this.nodeManager.initialize();
       // await this.tokenEngine.initialize();
+
+      // Initialize AI Integration Service
+      logger.info('Initializing AI Integration Service...');
+      await this.aiIntegrationService.initialize();
 
       // Initialize payment services
       logger.info('Initializing payment services...');

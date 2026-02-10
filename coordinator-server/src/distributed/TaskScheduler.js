@@ -5,6 +5,7 @@
 
 const { EventEmitter } = require('events');
 const crypto = require('crypto');
+const aiIntegrationService = require('../services/AIIntegrationService');
 
 class Task {
   constructor(taskData) {
@@ -477,20 +478,38 @@ class TaskScheduler extends EventEmitter {
   }
 
   async executeInferenceTask(task, node) {
-    if (!this.modelManager) {
-      throw new Error('Model manager not available');
+    try {
+      // Use the AI Integration Service for real AI execution
+      const aiTask = {
+        id: task.id,
+        type: 'inference',
+        model: task.payload.model_id || task.payload.model,
+        input_data: task.payload.input || task.payload.input_data,
+        parameters: task.payload.options || task.payload.parameters || {},
+        requirements: task.requirements
+      };
+
+      const result = await aiIntegrationService.executeTask(aiTask);
+
+      return {
+        success: true,
+        result: result.output,
+        metadata: result.metadata,
+        cost: result.cost,
+        execution_time: result.metadata.execution_time,
+        provider_type: result.metadata.provider_type
+      };
+
+    } catch (error) {
+      throw new Error(`AI inference failed: ${error.message}`);
     }
-
-    const { model_id, input, options = {} } = task.payload;
-
-    return await this.modelManager.executeInference(model_id, node.id, input, options);
   }
 
-  async executeTrainingTask(task, _node) {
-    // Placeholder for training task execution
-    // In a real implementation, this would handle model training
+  async executeTrainingTask(task, node) {
+    // For now, training tasks still use placeholder logic
+    // In the future, this could integrate with training-specific AI services
 
-    const { model_config: _model_config, training_data: _training_data, parameters } = task.payload;
+    const { model_config, training_data, parameters } = task.payload;
 
     // Simulate training
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -502,24 +521,53 @@ class TaskScheduler extends EventEmitter {
       metrics: {
         loss: 0.1,
         accuracy: 0.95,
-        epochs: parameters.epochs || 10
-      }
+        epochs: parameters?.epochs || 10
+      },
+      node_id: node.id
     };
   }
 
-  async executeProcessingTask(task, _node) {
-    // Placeholder for data processing tasks
-    const { operation, data, parameters } = task.payload;
+  async executeProcessingTask(task, node) {
+    try {
+      // Check if this is an AI processing task that can use our AI service
+      if (task.subtype && ['generation', 'text-generation', 'image-generation'].includes(task.subtype)) {
+        const aiTask = {
+          id: task.id,
+          type: 'generation',
+          model: task.payload.model || 'huggingface:gpt2',
+          input_data: task.payload.data || task.payload.input,
+          parameters: task.payload.parameters || {}
+        };
 
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+        const result = await aiIntegrationService.executeTask(aiTask);
 
-    return {
-      success: true,
-      operation,
-      processed_items: data.length || 1,
-      result: `Processed ${operation} with parameters: ${JSON.stringify(parameters)}`
-    };
+        return {
+          success: true,
+          result: result.output,
+          metadata: result.metadata,
+          cost: result.cost,
+          processed_items: 1,
+          node_id: node.id
+        };
+      }
+
+      // Fallback to original processing logic
+      const { operation, data, parameters } = task.payload;
+
+      // Simulate processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      return {
+        success: true,
+        operation,
+        processed_items: (data && data.length) || 1,
+        result: `Processed ${operation} with parameters: ${JSON.stringify(parameters)}`,
+        node_id: node.id
+      };
+
+    } catch (error) {
+      throw new Error(`Processing task failed: ${error.message}`);
+    }
   }
 
   async executeCustomTask(task, _node) {

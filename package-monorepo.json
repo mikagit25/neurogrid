@@ -1,0 +1,65 @@
+{
+  "name": "@neurogrid/monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NeuroGrid Decentralized AI Computing Platform - Monorepo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikagit25/neurogrid.git"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rimraf node_modules",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,md}\"",
+    "type-check": "turbo run type-check",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish",
+    "setup": "npm install && npm run build",
+    "coordinator": "npm run dev --workspace=@neurogrid/coordinator-server",
+    "web": "npm run dev --workspace=@neurogrid/web-interface",
+    "node-client": "cd apps/node-client && python main.py",
+    "contracts": "npm run compile --workspace=@neurogrid/contracts",
+    "docker:dev": "docker-compose up --build",
+    "docker:prod": "docker-compose -f docker-compose.production.yml up --build",
+    "migrate": "npm run migrate --workspace=@neurogrid/coordinator-server",
+    "seed": "npm run seed --workspace=@neurogrid/coordinator-server"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "turbo": "^1.12.3",
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "packageManager": "npm@10.2.4",
+  "keywords": [
+    "ai",
+    "blockchain",
+    "distributed-computing",
+    "gpu",
+    "defi",
+    "web3",
+    "machine-learning",
+    "cryptocurrency"
+  ],
+  "author": "NeuroGrid Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mikagit25/neurogrid/issues"
+  },
+  "homepage": "https://neurogrid.ai"
+}

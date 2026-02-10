@@ -1,0 +1,74 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".env", ".env.local", ".env.production"],
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", ".next/**", "coverage/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "test:unit": {
+      "dependsOn": []
+    },
+    "test:integration": {
+      "dependsOn": ["build"]
+    },
+    "test:e2e": {
+      "dependsOn": ["build", "db:migrate"]
+    },
+    "lint": {
+      "dependsOn": [],
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": []
+    },
+    "clean": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:seed": {
+      "cache": false
+    },
+    "deploy": {
+      "dependsOn": ["build", "test", "lint"]
+    },
+    "docker:build": {
+      "dependsOn": ["build"],
+      "inputs": ["Dockerfile", "docker-compose*.yml"]
+    },
+    "contracts:compile": {
+      "outputs": ["artifacts/**", "typechain/**"]
+    },
+    "contracts:deploy": {
+      "dependsOn": ["contracts:compile"],
+      "cache": false
+    }
+  },
+  "globalEnv": [
+    "NODE_ENV",
+    "POSTGRES_HOST",
+    "POSTGRES_PORT", 
+    "POSTGRES_DB",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "REDIS_URL",
+    "JWT_SECRET",
+    "OPENAI_API_KEY",
+    "HUGGINGFACE_API_KEY",
+    "MONGODB_URI",
+    "WEB3_PROVIDER_URL",
+    "CONTRACT_ADDRESSES",
+    "PINATA_API_KEY",
+    "DISCORD_WEBHOOK_URL"
+  ]
+}
