@@ -1,0 +1,72 @@
+[
+  {
+    "id": "tx_fe9a8a14913a34ebc0d9ffb7282e4a6c",
+    "from": "system",
+    "to": "0x1234567890123456789012345678901234567890",
+    "amount": 250,
+    "type": "initial_grant",
+    "description": "Initial NEURO grant for community model",
+    "timestamp": "2026-01-15T00:00:00.000Z",
+    "status": "completed"
+  },
+  {
+    "id": "tx_8e777d3e7691aa00bbfccf95e1522c54",
+    "from": "user_alice",
+    "to": "0x1234567890123456789012345678901234567890",
+    "amount": 0.15,
+    "type": "model_usage",
+    "model_id": "community-llama2-finetuned",
+    "description": "Payment for AI model usage",
+    "timestamp": "2026-01-20T00:00:00.000Z",
+    "status": "completed"
+  },
+  {
+    "id": "tx_38dd94052398f35628cdf149aa5f458a",
+    "from": "system",
+    "to": "0xNewUser111111111111111111111111111",
+    "amount": 100,
+    "type": "initial_grant",
+    "description": "Welcome to NeuroGrid! Initial NEURO balance",
+    "timestamp": "2026-02-06T12:41:16.966Z",
+    "status": "completed"
+  },
+  {
+    "id": "tx_6c5ebae836657cdb6685f0bed6880774",
+    "from": "0xNewUser111111111111111111111111111",
+    "to": "staking_pool_community-llama2-finetuned",
+    "amount": 25,
+    "type": "stake",
+    "model_id": "community-llama2-finetuned",
+    "description": "Staked NEURO on model for rewards",
+    "timestamp": "2026-02-06T12:41:24.609Z",
+    "status": "completed"
+  },
+  {
+    "id": "tx_d28a772c5daf1fe19ed82a61b6967c12",
+    "from": "0xNewUser111111111111111111111111111",
+    "to": "0x1234567890123456789012345678901234567890",
+    "amount": 0.4,
+    "author_revenue": 0.27999999999999997,
+    "platform_fee": 0.04000000000000001,
+    "type": "model_usage",
+    "model_id": "community-llama2-finetuned",
+    "tokens_used": 50,
+    "description": "Payment for Community Llama 2 Fine-tuned usage (50 tokens)",
+    "timestamp": "2026-02-06T12:41:36.256Z",
+    "status": "completed"
+  },
+  {
+    "id": "tx_0ac040d89a2ccaa9dfe42de6fca05d12",
+    "from": "0xTestUserAddress123456789",
+    "to": "0x1234567890123456789012345678901234567890",
+    "amount": 0.8,
+    "author_revenue": 0.5599999999999999,
+    "platform_fee": 0.08000000000000002,
+    "type": "model_usage",
+    "model_id": "community-llama2-finetuned",
+    "tokens_used": 100,
+    "description": "Payment for Community Llama 2 Fine-tuned usage (100 tokens)",
+    "timestamp": "2026-02-07T11:09:31.129Z",
+    "status": "completed"
+  }
+]

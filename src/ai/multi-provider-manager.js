@@ -23,6 +23,43 @@ class MultiProviderAIManager {
   }
 
   /**
+   * Auto-select best model and provider for content type 
+   */
+  selectBestModel(contentType = 'text', userPreference = null) {
+    const configuredProviders = this.getConfiguredProviders();
+    
+    if (configuredProviders.length === 0) {
+      // Return mock models for testing
+      return contentType === 'text' 
+        ? { provider: 'google-gemini', model: 'gemini-pro' }
+        : { provider: 'huggingface', model: 'stable-diffusion-xl' };
+    }
+
+    // Priority order for text generation
+    if (contentType === 'text') {
+      // Prefer Google Gemini for cost efficiency
+      if (configuredProviders.includes('google-gemini')) {
+        return { provider: 'google-gemini', model: 'gemini-pro' };
+      }
+      // Fallback to HuggingFace
+      if (configuredProviders.includes('huggingface')) {
+        return { provider: 'huggingface', model: 'llama2-7b' };
+      }
+    }
+
+    // Priority order for image generation  
+    if (contentType === 'image') {
+      // Prefer HuggingFace for image generation
+      if (configuredProviders.includes('huggingface')) {
+        return { provider: 'huggingface', model: 'stable-diffusion-xl' };
+      }
+    }
+
+    // Default fallback
+    return { provider: 'google-gemini', model: 'gemini-pro' };
+  }
+
+  /**
    * Generate text using specified provider and model
    */
   async generateText(provider, modelId, prompt, options = {}, onProgress = null) {

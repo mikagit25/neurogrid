@@ -63,6 +63,9 @@
                         <a href="ai-chat.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             <i class="fas fa-robot mr-1"></i>AI Chat
                         </a>
+                        <a href="marketplace.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fas fa-store mr-1"></i>Marketplace
+                        </a>
                         <a href="node-monitoring.html" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             My Nodes
                         </a>
@@ -280,13 +283,36 @@
                             <select id="modelType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neurogrid-500" required onchange="updateModelInfo()">
                                 <option value="">Select model...</option>
                                 <option value="auto">🤖 Smart Auto-Select (Recommended)</option>
-                                <option value="local-llama2">🏠 Local LLaMA 2 7B (Fast & Free)</option>
-                                <option value="neurogrid-swarm">🔥 NeuroGrid Multi-Agent (Best Quality)</option>
-                                <option value="openai-gpt4">⚡ OpenAI GPT-4 (Premium)</option>
-                                <option value="anthropic-claude">🧠 Claude (Analysis Expert)</option>
-                                <option value="llama2">LLaMA 2 (Text Generation)</option>
-                                <option value="stable-diffusion">Stable Diffusion (Image Generation)</option>
-                                <option value="whisper">Whisper (Speech-to-Text)</option>
+                                
+                                <!-- БЕСПЛАТНЫЕ МОДЕЛИ -->
+                                <optgroup label="🆓 БЕСПЛАТНЫЕ МОДЕЛИ">
+                                    <option value="free-llama2-7b-chat">🏠 LLaMA 2 7B Chat (FREE)</option>
+                                    <option value="free-stable-diffusion-xl">🎨 Stable Diffusion XL (FREE)</option>
+                                    <option value="free-codellama-7b">💻 CodeLlama 7B (FREE)</option>
+                                    <option value="free-whisper-large">🎙️ Whisper Large v3 (FREE)</option>
+                                    <option value="free-falcon-7b">🦅 Falcon 7B Instruct (FREE)</option>
+                                    <option value="free-musicgen-small">🎵 MusicGen Small (FREE)</option>
+                                    <option value="free-bloom-7b">🌸 BLOOM 7B1 (FREE - 46 langs)</option>
+                                    <option value="free-controlnet-canny">🖼️ ControlNet Canny (FREE)</option>
+                                </optgroup>
+                                
+                                <!-- СТАНДАРТНЫЕ МОДЕЛИ --> 
+                                <optgroup label="⚡ СТАНДАРТНЫЕ МОДЕЛИ">
+                                    <option value="local-llama2">🏠 Local LLaMA 2 7B (Fast & Free)</option>
+                                    <option value="neurogrid-swarm">🔥 NeuroGrid Multi-Agent (Best Quality)</option>
+                                    <option value="llama2">🦙 LLaMA 2 (Text Generation)</option>
+                                    <option value="stable-diffusion">🎨 Stable Diffusion (Image Generation)</option>
+                                    <option value="whisper">🎙️ Whisper (Speech-to-Text)</option>
+                                </optgroup>
+                                
+                                <!-- ПРЕМИУМ МОДЕЛИ -->
+                                <optgroup label="💎 ПРЕМИУМ МОДЕЛИ">
+                                    <option value="premium-gpt4-turbo">⚡ GPT-4 Turbo (Latest & Fastest)</option>
+                                    <option value="premium-claude-3-opus">🧠 Claude 3 Opus (Best Analysis)</option>
+                                    <option value="premium-midjourney-v6">🎯 Midjourney v6 (Pro Images)</option>
+                                    <option value="openai-gpt4">⚡ OpenAI GPT-4 (Premium)</option>
+                                    <option value="anthropic-claude">🧠 Claude (Analysis Expert)</option>
+                                </optgroup>
                             </select>
                             <div id="modelInfo" class="mt-2 text-sm text-gray-600 hidden">
                                 <!-- Model info will be displayed here -->
@@ -935,9 +961,81 @@
             'auto': {
                 description: 'Automatically selects the best model based on your task type, cost, and performance requirements',
                 cost: 'Optimized',
-                latency: 'Variable',
+                latency: 'Variable', 
                 quality: 'Optimal for task'
             },
+            
+            // === БЕСПЛАТНЫЕ МОДЕЛИ ===
+            'free-llama2-7b-chat': {
+                description: 'Бесплатная модель Meta LLaMA 2 для чата и генерации текста. Отличное соотношение качества и скорости.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~2 секунды',
+                quality: 'Высокое качество для чата'
+            },
+            'free-stable-diffusion-xl': {
+                description: 'Бесплатная генерация изображений высокого качества 1024x1024. Реалистичные и художественные стили.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~15 секунд',
+                quality: 'Профессиональное качество'
+            },
+            'free-codellama-7b': {
+                description: 'Бесплатная модель для генерации и анализа кода. Поддерживает Python, JavaScript и другие языки.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~3 секунды',
+                quality: 'Отличное для кода'
+            },
+            'free-whisper-large': {
+                description: 'Бесплатное распознавание речи от OpenAI. Поддерживает 100+ языков с высокой точностью.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~5 секунд',
+                quality: 'Превосходная точность'
+            },
+            'free-falcon-7b': {
+                description: 'Бесплатная высокопроизводительная модель от TII. Хорошо следует инструкциям, многоязычная.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~2.5 секунд',
+                quality: 'Хорошее для общих задач'
+            },
+            'free-musicgen-small': {
+                description: 'Бесплатная генерация музыки по текстовому описанию. Создает мелодии до 30 секунд.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~20 секунд',
+                quality: 'Креативная музыка'
+            },
+            'free-bloom-7b': {
+                description: 'Бесплатная многоязычная модель поддерживающая 46 языков. Отлично для международных задач.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~3.5 секунд',
+                quality: 'Многоязычное превосходство'
+            },
+            'free-controlnet-canny': {
+                description: 'Бесплатный точный контроль генерации изображений по контурам. Идеально для дизайна.',
+                cost: 'БЕСПЛАТНО',
+                latency: '~12 секунд',
+                quality: 'Точное управление'
+            },
+            
+            // === ПРЕМИУМ МОДЕЛИ ===
+            'premium-gpt4-turbo': {
+                description: 'Новейшая модель OpenAI с улучшенной производительностью. 128K контекст, самая быстрая.',
+                cost: '$0.01/1K tokens',
+                latency: '~0.8 секунд',
+                quality: 'Превосходнейшее качество'
+            },
+            'premium-claude-3-opus': {
+                description: 'Самая мощная модель Anthropic. 200K контекст, лучший анализ и рассуждения.',
+                cost: '$0.015/1K tokens',
+                latency: '~2.2 секунды',
+                quality: 'Топовый анализ'
+            },
+            'premium-midjourney-v6': {
+                description: 'Профессиональная генерация изображений. Фотореалистичное качество для коммерческого использования.',
+                cost: '$0.04/изображение',
+                latency: '~30 секунд',
+                quality: 'Профессиональное фото'
+            },
+            
+            // === СТАНДАРТНЫЕ МОДЕЛИ ===
             'local-llama2': {
                 description: 'Local LLaMA 2 7B model running on NeuroGrid nodes',
                 cost: '$0.001/1K tokens',

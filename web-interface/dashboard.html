@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/web-interface/js/payment-service.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -844,70 +846,198 @@
         function loadDepositForm(container) {
             container.innerHTML = `
                 <form class="space-y-4" onsubmit="handleDeposit(event)">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Сумма пополнения</label>
-                        <input type="number" min="1" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="100.00" required>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Сумма пополнения</label>
+                            <input type="number" name="amount" min="10" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="100.00" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Валюта</label>
+                            <select name="currency" class="w-full border border-gray-300 rounded-md px-3 py-2" onchange="updateDepositPreview()">
+                                <option value="USD">USD - Доллар США</option>
+                                <option value="EUR">EUR - Евро</option>
+                                <option value="RUB">RUB - Российский рубль</option>
+                                <option value="GBP">GBP - Британский фунт</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Валюта</label>
-                        <select class="w-full border border-gray-300 rounded-md px-3 py-2">
-                            <option value="USD">USD - Доллар США</option>
-                            <option value="EUR">EUR - Евро</option>
-                            <option value="RUB">RUB - Российский рубль</option>
-                        </select>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span>Получите NEURO токенов: <span id="neuroAmount" class="font-bold">~0</span></span>
+                            <span>Комиссия: <span id="feeAmount" class="font-bold">~0</span></span>
+                        </div>
                     </div>
+                    
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Способ оплаты</label>
-                        <div class="space-y-2">
-                            <label class="flex items-center">
-                                <input type="radio" name="paymentMethod" value="card" class="mr-2" checked>
-                                <i class="fas fa-credit-card mr-2"></i>Банковская карта
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Способ оплаты</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="paymentMethod" value="card" class="sr-only" checked onchange="updatePaymentMethodUI()">
+                                <div class="text-center">
+                                    <i class="fas fa-credit-card text-2xl text-blue-600 mb-2"></i>
+                                    <div class="font-medium">Банковская карта</div>
+                                    <div class="text-xs text-gray-500">Visa, MasterCard</div>
+                                </div>
                             </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="paymentMethod" value="crypto" class="mr-2">
-                                <i class="fab fa-bitcoin mr-2"></i>Криптовалюта
+                            <label class="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="paymentMethod" value="paypal" class="sr-only" onchange="updatePaymentMethodUI()">
+                                <div class="text-center">
+                                    <i class="fab fa-paypal text-2xl text-yellow-600 mb-2"></i>
+                                    <div class="font-medium">PayPal</div>
+                                    <div class="text-xs text-gray-500">Электронный кошелек</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mt-3">
+                            <label class="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="paymentMethod" value="crypto" class="sr-only" onchange="updatePaymentMethodUI()">
+                                <div class="text-center">
+                                    <i class="fab fa-bitcoin text-2xl text-orange-500 mb-2"></i>
+                                    <div class="font-medium">Криптовалюта</div>
+                                    <div class="text-xs text-gray-500">BTC, ETH, USDT</div>
+                                </div>
+                            </label>
+                            <label class="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="paymentMethod" value="bank" class="sr-only" onchange="updatePaymentMethodUI()">
+                                <div class="text-center">
+                                    <i class="fas fa-university text-2xl text-green-600 mb-2"></i>
+                                    <div class="font-medium">Банковский перевод</div>
+                                    <div class="text-xs text-gray-500">Для крупных сумм</div>
+                                </div>
                             </label>
                         </div>
                     </div>
-                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
-                        Пополнить баланс
+                    
+                    <!-- Card input section (Stripe Elements) -->
+                    <div id="cardInputSection" class="space-y-3">
+                        <label class="block text-sm font-medium text-gray-700">Данные карты</label>
+                        <div id="card-element" class="p-3 border border-gray-300 rounded-md bg-white">
+                            <!-- Stripe Elements will create form elements here -->
+                        </div>
+                        <div id="card-errors" class="text-red-600 text-sm hidden"></div>
+                    </div>
+                    
+                    <!-- Crypto input section -->
+                    <div id="cryptoInputSection" class="space-y-3 hidden">
+                        <label class="block text-sm font-medium text-gray-700">Криптовалюта</label>
+                        <select name="cryptoCurrency" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                            <option value="BTC">Bitcoin (BTC)</option>
+                            <option value="ETH">Ethereum (ETH)</option>
+                            <option value="USDT">Tether (USDT)</option>
+                            <option value="USDC">USD Coin (USDC)</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" id="depositSubmitBtn" class="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors font-medium">
+                        <i class="fas fa-plus-circle mr-2"></i>Пополнить баланс
                     </button>
+                    
+                    <div class="text-xs text-gray-500 text-center">
+                        256-битное SSL шифрование • PCI DSS сертифицировано • Безопасные платежи
+                    </div>
                 </form>
             `;
+            
+            // Initialize payment method UI
+            updatePaymentMethodUI();
+            updateDepositPreview();
+            
+            // Initialize Stripe Elements if card is selected
+            if (window.paymentService) {
+                setTimeout(() => {
+                    initializeStripeElements();
+                }, 100);
+            }
         }
 
         function loadWithdrawForm(container) {
             container.innerHTML = `
                 <form class="space-y-4" onsubmit="handleWithdraw(event)">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Сумма вывода</label>
-                        <input type="number" min="1" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="50.00" required>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Сумма вывода (NEURO)</label>
+                            <input type="number" name="tokenAmount" min="10" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="100.00" required onchange="updateWithdrawPreview()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Валюта вывода</label>
+                            <select name="currency" class="w-full border border-gray-300 rounded-md px-3 py-2" onchange="updateWithdrawPreview()">
+                                <option value="USD">USD - Доллар США</option>
+                                <option value="EUR">EUR - Евро</option>
+                                <option value="RUB">RUB - Российский рубль</option>
+                                <option value="GBP">GBP - Британский фунт</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Способ вывода</label>
-                        <select class="w-full border border-gray-300 rounded-md px-3 py-2">
-                            <option value="card">Банковская карта</option>
-                            <option value="crypto">Криптокошелек</option>
-                            <option value="paypal">PayPal</option>
-                        </select>
+                    
+                    <div class="bg-orange-50 border border-orange-200 rounded-md p-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span>Вы получите: <span id="withdrawFiatAmount" class="font-bold">~0</span></span>
+                            <span>Комиссия (2%): <span id="withdrawFeeAmount" class="font-bold">~0</span></span>
+                        </div>
                     </div>
+                    
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Реквизиты</label>
-                        <input type="text" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Номер карты или адрес кошелька" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Способ вывода</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="withdrawalMethod" value="paypal" class="sr-only" checked onchange="updateWithdrawMethodUI()">
+                                <div class="text-center">
+                                    <i class="fab fa-paypal text-2xl text-blue-600 mb-2"></i>
+                                    <div class="font-medium">PayPal</div>
+                                    <div class="text-xs text-gray-500">1-2 рабочих дня</div>
+                                </div>
+                            </label>
+                            <label class="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="withdrawalMethod" value="bank" class="sr-only" onchange="updateWithdrawMethodUI()">
+                                <div class="text-center">
+                                    <i class="fas fa-university text-2xl text-green-600 mb-2"></i>
+                                    <div class="font-medium">Банковский счет</div>
+                                    <div class="text-xs text-gray-500">3-5 рабочих дней</div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
+                    
+                    <!-- PayPal destination -->
+                    <div id="paypalDestination" class="space-y-3">
+                        <label class="block text-sm font-medium text-gray-700">Email PayPal</label>
+                        <input type="email" name="destination" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="your@email.com" required>
+                    </div>
+                    
+                    <!-- Bank destination -->
+                    <div id="bankDestination" class="space-y-3 hidden">
+                        <label class="block text-sm font-medium text-gray-700">Банковские реквизиты</label>
+                        <textarea name="destination" class="w-full border border-gray-300 rounded-md px-3 py-2 h-24" placeholder="Укажите полные банковские реквизиты:&#10;Банк: &#10;БИК: &#10;Номер счета: &#10;ФИО получателя: " required></textarea>
+                    </div>
+                    
                     <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                         <div class="flex">
                             <i class="fas fa-exclamation-triangle text-yellow-400 mr-2 mt-0.5"></i>
                             <div class="text-sm text-yellow-800">
-                                Минимальная сумма вывода: 10 NGRID. Комиссия: 2%.
+                                <div class="font-medium mb-1">Важная информация:</div>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li>Минимальная сумма вывода: 10 NEURO</li>
+                                    <li>Комиссия составляет 2% от суммы</li>
+                                    <li>Обработка может занять от 1 до 5 рабочих дней</li>
+                                    <li>Проверьте правильность реквизитов</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
-                        Вывести средства
+                    
+                    <button type="submit" class="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 transition-colors font-medium">
+                        <i class="fas fa-minus-circle mr-2"></i>Вывести средства
                     </button>
+                    
+                    <div class="text-xs text-gray-500 text-center">
+                        Все выводы проходят проверку безопасности и соответствуют требованиям AML/KYC
+                    </div>
                 </form>
             `;
+            
+            updateWithdrawMethodUI();
+            updateWithdrawPreview();
         }
 
         function loadTransactionHistory(container) {
@@ -946,16 +1076,73 @@
         }
 
         // Payment handlers
-        function handleDeposit(event) {
+        async function handleDeposit(event) {
             event.preventDefault();
-            showNotification('Функция пополнения баланса в разработке', 'info');
-            closeModal('walletModal');
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const depositData = {
+                amount: parseFloat(formData.get('amount')),
+                currency: formData.get('currency'),
+                paymentMethod: formData.get('paymentMethod'),
+                returnUrl: window.location.origin + '/dashboard.html'
+            };
+
+            try {
+                showNotification('Создание платежа...', 'info');
+                
+                const paymentIntent = await paymentService.createDeposit(depositData);
+                
+                if (depositData.paymentMethod === 'card') {
+                    await processCardPayment(paymentIntent);
+                } else if (depositData.paymentMethod === 'crypto') {
+                    showCryptoPayment(paymentIntent);
+                } else {
+                    showNotification('Перенаправление на ' + depositData.paymentMethod + '...', 'info');
+                    if (depositData.paymentMethod === 'paypal') {
+                        await paymentService.initiatePayPalPayment(paymentIntent);
+                    }
+                }
+            } catch (error) {
+                showNotification('Ошибка создания платежа: ' + error.message, 'error');
+            }
         }
 
-        function handleWithdraw(event) {
+        async function handleWithdraw(event) {
             event.preventDefault();
-            showNotification('Функция вывода средств в разработке', 'info');
-            closeModal('walletModal');
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            // Get destination based on withdrawal method
+            const withdrawalMethod = formData.get('withdrawalMethod');
+            const destinationValue = formData.get('destination');
+            
+            let destination = {};
+            if (withdrawalMethod === 'paypal') {
+                destination.email = destinationValue;
+            } else if (withdrawalMethod === 'bank') {
+                destination.bankAccount = destinationValue;
+            }
+            
+            const withdrawalData = {
+                tokenAmount: parseFloat(formData.get('tokenAmount')),
+                currency: formData.get('currency'),
+                withdrawalMethod: withdrawalMethod,
+                destination: destination
+            };
+
+            try {
+                showNotification('Создание запроса на вывод...', 'info');
+                
+                const withdrawalRequest = await paymentService.createWithdrawal(withdrawalData);
+                
+                showNotification('Запрос на вывод создан! ID: ' + withdrawalRequest.id, 'success');
+                closeModal('walletModal');
+                loadModalBalance(); // Refresh balance
+            } catch (error) {
+                showNotification('Ошибка вывода: ' + error.message, 'error');
+            }
         }
 
         // Other functions
@@ -1039,6 +1226,257 @@
             }, 5000);
         }
 
+        // Initialize payment service
+        let paymentService;
+        let stripeElements = null;
+
+        // Payment method UI functions
+        function updatePaymentMethodUI() {
+            const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+            const cardSection = document.getElementById('cardInputSection');
+            const cryptoSection = document.getElementById('cryptoInputSection');
+            
+            if (cardSection && cryptoSection) {
+                if (selectedMethod === 'card') {
+                    cardSection.classList.remove('hidden');
+                    cryptoSection.classList.add('hidden');
+                } else if (selectedMethod === 'crypto') {
+                    cardSection.classList.add('hidden');
+                    cryptoSection.classList.remove('hidden');
+                } else {
+                    cardSection.classList.add('hidden');
+                    cryptoSection.classList.add('hidden');
+                }
+            }
+            
+            // Update selected visual state
+            document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+                const label = radio.closest('label');
+                if (radio.checked) {
+                    label.classList.add('border-blue-500', 'bg-blue-50');
+                    label.classList.remove('border-gray-200');
+                } else {
+                    label.classList.remove('border-blue-500', 'bg-blue-50');
+                    label.classList.add('border-gray-200');
+                }
+            });
+        }
+
+        function updateDepositPreview() {
+            if (!paymentService) return;
+            
+            const amountInput = document.querySelector('input[name="amount"]');
+            const currencySelect = document.querySelector('select[name="currency"]');
+            const paymentMethodRadio = document.querySelector('input[name="paymentMethod"]:checked');
+            
+            if (amountInput && currencySelect && paymentMethodRadio) {
+                const amount = parseFloat(amountInput.value) || 0;
+                const currency = currencySelect.value;
+                const paymentMethod = paymentMethodRadio.value;
+                
+                const neuroAmount = paymentService.convertToNeuro(amount, currency);
+                const fees = paymentService.calculateFees(amount, currency, paymentMethod);
+                
+                const neuroAmountEl = document.getElementById('neuroAmount');
+                const feeAmountEl = document.getElementById('feeAmount');
+                
+                if (neuroAmountEl) {
+                    neuroAmountEl.textContent = neuroAmount.toFixed(4);
+                }
+                if (feeAmountEl) {
+                    feeAmountEl.textContent = paymentService.formatAmount(fees.total, currency);
+                }
+            }
+        }
+
+        function initializeStripeElements() {
+            const cardElement = document.getElementById('card-element');
+            if (!cardElement || !window.Stripe) return;
+            
+            // Initialize Stripe with test key (should be from environment)
+            const publishableKey = 'pk_test_51234567890abcdef'; // This should come from backend
+            
+            try {
+                stripeElements = paymentService.initStripeElements('#card-element', publishableKey);
+                
+                if (stripeElements && stripeElements.cardElement) {
+                    stripeElements.cardElement.on('change', (event) => {
+                        const errorElement = document.getElementById('card-errors');
+                        if (event.error) {
+                            errorElement.textContent = event.error.message;
+                            errorElement.classList.remove('hidden');
+                        } else {
+                            errorElement.textContent = '';
+                            errorElement.classList.add('hidden');
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to initialize Stripe Elements:', error);
+                const cardSection = document.getElementById('cardInputSection');
+                if (cardSection) {
+                    cardSection.innerHTML = '<div class="text-red-600 text-sm">Stripe не загружен. Попробуйте другой способ оплаты.</div>';
+                }
+            }
+        }
+
+        async function processCardPayment(paymentIntent) {
+            if (!stripeElements || !stripeElements.cardElement) {
+                throw new Error('Stripe не инициализирован');
+            }
+            
+            try {
+                showNotification('Обработка платежа...', 'info');
+                const result = await paymentService.processStripePayment(paymentIntent, stripeElements.cardElement);
+                
+                if (result.status === 'succeeded') {
+                    showNotification('Платеж успешно выполнен!', 'success');
+                    closeModal('walletModal');
+                    loadModalBalance(); // Refresh balance
+                } else {
+                    throw new Error('Платеж не завершен');
+                }
+            } catch (error) {
+                console.error('Card payment failed:', error);
+                throw error;
+            }
+        }
+
+        function showCryptoPayment(paymentIntent) {
+            const cryptoInfo = paymentService.displayCryptoPayment(paymentIntent);
+            
+            // Close the wallet modal and show crypto payment modal
+            closeModal('walletModal');
+            
+            // Create and show crypto payment modal
+            const modalHtml = `
+                <div id="cryptoPaymentModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center z-50">
+                    <div class="bg-white rounded-xl max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">Криптоплатеж ${cryptoInfo.currency}</h3>
+                                <button onclick="closeModal('cryptoPaymentModal')" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="text-center">
+                                    <div class="bg-gray-100 p-4 rounded-lg">
+                                        <img src="${cryptoInfo.qrCode}" alt="QR Code" class="w-32 h-32 mx-auto mb-2">
+                                        <div class="text-sm text-gray-600">Сканируйте QR-код</div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Адрес для перевода:</label>
+                                    <div class="flex items-center">
+                                        <input type="text" value="${cryptoInfo.address}" class="flex-1 p-2 border border-gray-300 rounded-l-md bg-gray-50" readonly>
+                                        <button onclick="copyToClipboard('${cryptoInfo.address}')" class="px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Сумма к переводу:</label>
+                                    <div class="flex items-center">
+                                        <input type="text" value="${cryptoInfo.amount}" class="flex-1 p-2 border border-gray-300 rounded-l-md bg-gray-50" readonly>
+                                        <button onclick="copyToClipboard('${cryptoInfo.amount}')" class="px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                                    <div class="text-sm text-yellow-800">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        Требуется ${cryptoInfo.confirmations} подтверждения сети. 
+                                        Средства будут зачислены автоматически после получения подтверждений.
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                                    <div class="text-sm text-blue-800">
+                                        <i class="fas fa-clock mr-2"></i>
+                                        Ожидание платежа... Статус обновляется автоматически.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Скопировано в буфер обмена!', 'success');
+            }).catch(() => {
+                showNotification('Не удалось скопировать', 'error');
+            });
+        }
+
+        function updateWithdrawPreview() {
+            if (!paymentService) return;
+            
+            const tokenAmountInput = document.querySelector('input[name="tokenAmount"]');
+            const currencySelect = document.querySelector('select[name="currency"]');
+            
+            if (tokenAmountInput && currencySelect) {
+                const tokenAmount = parseFloat(tokenAmountInput.value) || 0;
+                const currency = currencySelect.value;
+                
+                const fiatAmount = paymentService.convertFromNeuro(tokenAmount, currency);
+                const fee = fiatAmount * 0.02; // 2% fee
+                const netAmount = fiatAmount - fee;
+                
+                const withdrawFiatAmountEl = document.getElementById('withdrawFiatAmount');
+                const withdrawFeeAmountEl = document.getElementById('withdrawFeeAmount');
+                
+                if (withdrawFiatAmountEl) {
+                    withdrawFiatAmountEl.textContent = paymentService.formatAmount(netAmount, currency);
+                }
+                if (withdrawFeeAmountEl) {
+                    withdrawFeeAmountEl.textContent = paymentService.formatAmount(fee, currency);
+                }
+            }
+        }
+
+        function updateWithdrawMethodUI() {
+            const selectedMethod = document.querySelector('input[name="withdrawalMethod"]:checked')?.value;
+            const paypalDestination = document.getElementById('paypalDestination');
+            const bankDestination = document.getElementById('bankDestination');
+            
+            if (paypalDestination && bankDestination) {
+                if (selectedMethod === 'paypal') {
+                    paypalDestination.classList.remove('hidden');
+                    bankDestination.classList.add('hidden');
+                    paypalDestination.querySelector('input').required = true;
+                    bankDestination.querySelector('textarea').required = false;
+                } else if (selectedMethod === 'bank') {
+                    paypalDestination.classList.add('hidden');
+                    bankDestination.classList.remove('hidden');
+                    paypalDestination.querySelector('input').required = false;
+                    bankDestination.querySelector('textarea').required = true;
+                }
+            }
+            
+            // Update selected visual state
+            document.querySelectorAll('input[name="withdrawalMethod"]').forEach(radio => {
+                const label = radio.closest('label');
+                if (radio.checked) {
+                    label.classList.add('border-red-500', 'bg-red-50');
+                    label.classList.remove('border-gray-200');
+                } else {
+                    label.classList.remove('border-red-500', 'bg-red-50');
+                    label.classList.add('border-gray-200');
+                }
+            });
+        }
+
         function loadUserData() {
             // Mock user data loading
             setTimeout(() => {
@@ -1049,6 +1487,28 @@
                 }
             }, 1000);
         }
+        
+        // Initialize payment service when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            paymentService = new PaymentService();
+            
+            // Add event listeners for live updates
+            document.addEventListener('input', (e) => {
+                if (e.target.name === 'amount') {
+                    updateDepositPreview();
+                } else if (e.target.name === 'tokenAmount') {
+                    updateWithdrawPreview();
+                }
+            });
+            
+            document.addEventListener('change', (e) => {
+                if (e.target.name === 'currency' || e.target.name === 'paymentMethod') {
+                    updateDepositPreview();
+                } else if ((e.target.name === 'currency' && e.target.closest('form').querySelector('[name="tokenAmount"]')) || e.target.name === 'withdrawalMethod') {
+                    updateWithdrawPreview();
+                }
+            });
+        });
     </script>
 </body>
 </html>

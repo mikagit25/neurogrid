@@ -51,14 +51,28 @@ app.post('/api/ai/chat', async (req, res) => {
       });
     }
 
-    // Determine provider (auto-select if not specified)
-    const selectedProvider = provider || aiManager.selectBestProvider(model, 'text');
+    let selectedProvider = provider;
+    let selectedModel = model;
     
-    console.log(`🤖 Processing: ${selectedProvider}:${model} - "${message.substring(0, 50)}..."`);    
+    // Handle auto model selection
+    if (model === 'auto' || model === 'auto-text') {
+      const autoSelection = aiManager.selectBestModel('text', provider);
+      selectedProvider = autoSelection.provider;
+      selectedModel = autoSelection.model;
+      console.log(`🎯 Auto-selected: ${selectedProvider}:${selectedModel}`);
+    } else {
+      // Determine provider (auto-select if not specified)
+      selectedProvider = provider || aiManager.selectBestProvider(model, 'text');
+    }
     
-    const result = await aiManager.generateText(selectedProvider, model, message, options);
+    console.log(`🤖 Processing: ${selectedProvider}:${selectedModel} - "${message.substring(0, 50)}..."`);    
     
-    console.log(`✅ Response: provider=${result.provider_used}, tokens=${result.tokens_used}, time=${result.processing_time}ms`);
+    const result = await aiManager.generateText(selectedProvider, selectedModel, message, options);
+    
+    // Ensure the correct model name is returned
+    result.model = selectedModel;
+    
+    console.log(`✅ Response: provider=${result.provider_used}, model=${result.model}, tokens=${result.tokens_used}, time=${result.processing_time}ms`);
     
     res.json(result);
   } catch (error) {

@@ -57,7 +57,7 @@ class NeuroGridConfig {
     getPort() {
         return process.env.PORT || 
                process.env.API_PORT || 
-               (this.environment === 'development' ? 8080 : 80);
+               (this.environment === 'development' ? 3001 : 80);
     }
 
     /**

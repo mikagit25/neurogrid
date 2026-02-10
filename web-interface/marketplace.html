@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGrid AI Models Marketplace</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .model-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .model-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .model-card.featured {
+            border: 2px solid #ffd700;
+            background: linear-gradient(45deg, #fff9e5, #ffffff);
+        }
+        .stars {
+            color: #ffd700;
+        }
+        .badge {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: white;
+        }
+        .upload-zone {
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #667eea;
+            background-color: #f7fafc;
+        }
+        .tag {
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            color: #2d3748;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                        <span class="text-purple-600 font-bold text-xl">NG</span>
+                    </div>
+                    <div>
+                        <h1 class="text-white text-xl font-bold">NeuroGrid Marketplace</h1>
+                        <p class="text-purple-200 text-sm">Discover & Share AI Models</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-white">
+                        <span class="text-sm opacity-75">NEURO Balance:</span>
+                        <span id="userBalance" class="font-bold">--</span>
+                    </div>
+                    <a href="ai-chat.html" class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+                        <i class="fas fa-comment-alt mr-2"></i>AI Chat
+                    </a>
+                    <button id="uploadBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-upload mr-2"></i>Upload Model
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <div class="text-3xl font-bold text-blue-600" id="totalModels">--</div>
+                <div class="text-gray-600">Total Models</div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <div class="text-3xl font-bold text-green-600" id="totalProviders">--</div>
+                <div class="text-gray-600">Model Providers</div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <div class="text-3xl font-bold text-purple-600" id="totalDownloads">--</div>
+                <div class="text-gray-600">Downloads</div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <div class="text-3xl font-bold text-yellow-600" id="avgRating">--</div>
+                <div class="text-gray-600">Avg. Rating</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Filters Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <i class="fas fa-filter text-blue-600 mr-2"></i>Filters
+                    </h3>
+
+                    <!-- Search -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Models</label>
+                        <div class="relative">
+                            <input type="text" id="searchInput" placeholder="Search by name, tag, or author" 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="categoryFilter" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Categories</option>
+                            <option value="text">Text Generation</option>
+                            <option value="image">Image Generation</option>
+                            <option value="code">Code Generation</option>
+                            <option value="chat">Conversational</option>
+                            <option value="multimodal">Multimodal</option>
+                        </select>
+                    </div>
+
+                    <!-- Provider Filter -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Provider</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="provider-filter rounded" data-provider="huggingface" checked>
+                                <span class="ml-2 text-sm">🤗 HuggingFace</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="provider-filter rounded" data-provider="google" checked>
+                                <span class="ml-2 text-sm">🧠 Google</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="provider-filter rounded" data-provider="community" checked>
+                                <span class="ml-2 text-sm">👥 Community</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="provider-filter rounded" data-provider="custom" checked>
+                                <span class="ml-2 text-sm">⚡ Custom</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Rating Filter -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="range" id="ratingFilter" min="0" max="5" step="0.5" value="0" 
+                                   class="flex-1">
+                            <span id="ratingValue" class="text-sm font-medium">0+</span>
+                        </div>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price Range (NEURO/1k tokens)</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="number" id="minPrice" placeholder="Min" 
+                                   class="w-20 p-2 border border-gray-300 rounded text-sm">
+                            <span>-</span>
+                            <input type="number" id="maxPrice" placeholder="Max" 
+                                   class="w-20 p-2 border border-gray-300 rounded text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Sort Options -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                        <select id="sortBy" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="rating">Highest Rated</option>
+                            <option value="downloads">Most Downloaded</option>
+                            <option value="newest">Newest First</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="name">Name A-Z</option>
+                        </select>
+                    </div>
+
+                    <button id="clearFilters" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition">
+                        Clear All Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Models Grid -->
+            <div class="lg:col-span-3">
+                <!-- Top Bar -->
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-gray-600">
+                            <span id="filteredCount">--</span> models found
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <button id="gridView" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button id="listView" class="p-2 bg-gray-200 text-gray-600 rounded hover:bg-gray-300">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">Featured:</span>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="featuredOnly" class="rounded">
+                            <span class="ml-2 text-sm">Show only featured</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="text-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading models...</p>
+                </div>
+
+                <!-- Models Container -->
+                <div id="modelsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Models will be populated here -->
+                </div>
+
+                <!-- Load More Button -->
+                <div class="text-center mt-8">
+                    <button id="loadMoreBtn" class="hidden bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition">
+                        Load More Models
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Model Modal -->
+    <div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Upload New AI Model</h3>
+                    <button id="closeUploadModal" class="text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
+                </div>
+
+                <form id="uploadForm">
+                    <!-- Basic Info -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Model Name *</label>
+                            <input type="text" id="modelName" required 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                            <select id="modelCategory" required 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select category</option>
+                                <option value="text">Text Generation</option>
+                                <option value="image">Image Generation</option>
+                                <option value="code">Code Generation</option>
+                                <option value="chat">Conversational</option>
+                                <option value="multimodal">Multimodal</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                        <textarea id="modelDescription" required rows="4"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Describe what your model does, its capabilities, and use cases..."></textarea>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Price per 1k tokens (NEURO) *</label>
+                            <input type="number" id="modelPrice" required step="0.001" min="0" 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                            <input type="text" id="modelTags" 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                   placeholder="ai, nlp, generation (comma separated)">
+                        </div>
+                    </div>
+
+                    <!-- File Upload Zone -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Model File *</label>
+                        <div class="upload-zone p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                            <div id="uploadContent">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                <p class="text-gray-600 mb-2">Drag and drop your model file here, or</p>
+                                <button type="button" id="selectFileBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                    Select File
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2">Supported formats: .safetensors, .bin, .onnx (max 2GB)</p>
+                            </div>
+                            <div id="uploadProgress" class="hidden">
+                                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                                    <div id="progressBar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <p id="uploadStatus" class="text-sm text-gray-600">Uploading...</p>
+                            </div>
+                        </div>
+                        <input type="file" id="modelFile" class="hidden" accept=".safetensors,.bin,.onnx">
+                    </div>
+
+                    <!-- Advanced Options -->
+                    <div class="mb-6">
+                        <button type="button" id="toggleAdvanced" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-chevron-down mr-1"></i>Advanced Options
+                        </button>
+                        <div id="advancedOptions" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">License</label>
+                                    <select id="modelLicense" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                                        <option value="mit">MIT</option>
+                                        <option value="apache-2.0">Apache 2.0</option>
+                                        <option value="gpl-3.0">GPL 3.0</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Model Size</label>
+                                    <input type="text" id="modelSize" 
+                                           class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                           placeholder="e.g., 7B, 13B, 70B">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end space-x-4">
+                        <button type="button" id="cancelUpload" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" id="submitUpload" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
+                            Upload Model
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Detail Modal -->
+    <div id="modelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div id="modelModalContent">
+                <!-- Content will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js"></script>
+    <script>
+        class NeuroGridMarketplace {
+            constructor() {
+                this.models = [];
+                this.filteredModels = [];
+                this.currentPage = 1;
+                this.modelsPerPage = 12;
+                this.apiUrl = this.getApiUrl();
+                
+                this.init();
+                this.loadModels();
+                this.loadStats();
+            }
+
+            getApiUrl() {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    return 'http://localhost:8080/api';
+                }
+                return '/api';
+            }
+
+            init() {
+                // Search functionality
+                document.getElementById('searchInput').addEventListener('input', () => this.applyFilters());
+                document.getElementById('categoryFilter').addEventListener('change', () => this.applyFilters());
+                document.getElementById('sortBy').addEventListener('change', () => this.applyFilters());
+                document.getElementById('featuredOnly').addEventListener('change', () => this.applyFilters());
+                
+                // Provider filters
+                document.querySelectorAll('.provider-filter').forEach(checkbox => {
+                    checkbox.addEventListener('change', () => this.applyFilters());
+                });
+
+                // Rating filter
+                document.getElementById('ratingFilter').addEventListener('input', (e) => {
+                    document.getElementById('ratingValue').textContent = e.target.value + '+';
+                    this.applyFilters();
+                });
+
+                // Price filters
+                document.getElementById('minPrice').addEventListener('input', () => this.applyFilters());
+                document.getElementById('maxPrice').addEventListener('input', () => this.applyFilters());
+
+                // Clear filters
+                document.getElementById('clearFilters').addEventListener('click', () => this.clearAllFilters());
+
+                // View toggles
+                document.getElementById('gridView').addEventListener('click', () => this.setView('grid'));
+                document.getElementById('listView').addEventListener('click', () => this.setView('list'));
+
+                // Upload modal
+                document.getElementById('uploadBtn').addEventListener('click', () => this.openUploadModal());
+                document.getElementById('closeUploadModal').addEventListener('click', () => this.closeUploadModal());
+                document.getElementById('cancelUpload').addEventListener('click', () => this.closeUploadModal());
+                
+                // Upload form
+                document.getElementById('uploadForm').addEventListener('submit', (e) => this.handleUpload(e));
+                document.getElementById('selectFileBtn').addEventListener('click', () => {
+                    document.getElementById('modelFile').click();
+                });
+                document.getElementById('modelFile').addEventListener('change', (e) => this.handleFileSelect(e));
+
+                // Advanced options toggle
+                document.getElementById('toggleAdvanced').addEventListener('click', () => this.toggleAdvancedOptions());
+
+                // Load more
+                document.getElementById('loadMoreBtn').addEventListener('click', () => this.loadMore());
+
+                // Close modal on outside click
+                document.getElementById('uploadModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('uploadModal')) {
+                        this.closeUploadModal();
+                    }
+                });
+
+                document.getElementById('modelModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('modelModal')) {
+                        this.closeModelModal();
+                    }
+                });
+            }
+
+            async loadModels() {
+                try {
+                    document.getElementById('loadingIndicator').classList.remove('hidden');
+                    
+                    const response = await axios.get(`${this.apiUrl}/models`);
+                    if (response.data.success) {
+                        this.models = response.data.data;
+                        this.applyFilters();
+                    }
+                } catch (error) {
+                    console.error('Failed to load models:', error);
+                    this.loadDemoModels();
+                } finally {
+                    document.getElementById('loadingIndicator').classList.add('hidden');
+                }
+            }
+
+            async loadStats() {
+                try {
+                    const response = await axios.get(`${this.apiUrl}/models/stats`);
+                    if (response.data.success) {
+                        const stats = response.data.data;
+                        document.getElementById('totalModels').textContent = stats.total_models;
+                        document.getElementById('totalProviders').textContent = stats.top_authors.length;
+                        document.getElementById('totalDownloads').textContent = stats.total_downloads;
+                        document.getElementById('avgRating').textContent = stats.average_rating.toFixed(1) + '★';
+                    }
+                } catch (error) {
+                    console.error('Failed to load stats:', error);
+                    // Set demo stats
+                    document.getElementById('totalModels').textContent = '24';
+                    document.getElementById('totalProviders').textContent = '8';
+                    document.getElementById('totalDownloads').textContent = '1.2K';
+                    document.getElementById('avgRating').textContent = '4.3★';
+                }
+            }
+
+            loadDemoModels() {
+                this.models = [
+                    {
+                        id: 'llama-2-7b-custom',
+                        name: 'Llama 2 7B Fine-tuned',
+                        description: 'Custom fine-tuned Llama 2 model for conversational AI with enhanced creativity and reasoning capabilities.',
+                        category: 'chat',
+                        provider: 'community',
+                        author: 'AIResearcher',
+                        rating: 4.8,
+                        reviews: 127,
+                        downloads: 2341,
+                        price: 0.015,
+                        tags: ['conversational', 'fine-tuned', 'creative'],
+                        featured: true,
+                        size: '7B',
+                        license: 'Apache 2.0',
+                        created_at: '2026-02-01',
+                        updated_at: '2026-02-05'
+                    },
+                    {
+                        id: 'stable-diffusion-anime',
+                        name: 'Stable Diffusion Anime',
+                        description: 'Specialized Stable Diffusion model trained on anime artwork for high-quality anime-style image generation.',
+                        category: 'image',
+                        provider: 'community',
+                        author: 'AnimeArtist',
+                        rating: 4.6,
+                        reviews: 89,
+                        downloads: 1523,
+                        price: 0.8,
+                        tags: ['anime', 'art', 'stylized'],
+                        featured: true,
+                        size: '2.1',
+                        license: 'CreativeML OpenRAIL',
+                        created_at: '2026-01-28',
+                        updated_at: '2026-02-03'
+                    },
+                    {
+                        id: 'codellama-python-expert',
+                        name: 'CodeLlama Python Expert',
+                        description: 'Enhanced CodeLlama specifically optimized for Python development, debugging, and code explanation.',
+                        category: 'code',
+                        provider: 'custom',
+                        author: 'PyDeveloper',
+                        rating: 4.9,
+                        reviews: 203,
+                        downloads: 3124,
+                        price: 0.020,
+                        tags: ['python', 'coding', 'debugging'],
+                        featured: false,
+                        size: '7B',
+                        license: 'Custom',
+                        created_at: '2026-01-25',
+                        updated_at: '2026-02-04'
+                    },
+                    {
+                        id: 'mistral-7b-medical',
+                        name: 'Mistral 7B Medical',
+                        description: 'Medical knowledge-enhanced Mistral model trained on medical literature and clinical data.',
+                        category: 'text',
+                        provider: 'community',
+                        author: 'MedAI',
+                        rating: 4.7,
+                        reviews: 156,
+                        downloads: 892,
+                        price: 0.025,
+                        tags: ['medical', 'healthcare', 'specialized'],
+                        featured: false,
+                        size: '7B',
+                        license: 'MIT',
+                        created_at: '2026-01-30',
+                        updated_at: '2026-02-02'
+                    },
+                    {
+                        id: 'multimodal-vision-chat',
+                        name: 'Vision Chat Multimodal',
+                        description: 'Advanced multimodal model that can understand images and have conversations about visual content.',
+                        category: 'multimodal',
+                        provider: 'custom',
+                        author: 'VisionAI',
+                        rating: 4.5,
+                        reviews: 78,
+                        downloads: 671,
+                        price: 0.035,
+                        tags: ['multimodal', 'vision', 'chat'],
+                        featured: true,
+                        size: '13B',
+                        license: 'Apache 2.0',
+                        created_at: '2026-02-02',
+                        updated_at: '2026-02-06'
+                    },
+                    {
+                        id: 'gemini-pro-enhanced',
+                        name: 'Gemini Pro Enhanced',
+                        description: 'Community-enhanced version of Gemini Pro with improved reasoning and multilingual capabilities.',
+                        category: 'text',
+                        provider: 'google',
+                        author: 'GoogleAI',
+                        rating: 4.4,
+                        reviews: 234,
+                        downloads: 4567,
+                        price: 0.012,
+                        tags: ['reasoning', 'multilingual', 'general'],
+                        featured: false,
+                        size: 'Pro',
+                        license: 'Custom',
+                        created_at: '2026-01-20',
+                        updated_at: '2026-02-01'
+                    }
+                ];
+                this.applyFilters();
+            }
+
+            applyFilters() {
+                let filtered = [...this.models];
+
+                // Search filter
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                if (searchTerm) {
+                    filtered = filtered.filter(model =>
+                        model.name.toLowerCase().includes(searchTerm) ||
+                        model.description.toLowerCase().includes(searchTerm) ||
+                        model.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+                        model.author.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                // Category filter
+                const category = document.getElementById('categoryFilter').value;
+                if (category !== 'all') {
+                    filtered = filtered.filter(model => model.category === category);
+                }
+
+                // Provider filter
+                const selectedProviders = Array.from(document.querySelectorAll('.provider-filter:checked'))
+                    .map(checkbox => checkbox.dataset.provider);
+                if (selectedProviders.length > 0) {
+                    filtered = filtered.filter(model => selectedProviders.includes(model.provider));
+                }
+
+                // Rating filter
+                const minRating = parseFloat(document.getElementById('ratingFilter').value);
+                filtered = filtered.filter(model => model.rating >= minRating);
+
+                // Price filter
+                const minPrice = parseFloat(document.getElementById('minPrice').value);
+                const maxPrice = parseFloat(document.getElementById('maxPrice').value);
+                if (!isNaN(minPrice)) {
+                    filtered = filtered.filter(model => model.price >= minPrice);
+                }
+                if (!isNaN(maxPrice)) {
+                    filtered = filtered.filter(model => model.price <= maxPrice);
+                }
+
+                // Featured filter
+                const featuredOnly = document.getElementById('featuredOnly').checked;
+                if (featuredOnly) {
+                    filtered = filtered.filter(model => model.featured);
+                }
+
+                // Sort
+                const sortBy = document.getElementById('sortBy').value;
+                filtered.sort((a, b) => {
+                    switch (sortBy) {
+                        case 'rating':
+                            return b.rating - a.rating;
+                        case 'downloads':
+                            return b.downloads - a.downloads;
+                        case 'newest':
+                            return new Date(b.created_at) - new Date(a.created_at);
+                        case 'price-low':
+                            return a.price - b.price;
+                        case 'price-high':
+                            return b.price - a.price;
+                        case 'name':
+                            return a.name.localeCompare(b.name);
+                        default:
+                            return b.rating - a.rating;
+                    }
+                });
+
+                this.filteredModels = filtered;
+                this.currentPage = 1;
+                this.renderModels();
+                this.updateFilterCount();
+            }
+
+            renderModels() {
+                const container = document.getElementById('modelsContainer');
+                const startIndex = (this.currentPage - 1) * this.modelsPerPage;
+                const endIndex = startIndex + this.modelsPerPage;
+                const modelsToShow = this.filteredModels.slice(0, endIndex);
+
+                container.innerHTML = modelsToShow.map(model => this.createModelCard(model)).join('');
+
+                // Show/hide load more button
+                const loadMoreBtn = document.getElementById('loadMoreBtn');
+                if (endIndex < this.filteredModels.length) {
+                    loadMoreBtn.classList.remove('hidden');
+                } else {
+                    loadMoreBtn.classList.add('hidden');
+                }
+            }
+
+            createModelCard(model) {
+                const starsHtml = this.generateStars(model.rating);
+                const tagsHtml = model.tags.map(tag => 
+                    `<span class="tag text-xs px-2 py-1 rounded-full">${tag}</span>`
+                ).join('');
+                
+                return `
+                    <div class="model-card bg-white rounded-lg shadow-md p-6 ${model.featured ? 'featured' : ''}" 
+                         data-model-id="${model.id}">
+                        ${model.featured ? '<div class="badge text-xs px-2 py-1 rounded-full mb-2 inline-block">✨ Featured</div>' : ''}
+                        
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-semibold text-gray-900">${model.name}</h3>
+                            <div class="flex items-center space-x-1">
+                                ${starsHtml}
+                                <span class="text-sm text-gray-500">(${model.reviews})</span>
+                            </div>
+                        </div>
+
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">${model.description}</p>
+
+                        <div class="flex flex-wrap gap-1 mb-4">
+                            ${tagsHtml}
+                        </div>
+
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="text-sm text-gray-500">
+                                <i class="fas fa-user mr-1"></i>${model.author}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                <i class="fas fa-download mr-1"></i>${model.downloads}
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4 flex justify-between items-center">
+                            <div class="text-lg font-bold text-green-600">
+                                ${model.price.toFixed(3)} NEURO/1k
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="try-model bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition"
+                                        data-model-id="${model.id}">
+                                    <i class="fas fa-play mr-1"></i>Try
+                                </button>
+                                <button class="view-details bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition"
+                                        data-model-id="${model.id}">
+                                    Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            generateStars(rating) {
+                const fullStars = Math.floor(rating);
+                const hasHalfStar = rating % 1 !== 0;
+                const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+                let html = '';
+                for (let i = 0; i < fullStars; i++) {
+                    html += '<i class="fas fa-star stars text-xs"></i>';
+                }
+                if (hasHalfStar) {
+                    html += '<i class="fas fa-star-half-alt stars text-xs"></i>';
+                }
+                for (let i = 0; i < emptyStars; i++) {
+                    html += '<i class="far fa-star text-gray-300 text-xs"></i>';
+                }
+                
+                return html;
+            }
+
+            updateFilterCount() {
+                document.getElementById('filteredCount').textContent = this.filteredModels.length;
+            }
+
+            clearAllFilters() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('categoryFilter').value = 'all';
+                document.getElementById('ratingFilter').value = '0';
+                document.getElementById('ratingValue').textContent = '0+';
+                document.getElementById('minPrice').value = '';
+                document.getElementById('maxPrice').value = '';
+                document.getElementById('featuredOnly').checked = false;
+                document.getElementById('sortBy').value = 'rating';
+                
+                document.querySelectorAll('.provider-filter').forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+
+                this.applyFilters();
+            }
+
+            setView(viewType) {
+                // Update button states
+                if (viewType === 'grid') {
+                    document.getElementById('gridView').className = 'p-2 bg-blue-500 text-white rounded hover:bg-blue-600';
+                    document.getElementById('listView').className = 'p-2 bg-gray-200 text-gray-600 rounded hover:bg-gray-300';
+                    document.getElementById('modelsContainer').className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                } else {
+                    document.getElementById('listView').className = 'p-2 bg-blue-500 text-white rounded hover:bg-blue-600'; 
+                    document.getElementById('gridView').className = 'p-2 bg-gray-200 text-gray-600 rounded hover:bg-gray-300';
+                    document.getElementById('modelsContainer').className = 'space-y-4';
+                }
+                
+                this.renderModels();
+            }
+
+            loadMore() {
+                this.currentPage++;
+                this.renderModels();
+            }
+
+            openUploadModal() {
+                document.getElementById('uploadModal').classList.remove('hidden');
+            }
+
+            closeUploadModal() {
+                document.getElementById('uploadModal').classList.add('hidden');
+                document.getElementById('uploadForm').reset();
+                this.resetUploadUI();
+            }
+
+            closeModelModal() {
+                document.getElementById('modelModal').classList.add('hidden');
+            }
+
+            toggleAdvancedOptions() {
+                const advanced = document.getElementById('advancedOptions');
+                const icon = document.querySelector('#toggleAdvanced i');
+                
+                if (advanced.classList.contains('hidden')) {
+                    advanced.classList.remove('hidden');
+                    icon.className = 'fas fa-chevron-up mr-1';
+                } else {
+                    advanced.classList.add('hidden');
+                    icon.className = 'fas fa-chevron-down mr-1';
+                }
+            }
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('uploadContent').innerHTML = `
+                        <i class="fas fa-file-alt text-4xl text-green-500 mb-4"></i>
+                        <p class="text-gray-700 font-medium">${file.name}</p>
+                        <p class="text-sm text-gray-500">${this.formatFileSize(file.size)}</p>
+                    `;
+                }
+            }
+
+            async handleUpload(e) {
+                e.preventDefault();
+                
+                const modelData = {
+                    name: document.getElementById('modelName').value,
+                    type: document.getElementById('modelCategory').value,
+                    description: document.getElementById('modelDescription').value,
+                    cost_per_token: document.getElementById('modelPrice').value,
+                    cost_per_image: document.getElementById('modelPrice').value,
+                    tags: document.getElementById('modelTags').value.split(',').map(tag => tag.trim()),
+                    author: 'Anonymous User', // In real app, get from auth
+                    version: '1.0.0',
+                    size_mb: parseInt(document.getElementById('modelSize').value || '0'),
+                    huggingface_id: document.getElementById('huggingfaceId')?.value || null,
+                    performance: {
+                        inference_speed: 'medium',
+                        quality_score: 0
+                    },
+                    requirements: {
+                        min_gpu_memory: document.getElementById('minGpuMemory')?.value || 'Unknown',
+                        recommended_gpu: 'Any modern GPU',
+                        cuda_version: '11.8+'
+                    }
+                };
+
+                try {
+                    this.showUploadProgress();
+                    
+                    const response = await axios.post(`${this.apiUrl}/models`, modelData, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Author-Address': '0x' + Math.random().toString(16).substr(2, 40) // Mock address
+                        }
+                    });
+
+                    if (response.data.success) {
+                        this.showNotification('Model registered successfully!', 'success');
+                        this.closeUploadModal();
+                        this.loadModels(); // Refresh models list
+                        this.loadStats(); // Refresh stats
+                    } else {
+                        this.showNotification('Registration failed: ' + response.data.error, 'error');
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    this.showNotification('Registration failed. Please try again.', 'error');
+                } finally {
+                    this.resetUploadUI();
+                }
+            }
+
+            showUploadProgress() {
+                document.getElementById('uploadContent').classList.add('hidden');
+                document.getElementById('uploadProgress').classList.remove('hidden');
+            }
+
+            updateUploadProgress(percent) {
+                document.getElementById('progressBar').style.width = percent + '%';
+                document.getElementById('uploadStatus').textContent = `Uploading... ${percent}%`;
+            }
+
+            resetUploadUI() {
+                document.getElementById('uploadProgress').classList.add('hidden');
+                document.getElementById('uploadContent').classList.remove('hidden');
+                document.getElementById('uploadContent').innerHTML = `
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600 mb-2">Drag and drop your model file here, or</p>
+                    <button type="button" id="selectFileBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        Select File
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">Supported formats: .safetensors, .bin, .onnx (max 2GB)</p>
+                `;
+                
+                // Re-attach event listener
+                document.getElementById('selectFileBtn').addEventListener('click', () => {
+                    document.getElementById('modelFile').click();
+                });
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${
+                    type === 'error' ? 'bg-red-500' : 
+                    type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+                }`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
+        }
+
+        // Initialize marketplace when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new NeuroGridMarketplace();
+        });
+    </script>
+</body>
+</html>

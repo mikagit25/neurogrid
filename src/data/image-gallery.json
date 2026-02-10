@@ -1,0 +1,23 @@
+[
+  {
+    "id": "img_e572f21d24d1f56d",
+    "title": "Neural Network Visualization",
+    "description": "Beautiful AI-generated neural network patterns",
+    "creator": "AIArtist",
+    "user_id": "user_artist_001",
+    "model": "stable-diffusion-xl",
+    "prompt": "abstract neural network, flowing data streams, neon colors, digital art",
+    "image_url": "/api/images/neural_art_001.png",
+    "created_at": "2026-02-06T12:56:50.965Z",
+    "likes": 0,
+    "views": 0,
+    "tags": [
+      "neural",
+      "abstract",
+      "art",
+      "visualization"
+    ],
+    "is_featured": false,
+    "comments": []
+  }
+]

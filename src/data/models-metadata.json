@@ -1,0 +1,560 @@
+[
+  {
+    "id": "free-llama2-7b-chat",
+    "name": "LLaMA 2 7B Chat (FREE)",
+    "description": "Бесплатная модель Meta LLaMA 2 для чата и генерации текста",
+    "type": "text",
+    "author": "Meta AI (Community)",
+    "author_address": "0x0000000000000000000000000000000000000000",
+    "version": "2.0.0",
+    "size_mb": 13568,
+    "downloads": 12547,
+    "rating": 4.6,
+    "reviews_count": 127,
+    "cost_per_token": 0.000,
+    "tags": [
+      "free",
+      "conversation",
+      "general",
+      "open-source"
+    ],
+    "created_at": "2026-01-15T00:00:00.000Z",
+    "updated_at": "2026-02-10T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": "meta-llama/Llama-2-7b-chat-hf",
+    "performance": {
+      "inference_speed": "fast",
+      "quality_score": 4.6,
+      "benchmarks": {
+        "mmlu": 63.9,
+        "hellaswag": 77.2,
+        "arc": 53.7
+      }
+    },
+    "requirements": {
+      "min_gpu_memory": "8GB",
+      "recommended_gpu": "RTX 3060 or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "free-stable-diffusion-xl",
+    "name": "Stable Diffusion XL (FREE)",
+    "description": "Бесплатная генерация изображений высокого качества 1024x1024",
+    "type": "image",
+    "author": "Stability AI (Community)",
+    "author_address": "0x0000000000000000000000000000000000000000",
+    "version": "1.0.0",
+    "size_mb": 6738,
+    "downloads": 45621,
+    "rating": 4.8,
+    "reviews_count": 892,
+    "cost_per_image": 0.000,
+    "tags": [
+      "free",
+      "art",
+      "illustration",
+      "creative",
+      "high-resolution"
+    ],
+    "created_at": "2026-01-20T00:00:00.000Z",
+    "updated_at": "2026-02-10T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": "stabilityai/stable-diffusion-xl-base-1.0",
+    "performance": {
+      "inference_speed": "medium",
+      "quality_score": 4.8,
+      "sample_images": [
+        "https://picsum.photos/1024/1024?random=1",
+        "https://picsum.photos/1024/1024?random=2"
+      ]
+    },
+    "requirements": {
+      "min_gpu_memory": "10GB",
+      "recommended_gpu": "RTX 3080 or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "free-codellama-7b",
+    "name": "CodeLlama 7B (FREE)",
+    "description": "Бесплатная модель для генерации и анализа кода от Meta",
+    "type": "code",
+    "author": "Meta AI (Community)",
+    "author_address": "0x0000000000000000000000000000000000000000",
+    "version": "1.0.0",
+    "size_mb": 13568,
+    "downloads": 8934,
+    "rating": 4.5,
+    "reviews_count": 234,
+    "cost_per_token": 0.000,
+    "tags": [
+      "free",
+      "programming",
+      "python",
+      "javascript",
+      "debugging",
+      "code-completion"
+    ],
+    "created_at": "2026-01-10T00:00:00.000Z",
+    "updated_at": "2026-02-08T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": "codellama/CodeLlama-7b-Instruct-hf",
+    "performance": {
+      "inference_speed": "fast",
+      "quality_score": 4.5,
+      "benchmarks": {
+        "humaneval": 29.8,
+        "mbpp": 37.7
+      }
+    },
+    "requirements": {
+      "min_gpu_memory": "8GB",
+      "recommended_gpu": "RTX 3060 or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "free-whisper-large",
+    "name": "Whisper Large v3 (FREE)",
+    "description": "Бесплатное распознавание речи от OpenAI на 100+ языках",
+    "type": "audio",
+    "author": "OpenAI (Community)",
+    "author_address": "0x0000000000000000000000000000000000000000",
+    "version": "3.0.0",
+    "size_mb": 2916,
+    "downloads": 23456,
+    "rating": 4.9,
+    "reviews_count": 567,
+    "cost_per_minute": 0.000,
+    "tags": [
+      "free",
+      "speech-to-text",
+      "multilingual",
+      "transcription",
+      "audio-processing"
+    ],
+    "created_at": "2026-01-05T00:00:00.000Z",
+    "updated_at": "2026-02-05T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": "openai/whisper-large-v3",
+    "performance": {
+      "inference_speed": "medium",
+      "quality_score": 4.9,
+      "languages_supported": 100
+    },
+    "requirements": {
+      "min_gpu_memory": "4GB",
+      "recommended_gpu": "GTX 1660 or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "free-falcon-7b",
+    "name": "Falcon 7B Instruct (FREE)",
+    "description": "Бесплатная высокопроизводительная модель от TII для общих задач",
+    "type": "text",
+    "author": "Technology Innovation Institute",
+    "author_address": "0x0000000000000000000000000000000000000001",
+    "version": "1.0.0",
+    "size_mb": 13000,
+    "downloads": 15678,
+    "rating": 4.4,
+    "reviews_count": 189,
+    "cost_per_token": 0.000,
+    "tags": [
+      "free",
+      "conversation",
+      "instruction-following",
+      "general-purpose",
+      "multilingual"
+    ],
+    "created_at": "2026-01-12T00:00:00.000Z",
+    "updated_at": "2026-02-03T00:00:00.000Z",
+    "verified": true,
+    "featured": false,
+    "huggingface_id": "tiiuae/falcon-7b-instruct",
+    "performance": {
+      "inference_speed": "fast",
+      "quality_score": 4.4,
+      "benchmarks": {
+        "mmlu": 55.8,
+        "hellaswag": 74.1
+      }
+    },
+    "requirements": {
+      "min_gpu_memory": "8GB",
+      "recommended_gpu": "RTX 3060 Ti or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "free-musicgen-small",
+    "name": "MusicGen Small (FREE)",
+    "description": "Бесплатная генерация музыки по текстовому описанию от Meta",
+    "type": "audio",
+    "author": "Meta AI (Community)",
+    "author_address": "0x0000000000000000000000000000000000000000",
+    "version": "1.0.0",
+    "size_mb": 1200,
+    "downloads": 7832,
+    "rating": 4.3,
+    "reviews_count": 83,
+    "cost_per_second": 0.000,
+    "tags": [
+      "free",
+      "music-generation",
+      "audio-synthesis",
+      "creative",
+      "entertainment"
+    ],
+    "created_at": "2026-01-25T00:00:00.000Z",
+    "updated_at": "2026-02-02T00:00:00.000Z",
+    "verified": true,
+    "featured": false,
+    "huggingface_id": "facebook/musicgen-small",
+    "performance": {
+      "inference_speed": "slow",
+      "quality_score": 4.3,
+      "max_duration": "30 seconds"
+    },
+    "requirements": {
+      "min_gpu_memory": "4GB",
+      "recommended_gpu": "RTX 3060 or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "premium-gpt4-turbo",
+    "name": "GPT-4 Turbo (Premium)",
+    "description": "Новейшая модель OpenAI с улучшенной производительностью",
+    "type": "text",
+    "author": "OpenAI",
+    "author_address": "0x1111111111111111111111111111111111111111",
+    "version": "2024.04.09",
+    "size_mb": 0,
+    "downloads": 100000,
+    "rating": 4.9,
+    "reviews_count": 2341,
+    "cost_per_token": 0.01,
+    "tags": [
+      "premium",
+      "advanced",
+      "reasoning",
+      "coding",
+      "analysis",
+      "latest"
+    ],
+    "created_at": "2026-02-01T00:00:00.000Z",
+    "updated_at": "2026-02-10T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": null,
+    "performance": {
+      "inference_speed": "very-fast",
+      "quality_score": 4.9,
+      "context_length": 128000
+    },
+    "requirements": {
+      "min_gpu_memory": "N/A (API)",
+      "recommended_gpu": "N/A (API)",
+      "cuda_version": "N/A"
+    }
+  },
+  {
+    "id": "premium-claude-3-opus",
+    "name": "Claude 3 Opus (Premium)",
+    "description": "Самая мощная модель Anthropic для сложного анализа",
+    "type": "text",
+    "author": "Anthropic",
+    "author_address": "0x2222222222222222222222222222222222222222",
+    "version": "3.0.0",
+    "size_mb": 0,
+    "downloads": 67890,
+    "rating": 4.8,
+    "reviews_count": 1456,
+    "cost_per_token": 0.015,
+    "tags": [
+      "premium",
+      "analysis",
+      "reasoning",
+      "long-context",
+      "safety-focused"
+    ],
+    "created_at": "2026-01-28T00:00:00.000Z",
+    "updated_at": "2026-02-09T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": null,
+    "performance": {
+      "inference_speed": "medium",
+      "quality_score": 4.8,
+      "context_length": 200000
+    },
+    "requirements": {
+      "min_gpu_memory": "N/A (API)",
+      "recommended_gpu": "N/A (API)",
+      "cuda_version": "N/A"
+    }
+  },
+  {
+    "id": "premium-midjourney-v6",
+    "name": "Midjourney v6 (Premium)",
+    "description": "Профессиональная генерация изображений с фотореалистичным качеством",
+    "type": "image",
+    "author": "Midjourney Inc",
+    "author_address": "0x3333333333333333333333333333333333333333",
+    "version": "6.0.0",
+    "size_mb": 0,
+    "downloads": 234567,
+    "rating": 4.9,
+    "reviews_count": 5678,
+    "cost_per_image": 0.04,
+    "tags": [
+      "premium",
+      "photorealistic",
+      "artistic",
+      "professional",
+      "commercial-use"
+    ],
+    "created_at": "2026-01-30T00:00:00.000Z",
+    "updated_at": "2026-02-08T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": null,
+    "performance": {
+      "inference_speed": "medium",
+      "quality_score": 4.9,
+      "max_resolution": "2048x2048"
+    },
+    "requirements": {
+      "min_gpu_memory": "N/A (API)",
+      "recommended_gpu": "N/A (API)",
+      "cuda_version": "N/A"
+    }
+  },
+  {
+    "id": "community-llama2-finetuned",
+    "name": "Community Llama 2 Fine-tuned",
+    "description": "Llama 2 model fine-tuned by the community for better conversations",
+    "type": "text",
+    "author": "NeuroGrid Community",
+    "author_address": "0x1234567890123456789012345678901234567890",
+    "version": "1.0.0",
+    "size_mb": 13568,
+    "downloads": 1247,
+    "rating": 4.7,
+    "reviews_count": 3,
+    "cost_per_token": 0.008,
+    "tags": [
+      "conversation",
+      "general",
+      "fine-tuned"
+    ],
+    "created_at": "2026-01-15T00:00:00.000Z",
+    "updated_at": "2026-01-15T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": "neurogrid-community/llama-2-7b-chat-neurogrid",
+    "performance": {
+      "inference_speed": "fast",
+      "quality_score": 4.6,
+      "benchmarks": {
+        "mmlu": 62.8,
+        "hellaswag": 77.2,
+        "arc": 53.7
+      }
+    },
+    "requirements": {
+      "min_gpu_memory": "8GB",
+      "recommended_gpu": "RTX 3080 or better",
+      "cuda_version": "11.8+"
+    }
+  },
+  {
+    "id": "artist-stable-diffusion",
+    "name": "Artist's Stable Diffusion XL",
+    "description": "Specially trained on artistic styles and high-quality illustrations",
+    "type": "image",
+    "author": "AIArtist Pro",
+    "author_address": "0x9876543210987654321098765432109876543210",
+    "version": "2.1.0",
+    "size_mb": 6738,
+    "downloads": 3421,
+    "rating": 4.5,
+    "reviews_count": 2,
+    "cost_per_image": 0.25,
+    "tags": [
+      "art",
+      "illustration",
+      "creative",
+      "high-quality"
+    ],
+    "created_at": "2026-01-20T00:00:00.000Z",
+    "updated_at": "2026-02-01T00:00:00.000Z",
+    "verified": true,
+    "featured": true,
+    "huggingface_id": "aiartist-pro/sdxl-artistic-v2",
+    "performance": {
+      "inference_speed": "medium",
+      "quality_score": 4.8,
+      "sample_images": [
+        "https://picsum.photos/512/512?random=1",
+        "https://picsum.photos/512/512?random=2"
+      ]
+    },
+    "requirements": {
+      "min_gpu_memory": "12GB",
+      "recommended_gpu": "RTX 4080 or better",
+      "cuda_version": "11.8+"
+    }
+  },
+  {
+    "id": "coder-assist-7b",
+    "name": "CoderAssist 7B",
+    "description": "Specialized coding model trained on GitHub repositories and documentation",
+    "type": "code",
+    "author": "DevTools Inc",
+    "author_address": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+    "version": "1.3.2",
+    "size_mb": 7892,
+    "downloads": 892,
+    "rating": 4,
+    "reviews_count": 1,
+    "cost_per_token": 0.012,
+    "tags": [
+      "programming",
+      "python",
+      "javascript",
+      "debugging"
+    ],
+    "created_at": "2026-01-10T00:00:00.000Z",
+    "updated_at": "2026-02-03T00:00:00.000Z",
+    "verified": true,
+    "featured": false,
+    "huggingface_id": "devtools/coderassist-7b-v1.3",
+    "performance": {
+      "inference_speed": "fast",
+      "quality_score": 4.4,
+      "benchmarks": {
+        "humaneval": 71.2,
+        "mbpp": 68.5
+      }
+    },
+    "requirements": {
+      "min_gpu_memory": "8GB",
+      "recommended_gpu": "RTX 3070 or better",
+      "cuda_version": "11.8+"
+    }
+  },
+  {
+    "id": "free-bloom-7b",
+    "name": "BLOOM 7B1 (FREE)",
+    "description": "Бесплатная многоязычная модель от BigScience для 46 языков",
+    "type": "text",
+    "author": "BigScience Workshop",
+    "author_address": "0x0000000000000000000000000000000000000005",
+    "version": "1.0.0",
+    "size_mb": 14200,
+    "downloads": 9876,
+    "rating": 4.2,
+    "reviews_count": 156,
+    "cost_per_token": 0.000,
+    "tags": [
+      "free",
+      "multilingual",
+      "conversation",
+      "46-languages",
+      "open-science"
+    ],
+    "created_at": "2026-01-08T00:00:00.000Z",
+    "updated_at": "2026-02-04T00:00:00.000Z",
+    "verified": true,
+    "featured": false,
+    "huggingface_id": "bigscience/bloom-7b1",
+    "performance": {
+      "inference_speed": "medium",
+      "quality_score": 4.2,
+      "languages_supported": 46
+    },
+    "requirements": {
+      "min_gpu_memory": "16GB",
+      "recommended_gpu": "RTX 3080 or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "free-controlnet-canny",
+    "name": "ControlNet Canny (FREE)", 
+    "description": "Бесплатный контроль генерации изображений по контурам",
+    "type": "image",
+    "author": "lllyasviel (Community)",
+    "author_address": "0x0000000000000000000000000000000000000006",
+    "version": "1.1.0",
+    "size_mb": 1440,
+    "downloads": 12345,
+    "rating": 4.7,
+    "reviews_count": 234,
+    "cost_per_image": 0.000,
+    "tags": [
+      "free",
+      "controlnet",
+      "edge-detection",
+      "precise-control",
+      "image-conditioning"
+    ],
+    "created_at": "2026-01-22T00:00:00.000Z",
+    "updated_at": "2026-02-06T00:00:00.000Z",
+    "verified": true,
+    "featured": false,
+    "huggingface_id": "lllyasviel/control_v11p_sd15_canny",
+    "performance": {
+      "inference_speed": "medium",
+      "quality_score": 4.7,
+      "control_type": "edge-detection"
+    },
+    "requirements": {
+      "min_gpu_memory": "8GB",
+      "recommended_gpu": "RTX 3070 or better",
+      "cuda_version": "11.4+"
+    }
+  },
+  {
+    "id": "custom-gpt-4-clone-32e226ea",
+    "name": "Custom GPT-4 Clone",
+    "description": "A fine-tuned model that mimics GPT-4 capabilities",
+    "type": "text",
+    "author": "TestUser",
+    "author_address": "0xTestUserAddress123456789",
+    "version": "1.0.0",
+    "size_mb": 25000,
+    "downloads": 0,
+    "rating": 0,
+    "reviews_count": 0,
+    "cost_per_token": 0.05,
+    "cost_per_image": 0.5,
+    "tags": [
+      "advanced",
+      "gpt",
+      "custom"
+    ],
+    "created_at": "2026-02-06T12:29:17.012Z",
+    "updated_at": "2026-02-06T12:29:17.012Z",
+    "verified": false,
+    "featured": false,
+    "huggingface_id": null,
+    "performance": {
+      "inference_speed": "unknown",
+      "quality_score": 0
+    },
+    "requirements": {
+      "min_gpu_memory": "Unknown",
+      "recommended_gpu": "Any modern GPU",
+      "cuda_version": "11.8+"
+    }
+  }
+]

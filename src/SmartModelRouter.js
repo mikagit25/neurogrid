@@ -22,6 +22,129 @@ class SmartModelRouter {
     
     // Конфигурация РЕАЛЬНЫХ доступных координаторов
     this.coordinators = {
+      // === БЕСПЛАТНЫЕ МОДЕЛИ ===
+      'free-llama2-7b-chat': {
+        name: 'LLaMA 2 7B Chat (FREE)',
+        type: 'local',
+        endpoint: 'huggingface-inference',
+        capabilities: ['text', 'chat', 'conversation'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 2000,
+        reliability: 0.95,
+        available: true,
+        huggingface_id: 'meta-llama/Llama-2-7b-chat-hf'
+      },
+      'free-stable-diffusion-xl': {
+        name: 'Stable Diffusion XL (FREE)',
+        type: 'local', 
+        endpoint: 'diffusion-inference',
+        capabilities: ['image-generation', 'art', 'creative'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 15000,
+        reliability: 0.92,
+        available: true,
+        huggingface_id: 'stabilityai/stable-diffusion-xl-base-1.0'
+      },
+      'free-codellama-7b': {
+        name: 'CodeLlama 7B (FREE)',
+        type: 'local',
+        endpoint: 'huggingface-inference',
+        capabilities: ['code', 'programming', 'debugging'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 3000,
+        reliability: 0.94,
+        available: true,
+        huggingface_id: 'codellama/CodeLlama-7b-Instruct-hf'
+      },
+      'free-whisper-large': {
+        name: 'Whisper Large v3 (FREE)',
+        type: 'local',
+        endpoint: 'audio-inference',
+        capabilities: ['speech-to-text', 'transcription', 'multilingual'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 5000,
+        reliability: 0.98,
+        available: true,
+        huggingface_id: 'openai/whisper-large-v3'
+      },
+      'free-falcon-7b': {
+        name: 'Falcon 7B Instruct (FREE)',
+        type: 'local',
+        endpoint: 'huggingface-inference',
+        capabilities: ['text', 'instruction-following', 'general'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 2500,
+        reliability: 0.93,
+        available: true,
+        huggingface_id: 'tiiuae/falcon-7b-instruct'
+      },
+      'free-musicgen-small': {
+        name: 'MusicGen Small (FREE)',
+        type: 'local',
+        endpoint: 'audio-generation',
+        capabilities: ['music-generation', 'audio-synthesis'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 20000,
+        reliability: 0.89,
+        available: true,
+        huggingface_id: 'facebook/musicgen-small'
+      },
+      'free-bloom-7b': {
+        name: 'BLOOM 7B1 (FREE)',
+        type: 'local',
+        endpoint: 'huggingface-inference',
+        capabilities: ['text', 'multilingual', '46-languages'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 3500,
+        reliability: 0.91,
+        available: true,
+        huggingface_id: 'bigscience/bloom-7b1'
+      },
+      'free-controlnet-canny': {
+        name: 'ControlNet Canny (FREE)',
+        type: 'local',
+        endpoint: 'controlnet-inference', 
+        capabilities: ['image-conditioning', 'edge-detection', 'precise-control'],
+        cost: 0.000, // БЕСПЛАТНО!
+        latency: 12000,
+        reliability: 0.90,
+        available: true,
+        huggingface_id: 'lllyasviel/control_v11p_sd15_canny'
+      },
+      
+      // === PREMIUM МОДЕЛИ ===
+      'premium-gpt4-turbo': {
+        name: 'GPT-4 Turbo (Premium)',
+        type: 'external',
+        endpoint: 'https://api.openai.com/v1/chat/completions',
+        capabilities: ['text', 'code', 'reasoning', 'analysis', 'latest'],
+        cost: 0.01,
+        latency: 800,
+        reliability: 0.99,
+        available: this.externalAPI.getAvailableAPIs().openai
+      },
+      'premium-claude-3-opus': {
+        name: 'Claude 3 Opus (Premium)',
+        type: 'external',
+        endpoint: 'https://api.anthropic.com/v1/messages',
+        capabilities: ['text', 'analysis', 'long-context', 'reasoning'],
+        cost: 0.015,
+        latency: 2200,
+        reliability: 0.98,
+        available: this.externalAPI.getAvailableAPIs().anthropic
+      },
+      'premium-midjourney-v6': {
+        name: 'Midjourney v6 (Premium)',
+        type: 'external',
+        endpoint: 'https://api.midjourney.com/v1/imagine',
+        capabilities: ['image-generation', 'photorealistic', 'artistic'],
+        cost: 0.04,
+        latency: 30000,
+        reliability: 0.97,
+        available: false // пока недоступно
+      },
+
+      // === СУЩЕСТВУЮЩИЕ МОДЕЛИ ===
       'google-gemini': {
         name: 'Google Gemini Pro',
         type: 'external',
@@ -86,12 +209,37 @@ class SmartModelRouter {
 
     // Специализированные агенты для разных типов задач
     this.specialists = {
-      'text-generation': ['google-gemini', 'openai-gpt3.5', 'anthropic-claude'],
-      'code-generation': ['huggingface-codellama', 'openai-gpt4'],
-      'analysis': ['anthropic-claude', 'openai-gpt4'],
-      'reasoning': ['anthropic-claude', 'openai-gpt4'],
-      'simple-tasks': ['google-gemini', 'openai-gpt3.5'],
-      'complex-tasks': ['openai-gpt4', 'anthropic-claude']
+      // Текстовые задачи - включаем БЕСПЛАТНЫЕ модели для демо
+      'text-generation': ['free-llama2-7b-chat', 'free-falcon-7b', 'free-bloom-7b', 'google-gemini', 'openai-gpt3.5', 'anthropic-claude'],
+      
+      // Программирование - включаем БЕСПЛАТНЫЙ CodeLlama
+      'code-generation': ['free-codellama-7b', 'huggingface-codellama', 'openai-gpt4', 'premium-gpt4-turbo'],
+      
+      // Генерация изображений - множество БЕСПЛАТНЫХ вариантов
+      'image-generation': ['free-stable-diffusion-xl', 'free-controlnet-canny', 'premium-midjourney-v6'],
+      
+      // Аудио задачи - БЕСПЛАТНЫЕ модели
+      'speech-to-text': ['free-whisper-large'],
+      'music-generation': ['free-musicgen-small'],
+      
+      // Анализ и рассуждения - премиум и стандарт
+      'analysis': ['premium-claude-3-opus', 'anthropic-claude', 'openai-gpt4', 'free-llama2-7b-chat'],
+      'reasoning': ['premium-claude-3-opus', 'premium-gpt4-turbo', 'anthropic-claude', 'openai-gpt4'],
+      
+      // Простые задачи - приоритет БЕСПЛАТНЫМ
+      'simple-tasks': ['free-llama2-7b-chat', 'free-falcon-7b', 'google-gemini', 'openai-gpt3.5'],
+      
+      // Сложные задачи - премиум модели
+      'complex-tasks': ['premium-gpt4-turbo', 'premium-claude-3-opus', 'openai-gpt4', 'anthropic-claude', 'neurogrid-swarm'],
+      
+      // Многоязычные задачи  
+      'multilingual': ['free-bloom-7b', 'free-whisper-large', 'premium-claude-3-opus'],
+      
+      // Чат и диалог - акцент на бесплатные
+      'chat': ['free-llama2-7b-chat', 'free-falcon-7b', 'google-gemini', 'openai-gpt3.5'],
+      
+      // Креативные задачи
+      'creative': ['free-stable-diffusion-xl', 'free-musicgen-small', 'premium-midjourney-v6', 'anthropic-claude']
     };
 
     // Критерии выбора модели
