@@ -42,17 +42,22 @@
     "node-client",
     "web-interface"
   ],
+  "main": "index.js",
   "scripts": {
-    "start": "concurrently \"npm run start:coordinator\" \"npm run start:web\"",
-    "start:coordinator": "cd coordinator-server && npm start",
+    "start": "node index.js smart-router",
+    "start:production": "NODE_ENV=production node index.js smart-router",
+    "start:coordinator": "node index.js coordinator",
     "start:web": "cd web-interface && npm start",
-    "start:node": "cd node-client && python main.py",
+    "start:node": "node index.js node-client",
+    "dev": "concurrently \"npm run dev:coordinator\" \"npm run dev:web\"",
+    "test": "npm run test:coordinator && npm run test:web",
+    "test:unit": "jest tests/unit --coverage",
+    "test:integration": "jest tests/integration",
+    "test:e2e": "jest tests/e2e",
     "install:all": "npm install && cd coordinator-server && npm install && cd ../web-interface && npm install && cd ../node-client && pip install -r requirements.txt",
     "build": "cd coordinator-server && npm run build && cd ../web-interface && npm run build",
-    "test": "npm run test:coordinator && npm run test:web",
     "test:coordinator": "cd coordinator-server && npm test",
     "test:web": "cd web-interface && npm test",
-    "dev": "concurrently \"npm run dev:coordinator\" \"npm run dev:web\"",
     "dev:coordinator": "cd coordinator-server && npm run dev",
     "dev:web": "cd web-interface && npm run dev",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
@@ -71,6 +76,9 @@
     "ws": "^8.18.3"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
   }
 }
