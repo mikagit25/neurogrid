@@ -1,0 +1,86 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'neurogrid'
+    environment: 'development'
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # NeuroGrid Coordinator Server
+  - job_name: 'neurogrid-coordinator'
+    static_configs:
+      - targets: ['coordinator:9464']
+    scrape_interval: 10s
+    metrics_path: '/metrics'
+    scheme: 'http'
+    params:
+      format: ['prometheus']
+
+  # Node Exporter (System Metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # PostgreSQL Exporter
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # Redis Exporter
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # Cadvisor (Container Metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+
+  # Web Interface Metrics
+  - job_name: 'neurogrid-web'
+    static_configs:
+      - targets: ['web-interface:3000']
+    scrape_interval: 30s
+    metrics_path: '/api/metrics'
+
+  # GPU Node Clients
+  - job_name: 'neurogrid-nodes'
+    static_configs:
+      - targets: ['node-client:8000']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+
+  # Self-scraping Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Blackbox Exporter for endpoint monitoring
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - http://coordinator:3001/api/v1/health
+        - http://web-interface:3000/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
