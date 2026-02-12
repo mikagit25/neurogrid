@@ -265,7 +265,7 @@ jobs:
         DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_neurogrid
         
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: ./coordinator-server/coverage/lcov.info
         directory: ./coordinator-server/coverage/
