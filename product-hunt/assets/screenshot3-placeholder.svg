@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1270" height="760" viewBox="0 0 1270 760" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f1e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1270" height="760" fill="url(#bg3)"/>
+  
+  <!-- Header -->
+  <rect x="0" y="0" width="1270" height="80" fill="#1e1e2e"/>
+  <text x="40" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#fff">Deployment Interface</text>
+  
+  <!-- Main container -->
+  <rect x="40" y="100" width="1190" height="640" rx="10" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="2"/>
+  
+  <!-- Sidebar - Deployment options -->
+  <g id="sidebar">
+    <rect x="60" y="120" width="280" height="600" rx="8" fill="#252535"/>
+    <text x="80" y="150" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#fff">Deployment Type</text>
+    
+    <!-- Option 1 - Docker (selected) -->
+    <rect x="80" y="170" width="240" height="70" rx="6" fill="#00d4ff" fill-opacity="0.2" stroke="#00d4ff" stroke-width="2"/>
+    <circle cx="100" cy="205" r="8" fill="#00d4ff"/>
+    <text x="120" y="200" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#fff">Docker Compose</text>
+    <text x="120" y="220" font-family="Arial, sans-serif" font-size="12" fill="#ccc">Quick local setup</text>
+    
+    <!-- Option 2 - Kubernetes -->
+    <rect x="80" y="250" width="240" height="70" rx="6" fill="#252535" stroke="#2a2a3e" stroke-width="1"/>
+    <circle cx="100" cy="285" r="8" fill="#2a2a3e" stroke="#555" stroke-width="1"/>
+    <text x="120" y="280" font-family="Arial, sans-serif" font-size="16" fill="#ccc">Kubernetes</text>
+    <text x="120" y="300" font-family="Arial, sans-serif" font-size="12" fill="#888">Production clusters</text>
+    
+    <!-- Option 3 - Cloud -->
+    <rect x="80" y="330" width="240" height="70" rx="6" fill="#252535" stroke="#2a2a3e" stroke-width="1"/>
+    <circle cx="100" cy="365" r="8" fill="#2a2a3e" stroke="#555" stroke-width="1"/>
+    <text x="120" y="360" font-family="Arial, sans-serif" font-size="16" fill="#ccc">Cloud Provider</text>
+    <text x="120" y="380" font-family="Arial, sans-serif" font-size="12" fill="#888">AWS, GCP, Azure</text>
+    
+    <!-- Option 4 - Bare Metal -->
+    <rect x="80" y="410" width="240" height="70" rx="6" fill="#252535" stroke="#2a2a3e" stroke-width="1"/>
+    <circle cx="100" cy="445" r="8" fill="#2a2a3e" stroke="#555" stroke-width="1"/>
+    <text x="120" y="440" font-family="Arial, sans-serif" font-size="16" fill="#ccc">Bare Metal</text>
+    <text x="120" y="460" font-family="Arial, sans-serif" font-size="12" fill="#888">Custom hardware</text>
+    
+    <!-- Deploy button -->
+    <rect x="80" y="650" width="240" height="50" rx="6" fill="#00d4ff"/>
+    <text x="200" y="680" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#fff" text-anchor="middle">Deploy Node</text>
+  </g>
+  
+  <!-- Main deployment configuration -->
+  <g id="mainConfig">
+    <rect x="360" y="120" width="850" height="340" rx="8" fill="#252535"/>
+    <text x="380" y="150" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#fff">Configuration</text>
+    
+    <!-- Configuration form -->
+    <!-- Field 1 -->
+    <text x="380" y="190" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Node Name</text>
+    <rect x="380" y="200" width="440" height="40" rx="4" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="1"/>
+    <text x="395" y="227" font-family="Arial, sans-serif" font-size="14" fill="#fff">neurogrid-node-01</text>
+    
+    <!-- Field 2 -->
+    <text x="380" y="270" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Port</text>
+    <rect x="380" y="280" width="200" height="40" rx="4" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="1"/>
+    <text x="395" y="307" font-family="Arial, sans-serif" font-size="14" fill="#fff">8080</text>
+    
+    <text x="620" y="270" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Protocol</text>
+    <rect x="620" y="280" width="200" height="40" rx="4" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="1"/>
+    <text x="635" y="307" font-family="Arial, sans-serif" font-size="14" fill="#fff">HTTPS</text>
+    
+    <!-- Field 3 -->
+    <text x="380" y="350" font-family="Arial, sans-serif" font-size="14" fill="#ccc">Memory Allocation (GB)</text>
+    <rect x="380" y="360" width="440" height="40" rx="4" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="1"/>
+    <text x="395" y="387" font-family="Arial, sans-serif" font-size="14" fill="#fff">16</text>
+    <rect x="420" y="370" width="350" height="20" rx="10" fill="#2a2a3e"/>
+    <rect x="420" y="370" width="200" height="20" rx="10" fill="#00d4ff"/>
+    
+    <!-- Field 4 -->
+    <text x="380" y="430" font-family="Arial, sans-serif" font-size="14" fill="#ccc">CPU Cores</text>
+    <rect x="380" y="440" width="440" height="40" rx="4" fill="#1e1e2e" stroke="#2a2a3e" stroke-width="1"/>
+    <text x="395" y="467" font-family="Arial, sans-serif" font-size="14" fill="#fff">8</text>
+    <rect x="430" y="450" width="350" height="20" rx="10" fill="#2a2a3e"/>
+    <rect x="430" y="450" width="175" height="20" rx="10" fill="#7e57ff"/>
+    
+    <!-- Resource summary panel -->
+    <rect x="850" y="190" width="340" height="260" rx="8" fill="#1e1e2e"/>
+    <text x="870" y="220" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#fff">Resource Summary</text>
+    
+    <text x="870" y="260" font-family="Arial, sans-serif" font-size="13" fill="#888">Estimated Monthly Cost</text>
+    <text x="870" y="285" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#00d4ff">$47.50</text>
+    
+    <text x="870" y="320" font-family="Arial, sans-serif" font-size="13" fill="#888">Performance Score</text>
+    <text x="870" y="345" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#00ff88">8.7/10</text>
+    
+    <text x="870" y="380" font-family="Arial, sans-serif" font-size="13" fill="#888">Network Bandwidth</text>
+    <text x="870" y="405" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#7e57ff">1 Gbps</text>
+    
+    <circle cx="890" cy="435" r="3" fill="#00ff88"/>
+    <text x="900" y="438" font-family="Arial, sans-serif" font-size="11" fill="#ccc">Auto-scaling enabled</text>
+  </g>
+  
+  <!-- Docker command preview -->
+  <g id="commandPreview">
+    <rect x="360" y="480" width="850" height="240" rx="8" fill="#252535"/>
+    <text x="380" y="510" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#fff">Deployment Command</text>
+    
+    <!-- Terminal-style code block -->
+    <rect x="380" y="530" width="810" height="170" rx="4" fill="#0f0f1e" stroke="#2a2a3e" stroke-width="1"/>
+    
+    <!-- Terminal header -->
+    <rect x="380" y="530" width="810" height="30" rx="4" fill="#1a1a2e"/>
+    <circle cx="395" cy="545" r="5" fill="#ff5f56"/>
+    <circle cx="410" cy="545" r="5" fill="#ffbd2e"/>
+    <circle cx="425" cy="545" r="5" fill="#27c93f"/>
+    <text x="445" y="550" font-family="monospace" font-size="12" fill="#888">docker-compose.yml</text>
+    
+    <!-- Command text -->
+    <text x="395" y="580" font-family="monospace" font-size="13" fill="#00d4ff">docker-compose up -d</text>
+    <text x="395" y="605" font-family="monospace" font-size="13" fill="#7e57ff">  --build</text>
+    <text x="395" y="630" font-family="monospace" font-size="13" fill="#7e57ff">  --scale neurogrid-node=3</text>
+    <text x="395" y="655" font-family="monospace" font-size="13" fill="#00ff88">  -p neurogrid</text>
+    <text x="395" y="680" font-family="monospace" font-size="13" fill="#ccc">Creating neurogrid_neurogrid-node_1 ... done</text>
+    
+    <!-- Copy button -->
+    <rect x="1120" y="670" width="60" height="25" rx="4" fill="#2a2a3e"/>
+    <text x="1135" y="687" font-family="Arial, sans-serif" font-size="12" fill="#00d4ff">Copy</text>
+  </g>
+</svg>
